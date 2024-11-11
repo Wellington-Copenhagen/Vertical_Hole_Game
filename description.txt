@@ -1,3 +1,13 @@
 This is ongoing game making project.
+Curreently,This game is planned to be like 2D tower diffence game.
+Detail story is have not been decieded.
+Player is commander of army.
+He is commanded to clear ruins.
+That ruins is underground and have straight vertical hole.
+So, player place soldiers and weapos on elevator and send it threw hole.
+Ruin have many floors and there are enemys.
+If soldier kills enemy, player get money.
+And player place more soldiers on elevator by consuming money.
+Finally, olayer clear game when elevator reach bottom floor.
 
-Curreently,planned like 2D tower diffence game.
+Finally,I'm willing to go ahead this project with someone who want to take part!
