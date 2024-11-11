@@ -1,0 +1,3 @@
+This is ongoing game making project.
+
+Curreently,planned like 2D tower diffence game.
