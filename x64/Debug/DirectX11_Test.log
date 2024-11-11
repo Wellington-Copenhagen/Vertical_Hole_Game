@@ -1,0 +1,65 @@
+﻿  compilation object save succeeded; see C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\ColoredShader.cso
+  compilation object save succeeded; see C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\SpriteShader.cso
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Shader\SpriteShader_TestBed.hlsl(48,5-49): warning X3206: implicit truncation of vector type
+  
+  compilation object save succeeded; see C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\SpriteShader_TestBed.cso
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Shader\OpaqueSolidShader.hlsl(74,16-64): warning X3206: implicit truncation of vector type
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Shader\OpaqueSolidShader.hlsl(87,16-65): warning X3206: implicit truncation of vector type
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Shader\OpaqueSolidShader.hlsl(88,16-35): warning X3206: implicit truncation of vector type
+  
+  compilation object save succeeded; see C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\OpaqueSolidShader.cso
+  DirectX11_Test.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\numbers(11): warning STL4038: The contents of <numbers> are available only with C++20 or later.
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\DirectX11_Test.cpp(204,22): warning C4244: '初期化中': 'WPARAM' から 'int' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\DirectX11_Test.cpp(224,41): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\DirectX11_Test.cpp(227,41): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\DirectX11_Test.cpp(236,44): warning C4305: '-=': 'double' から 'float' へ切り詰めます。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\DirectX11_Test.cpp(239,44): warning C4305: '+=': 'double' から 'float' へ切り詰めます。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\DirectX11_Test.cpp(242,44): warning C4305: '-=': 'double' から 'float' へ切り詰めます。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\DirectX11_Test.cpp(245,44): warning C4305: '+=': 'double' から 'float' へ切り詰めます。
+  Buffers.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\numbers(11): warning STL4038: The contents of <numbers> are available only with C++20 or later.
+  Direct3D.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\numbers(11): warning STL4038: The contents of <numbers> are available only with C++20 or later.
+  DrawPipe.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\numbers(11): warning STL4038: The contents of <numbers> are available only with C++20 or later.
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\DrawPipe.cpp(202,7): warning C4267: '引数': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
+  Sampler.cpp
+  Texture.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\numbers(11): warning STL4038: The contents of <numbers> are available only with C++20 or later.
+  Camera.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\numbers(11): warning STL4038: The contents of <numbers> are available only with C++20 or later.
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Camera.cpp(23,15): warning C4305: '=': 'double' から 'float' へ切り詰めます。
+  Game.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\numbers(11): warning STL4038: The contents of <numbers> are available only with C++20 or later.
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(93,20): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(94,20): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(95,67): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(118,62): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(121,55): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(184,49): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(197,119): warning C4244: '引数': 'float' から 'UINT8' への変換です。データが失われる可能性があります。
+  Object.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\numbers(11): warning STL4038: The contents of <numbers> are available only with C++20 or later.
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Object.cpp(213,60): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Object.cpp(214,40): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Object.cpp(252,19): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Object.cpp(255,19): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
+  Plane.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\numbers(11): warning STL4038: The contents of <numbers> are available only with C++20 or later.
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Plane.cpp(32,42): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Plane.cpp(33,42): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Plane.cpp(34,40): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Plane.cpp(35,40): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Plane.cpp(44,55): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Plane.cpp(45,35): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Plane.cpp(49,54): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Plane.cpp(50,34): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Plane.cpp(65,31): warning C4838: 'int' から 'float' への変換には縮小変換が必要です
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Plane.cpp(65,31): warning C4244: '初期化中': 'int' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Plane.cpp(84,19): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Plane.cpp(86,19): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
+  Position.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\numbers(11): warning STL4038: The contents of <numbers> are available only with C++20 or later.
+  コードを生成中...
+  DirectX11_Test.vcxproj -> C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\DirectX11_Test.exe

@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\DirectX11_Test.exe</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\ColoredShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\SpriteShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\SpriteShader_TestBed.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\OpaqueSolidShader.cso</FullPath>
+    </ContentFile>
+  </ContentFiles>
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>
