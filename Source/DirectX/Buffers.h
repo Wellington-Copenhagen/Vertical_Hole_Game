@@ -1,6 +1,7 @@
 #pragma once
 #include "framework.h"
 #include "Source/DirectX/DirectX.h"
+#include "Interfaces.h"
 
 #define BLENGTHINSTANCE 1000
 #define BLENGTHVERTEX 1000000
@@ -16,6 +17,8 @@
 //おそらくだけどインスタンス描画は頂点の数が同じものしか同時に描画できない
 //手くらい三角形を使えば一つのストリップでいくつもの離れ離れの図形を描画できる！
 //これはつまり最初に最初の頂点を1回書き込み終わった時点で最後に最後の頂点をもう1回書き込めばよい
+
+/*
 struct StripVertexType {
 public:
 	DirectX::XMFLOAT3 Pos;
@@ -38,56 +41,41 @@ private:
 	static StripVertexBuffer* pThis;
 };
 #define sBuffer StripVertexBuffer::GetInstance()
-struct RectVertexType {
+*/
+class RectDrawCallBuffer{
 public:
-	DirectX::XMFLOAT2 UV;
-	DirectX::XMFLOAT3 Normal;
-	DirectX::XMFLOAT3 Pos;
-};
-class RectVertexBuffer {
-public:
+	RectDrawCallBuffer();
 	void UpdateAndSet();
 	int UsedCount;
-	RectVertexType* DataList;
+	RectDrawCallType* DataList;
 	ComPtr<ID3D11Buffer> Buffer;
-	static RectVertexBuffer& GetInstance() {
-		if (pThis == nullptr) {
-			pThis = new RectVertexBuffer();
-		}
-		return *pThis;
-	}
-private:
-	RectVertexBuffer();
-	static RectVertexBuffer* pThis;
 };
-#define rBuffer RectVertexBuffer::GetInstance()
-struct PositionType {
+class RectInstanceBuffer{
 public:
-	DirectX::XMFLOAT4 Row1;
-	DirectX::XMFLOAT4 Row2;
-	DirectX::XMFLOAT4 Row3;
-	DirectX::XMFLOAT4 Row4;
-	void Set(DirectX::XMMATRIX input);
-	void Set(DirectX::XMMATRIX* input);
-};
-class PositionBuffer {
-public:
-	PositionBuffer();
+	RectInstanceBuffer();
 	void UpdateAndSet();
 	int UsedCount;
-	PositionType* DataList;
+	RectInstanceType* DataList;
 	ComPtr<ID3D11Buffer> Buffer;
-	static PositionBuffer& GetInstance() {
-		if (pThis == nullptr) {
-			pThis = new PositionBuffer();
-		}
-		return *pThis;
-	}
-private:
-	PositionBuffer();
-	static PositionBuffer* pThis;
 };
-#define pBuffer PositionBuffer::GetInstance()
+/*
+class ColorVarRectDrawCallBuffer {
+public:
+	ColorVarRectDrawCallBuffer();
+	void UpdateAndSet();
+	int UsedCount;
+	ColorVarRectDrawCallType* DataList;
+	ComPtr<ID3D11Buffer> Buffer;
+};
+class ColorVarRectInstanceBuffer {
+public:
+	ColorVarRectInstanceBuffer();
+	void UpdateAndSet();
+	int UsedCount;
+	ColorVarRectInstanceType* DataList;
+	ComPtr<ID3D11Buffer> Buffer;
+};
+*/
 /*
 class IndexBuffer {
 public:
@@ -99,28 +87,14 @@ public:
 	ComPtr<ID3D11Buffer> Buffer;
 };
 */
-struct ConstantData
-{
-public:
-	DirectX::XMFLOAT2 ViewProjection;
-};
 class ConstantBuffer {
 public:
 	ConstantBuffer();
 	void UpdateAndSet();
-	ConstantData Data;
+	ConstantType Data;
 	ComPtr<ID3D11Buffer> Buffer;
-	static ConstantBuffer& GetInstance() {
-		if (pThis == nullptr) {
-			pThis = new ConstantBuffer();
-		}
-		return *pThis;
-	}
-private:
-	ConstantBuffer();
-	static ConstantBuffer* pThis;
 };
-#define cBuffer ConstantBuffer::GetInstance()
+/*
 struct LightBufferData {
 public:
 	DirectX::XMFLOAT4 LightPos;
@@ -144,3 +118,16 @@ private:
 	static LightBuffer* pThis;
 };
 #define lBuffer LightBuffer::GetInstance()
+*/
+class AllBuffers : IAllGraphicBuffer {
+public:
+	RectDrawCallBuffer RectDCBuffer;
+	RectInstanceBuffer RectIBuffer;
+	AllBuffers() {
+		RectDCBuffer = RectDrawCallBuffer();
+		RectIBuffer = RectInstanceBuffer();
+	}
+
+	RectDrawCallType* GetNextRectDCPointer() override;
+	RectInstanceType* GetNextRectIPointer() override;
+};

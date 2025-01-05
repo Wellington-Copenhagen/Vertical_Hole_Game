@@ -4,28 +4,14 @@
 
 class Camera {
 public:
-	DirectX::XMMATRIX Rotation;
-	DirectX::XMVECTOR ParallelMovement;
-	float nearZ;
-	float farZ;
-	float aspect;
-	float FOV;
-	float rotationXaxis;
-	float rotationYaxis;
-	float rotationZaxis;
-	//ïΩçsà⁄ìÆÅ®âÒì]Å®ZâìãﬂÅ®FOVÇÃèáÇ≈èàóùÇ∑ÇÈ
-	DirectX::XMFLOAT4X4 GetViewProjectionMatrix();
-	DirectX::XMMATRIX GetViewProjectionMatrix2();
-	DirectX::XMMATRIX GetRotationMatrix();
-	DirectX::XMFLOAT2 GetEyePos();
-	static Camera* pInstance;
-	static Camera& GetInstance() {
-		if (pInstance == nullptr) {
-			pInstance = new Camera();
-		}
-		return *pInstance;
+	DirectX::XMMATRIX CameraMatrix;
+	float Aspect;//Width/Height
+	DirectX::XMVECTOR CenterCoord;
+	float ZoomRate;//How many block line virtically
+	Camera(float WindowHeight,float WindowWidth) {
+		Aspect = WindowWidth / WindowHeight;
+		CenterCoord = {0,0,0,1};
+		ZoomRate = 10;
 	}
-private:
-	Camera();
+	void Update();
 };
-#define CAMERA Camera::GetInstance()

@@ -2,11 +2,12 @@
 #include "framework.h"
 #include "Source/DirectX/DirectX.h"
 #include "Buffers.h"
-StripVertexBuffer::StripVertexBuffer() {
-	DataList = new StripVertexType[BLENGTHVERTEX];
+/*
+StripDrawCallBuffer::StripDrawCallBuffer() {
+	DataList = new StripDrawCallType[BLENGTHVERTEX];
 	D3D11_BUFFER_DESC bDesc = {};
 	bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// デバイスにバインドするときの種類(頂点バッファ、インデックスバッファ、定数バッファなど)
-	bDesc.ByteWidth = sizeof(StripVertexType)*BLENGTHVERTEX;					// 作成するバッファのバイトサイズ
+	bDesc.ByteWidth = sizeof(StripDrawCallType)*BLENGTHVERTEX;					// 作成するバッファのバイトサイズ
 	//起動時に確保して使いまわす場合ここのサイズをあらかじめ決める必要があり、それが描画可能量の限界となる
 	bDesc.MiscFlags = 0;							// その他のフラグ
 	bDesc.StructureByteStride = 0;					// 構造化バッファの場合、その構造体のサイズ
@@ -16,45 +17,46 @@ StripVertexBuffer::StripVertexBuffer() {
 	// 上の仕様を渡して頂点バッファを作ってもらう
 	// もちろんデバイスさんにお願いする
 	// 頂点バッファについては最初の変数以外は関係ないらしい？
-	D3D11_SUBRESOURCE_DATA initData = { DataList, sizeof(StripVertexType)*UsedCount, 0 };	// 書き込むデータ
+	D3D11_SUBRESOURCE_DATA initData = { DataList, sizeof(StripDrawCallType)*UsedCount, 0 };	// 書き込むデータ
 	// 頂点バッファの作成
 	if (FAILED(D3D.m_device->CreateBuffer(&bDesc, &initData, &Buffer))) {
 		return;
 	}
 	
 	// 頂点バッファを描画で使えるようにセットする
-	UINT stride = sizeof(StripVertexType);
+	UINT stride = sizeof(StripDrawCallType);
 	UINT offset = 0;
 	//頂点バッファのうち何番から(第1引数)何個を(第2引数)を使うのか
 	//vbは配列の先頭のアドレスを指すことになる
 	//strideとoffsetも各頂点バッファごとに指定することになるのでこれらも配列
-	D3D.m_deviceContext->IASetVertexBuffers(0, 1, Buffer.GetAddressOf(), &stride, &offset);
+	D3D.m_deviceContext->IASetDrawCallBuffers(0, 1, Buffer.GetAddressOf(), &stride, &offset);
 }
-void StripVertexBuffer::UpdateAndSet() {
+void StripDrawCallBuffer::UpdateAndSet() {
 	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
 	//ここでGPUから頂点バッファへのアクセスを止め、CPUからのアクセスができるようにしている
 	if (FAILED(D3D.m_deviceContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource))) {
 		return;
 	}
 	//ここでCPUによる処理でバッファの内容を変えている
-	memcpy(mappedSubresource.pData, DataList, sizeof(StripVertexType) * UsedCount);//第3変数を変えることで書き換える数を変えられる
+	memcpy(mappedSubresource.pData, DataList, sizeof(StripDrawCallType) * UsedCount);//第3変数を変えることで書き換える数を変えられる
 	//ここでGPUにアクセスを許可してる
 	D3D.m_deviceContext->Unmap(Buffer.Get(), 0);
 	// 頂点バッファを描画で使えるようにセットする
-	UINT stride = sizeof(StripVertexType);
+	UINT stride = sizeof(StripDrawCallType);
 	UINT offset = 0;
 	//頂点バッファのうち何番から(第1引数)何個を(第2引数)を使うのか
 	//vbは配列の先頭のアドレスを指すことになる
 	//strideとoffsetも各頂点バッファごとに指定することになるのでこれらも配列
-	D3D.m_deviceContext->IASetVertexBuffers(0, 1, Buffer.GetAddressOf(), &stride, &offset);
+	D3D.m_deviceContext->IASetDrawCallBuffers(0, 1, Buffer.GetAddressOf(), &stride, &offset);
 }
+*/
 
 
-RectVertexBuffer::RectVertexBuffer() {
-	DataList = new RectVertexType[BLENGTHVERTEX];
+RectDrawCallBuffer::RectDrawCallBuffer() {
+	DataList = new RectDrawCallType[BLENGTHVERTEX];
 	D3D11_BUFFER_DESC bDesc = {};
 	bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// デバイスにバインドするときの種類(頂点バッファ、インデックスバッファ、定数バッファなど)
-	bDesc.ByteWidth = sizeof(RectVertexType) * BLENGTHVERTEX;					// 作成するバッファのバイトサイズ
+	bDesc.ByteWidth = sizeof(RectDrawCallType) * BLENGTHVERTEX;					// 作成するバッファのバイトサイズ
 	//起動時に確保して使いまわす場合ここのサイズをあらかじめ決める必要があり、それが描画可能量の限界となる
 	bDesc.MiscFlags = 0;							// その他のフラグ
 	bDesc.StructureByteStride = 0;					// 構造化バッファの場合、その構造体のサイズ
@@ -64,57 +66,46 @@ RectVertexBuffer::RectVertexBuffer() {
 	// 上の仕様を渡して頂点バッファを作ってもらう
 	// もちろんデバイスさんにお願いする
 	// 頂点バッファについては最初の変数以外は関係ないらしい？
-	D3D11_SUBRESOURCE_DATA initData = { DataList, sizeof(RectVertexType) * UsedCount, 0 };	// 書き込むデータ
+	D3D11_SUBRESOURCE_DATA initData = { DataList, sizeof(RectDrawCallType) * UsedCount, 0 };	// 書き込むデータ
 	// 頂点バッファの作成
 	if (FAILED(D3D.m_device->CreateBuffer(&bDesc, &initData, &Buffer))) {
 		return;
 	}
 
 	// 頂点バッファを描画で使えるようにセットする
-	UINT stride = sizeof(RectVertexType);
+	UINT stride = sizeof(RectDrawCallType);
 	UINT offset = 0;
 	//頂点バッファのうち何番から(第1引数)何個を(第2引数)を使うのか
 	//vbは配列の先頭のアドレスを指すことになる
 	//strideとoffsetも各頂点バッファごとに指定することになるのでこれらも配列
-	D3D.m_deviceContext->IASetVertexBuffers(0, 1, Buffer.GetAddressOf(), &stride, &offset);
+	D3D.m_deviceContext->IASetDrawCallBuffers(0, 1, Buffer.GetAddressOf(), &stride, &offset);
+	UsedCount = 0;
 }
-void RectVertexBuffer::UpdateAndSet() {
+void RectDrawCallBuffer::UpdateAndSet() {
 	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
 	//ここでGPUから頂点バッファへのアクセスを止め、CPUからのアクセスができるようにしている
 	if (FAILED(D3D.m_deviceContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource))) {
 		return;
 	}
 	//ここでCPUによる処理でバッファの内容を変えている
-	memcpy(mappedSubresource.pData, DataList, sizeof(RectVertexType) * UsedCount);//第3変数を変えることで書き換える数を変えられる
+	memcpy(mappedSubresource.pData, DataList, sizeof(RectDrawCallType) * UsedCount);//第3変数を変えることで書き換える数を変えられる
 	//ここでGPUにアクセスを許可してる
 	D3D.m_deviceContext->Unmap(Buffer.Get(), 0);
 	// 頂点バッファを描画で使えるようにセットする
-	UINT stride = sizeof(RectVertexType);
+	UINT stride = sizeof(RectDrawCallType);
 	UINT offset = 0;
 	//頂点バッファのうち何番から(第1引数)何個を(第2引数)を使うのか
 	//vbは配列の先頭のアドレスを指すことになる
 	//strideとoffsetも各頂点バッファごとに指定することになるのでこれらも配列
-	D3D.m_deviceContext->IASetVertexBuffers(0, 1, Buffer.GetAddressOf(), &stride, &offset);
+	D3D.m_deviceContext->IASetDrawCallBuffers(0, 1, Buffer.GetAddressOf(), &stride, &offset);
+	UsedCount = 0;
 }
-
-
-void PositionType::Set(DirectX::XMMATRIX input) {
-	DirectX::XMStoreFloat4(&Row1, input.r[0]);
-	DirectX::XMStoreFloat4(&Row2, input.r[1]);
-	DirectX::XMStoreFloat4(&Row3, input.r[2]);
-	DirectX::XMStoreFloat4(&Row4, input.r[3]);
-}
-void PositionType::Set(DirectX::XMMATRIX* input) {
-	DirectX::XMStoreFloat4(&Row1, input->r[0]);
-	DirectX::XMStoreFloat4(&Row2, input->r[1]);
-	DirectX::XMStoreFloat4(&Row3, input->r[2]);
-	DirectX::XMStoreFloat4(&Row4, input->r[3]);
-}
-PositionBuffer::PositionBuffer() {
-	DataList = new PositionType[BLENGTHINSTANCE];
+/*
+ColorVarRectDrawCallBuffer::ColorVarRectDrawCallBuffer() {
+	DataList = new ColorVarRectDrawCallType[BLENGTHVERTEX];
 	D3D11_BUFFER_DESC bDesc = {};
 	bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// デバイスにバインドするときの種類(頂点バッファ、インデックスバッファ、定数バッファなど)
-	bDesc.ByteWidth = sizeof(PositionType) * BLENGTHINSTANCE;					// 作成するバッファのバイトサイズ
+	bDesc.ByteWidth = sizeof(ColorVarRectDrawCallType) * BLENGTHVERTEX;					// 作成するバッファのバイトサイズ
 	//起動時に確保して使いまわす場合ここのサイズをあらかじめ決める必要があり、それが描画可能量の限界となる
 	bDesc.MiscFlags = 0;							// その他のフラグ
 	bDesc.StructureByteStride = 0;					// 構造化バッファの場合、その構造体のサイズ
@@ -124,21 +115,72 @@ PositionBuffer::PositionBuffer() {
 	// 上の仕様を渡して頂点バッファを作ってもらう
 	// もちろんデバイスさんにお願いする
 	// 頂点バッファについては最初の変数以外は関係ないらしい？
-	D3D11_SUBRESOURCE_DATA initData = { DataList, sizeof(PositionType) * UsedCount, 0 };	// 書き込むデータ
+	D3D11_SUBRESOURCE_DATA initData = { DataList, sizeof(ColorVarRectDrawCallType) * UsedCount, 0 };	// 書き込むデータ
 	// 頂点バッファの作成
 	if (FAILED(D3D.m_device->CreateBuffer(&bDesc, &initData, &Buffer))) {
 		return;
 	}
 
 	// 頂点バッファを描画で使えるようにセットする
-	UINT stride = sizeof(PositionType);
+	UINT stride = sizeof(ColorVarRectDrawCallType);
 	UINT offset = 0;
 	//頂点バッファのうち何番から(第1引数)何個を(第2引数)を使うのか
 	//vbは配列の先頭のアドレスを指すことになる
 	//strideとoffsetも各頂点バッファごとに指定することになるのでこれらも配列
-	D3D.m_deviceContext->IASetVertexBuffers(1, 1, Buffer.GetAddressOf(), &stride, &offset);
+	D3D.m_deviceContext->IASetDrawCallBuffers(0, 1, Buffer.GetAddressOf(), &stride, &offset);
 }
-void PositionBuffer::UpdateAndSet() {
+void ColorVarRectDrawCallBuffer::UpdateAndSet() {
+	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+	//ここでGPUから頂点バッファへのアクセスを止め、CPUからのアクセスができるようにしている
+	if (FAILED(D3D.m_deviceContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource))) {
+		return;
+	}
+	//ここでCPUによる処理でバッファの内容を変えている
+	memcpy(mappedSubresource.pData, DataList, sizeof(ColorVarRectDrawCallType) * UsedCount);//第3変数を変えることで書き換える数を変えられる
+	//ここでGPUにアクセスを許可してる
+	D3D.m_deviceContext->Unmap(Buffer.Get(), 0);
+	// 頂点バッファを描画で使えるようにセットする
+	UINT stride = sizeof(ColorVarRectDrawCallType);
+	UINT offset = 0;
+	//頂点バッファのうち何番から(第1引数)何個を(第2引数)を使うのか
+	//vbは配列の先頭のアドレスを指すことになる
+	//strideとoffsetも各頂点バッファごとに指定することになるのでこれらも配列
+	D3D.m_deviceContext->IASetDrawCallBuffers(0, 1, Buffer.GetAddressOf(), &stride, &offset);
+}
+*/
+
+
+
+RectInstanceBuffer::RectInstanceBuffer() {
+	DataList = new RectInstanceType[BLENGTHINSTANCE];
+	D3D11_BUFFER_DESC bDesc = {};
+	bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// デバイスにバインドするときの種類(頂点バッファ、インデックスバッファ、定数バッファなど)
+	bDesc.ByteWidth = sizeof(RectInstanceType) * BLENGTHINSTANCE;					// 作成するバッファのバイトサイズ
+	//起動時に確保して使いまわす場合ここのサイズをあらかじめ決める必要があり、それが描画可能量の限界となる
+	bDesc.MiscFlags = 0;							// その他のフラグ
+	bDesc.StructureByteStride = 0;					// 構造化バッファの場合、その構造体のサイズ
+	bDesc.Usage = D3D11_USAGE_DYNAMIC;				// 作成するバッファの使用法
+	bDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	// 上の仕様を渡して頂点バッファを作ってもらう
+	// もちろんデバイスさんにお願いする
+	// 頂点バッファについては最初の変数以外は関係ないらしい？
+	D3D11_SUBRESOURCE_DATA initData = { DataList, sizeof(RectInstanceType) * UsedCount, 0 };	// 書き込むデータ
+	// 頂点バッファの作成
+	if (FAILED(D3D.m_device->CreateBuffer(&bDesc, &initData, &Buffer))) {
+		return;
+	}
+
+	// 頂点バッファを描画で使えるようにセットする
+	UINT stride = sizeof(RectInstanceType);
+	UINT offset = 0;
+	//頂点バッファのうち何番から(第1引数)何個を(第2引数)を使うのか
+	//vbは配列の先頭のアドレスを指すことになる
+	//strideとoffsetも各頂点バッファごとに指定することになるのでこれらも配列
+	D3D.m_deviceContext->IASetDrawCallBuffers(1, 1, Buffer.GetAddressOf(), &stride, &offset);
+	UsedCount = 0;
+}
+void RectInstanceBuffer::UpdateAndSet() {
 	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
 	//ここでGPUから頂点バッファへのアクセスを止め、CPUからのアクセスができるようにしている
 	if (FAILED(D3D.m_deviceContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource))) {
@@ -146,21 +188,75 @@ void PositionBuffer::UpdateAndSet() {
 	}
 	//ここでCPUによる処理でバッファの内容を変えている
 	for (int i = 0; i < UsedCount; i++) {
-		PositionType temp = DataList[i];
+		RectInstanceType temp = DataList[i];
 		int a = 1;
 		a = a + 1;
 	}
-	memcpy(mappedSubresource.pData, DataList, sizeof(PositionType) * UsedCount);//第3変数を変えることで書き換える数を変えられる
+	memcpy(mappedSubresource.pData, DataList, sizeof(RectInstanceType) * UsedCount);//第3変数を変えることで書き換える数を変えられる
 	//ここでGPUにアクセスを許可してる
 	D3D.m_deviceContext->Unmap(Buffer.Get(), 0);
 	// 頂点バッファを描画で使えるようにセットする
-	UINT stride = sizeof(PositionType);
+	UINT stride = sizeof(RectInstanceType);
 	UINT offset = 0;
 	//頂点バッファのうち何番から(第1引数)何個を(第2引数)を使うのか
 	//vbは配列の先頭のアドレスを指すことになる
 	//strideとoffsetも各頂点バッファごとに指定することになるのでこれらも配列
-	D3D.m_deviceContext->IASetVertexBuffers(1, 1, Buffer.GetAddressOf(), &stride, &offset);
+	D3D.m_deviceContext->IASetDrawCallBuffers(1, 1, Buffer.GetAddressOf(), &stride, &offset);
+	UsedCount = 0;
 }
+/*
+ColorVarRectInstanceBuffer::ColorVarRectInstanceBuffer() {
+	DataList = new ColorVarRectInstanceType[BLENGTHINSTANCE];
+	D3D11_BUFFER_DESC bDesc = {};
+	bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// デバイスにバインドするときの種類(頂点バッファ、インデックスバッファ、定数バッファなど)
+	bDesc.ByteWidth = sizeof(ColorVarRectInstanceType) * BLENGTHINSTANCE;					// 作成するバッファのバイトサイズ
+	//起動時に確保して使いまわす場合ここのサイズをあらかじめ決める必要があり、それが描画可能量の限界となる
+	bDesc.MiscFlags = 0;							// その他のフラグ
+	bDesc.StructureByteStride = 0;					// 構造化バッファの場合、その構造体のサイズ
+	bDesc.Usage = D3D11_USAGE_DYNAMIC;				// 作成するバッファの使用法
+	bDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	// 上の仕様を渡して頂点バッファを作ってもらう
+	// もちろんデバイスさんにお願いする
+	// 頂点バッファについては最初の変数以外は関係ないらしい？
+	D3D11_SUBRESOURCE_DATA initData = { DataList, sizeof(ColorVarRectInstanceType) * UsedCount, 0 };	// 書き込むデータ
+	// 頂点バッファの作成
+	if (FAILED(D3D.m_device->CreateBuffer(&bDesc, &initData, &Buffer))) {
+		return;
+	}
+
+	// 頂点バッファを描画で使えるようにセットする
+	UINT stride = sizeof(ColorVarRectInstanceType);
+	UINT offset = 0;
+	//頂点バッファのうち何番から(第1引数)何個を(第2引数)を使うのか
+	//vbは配列の先頭のアドレスを指すことになる
+	//strideとoffsetも各頂点バッファごとに指定することになるのでこれらも配列
+	D3D.m_deviceContext->IASetDrawCallBuffers(1, 1, Buffer.GetAddressOf(), &stride, &offset);
+}
+void ColorVarRectInstanceBuffer::UpdateAndSet() {
+	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+	//ここでGPUから頂点バッファへのアクセスを止め、CPUからのアクセスができるようにしている
+	if (FAILED(D3D.m_deviceContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource))) {
+		return;
+	}
+	//ここでCPUによる処理でバッファの内容を変えている
+	for (int i = 0; i < UsedCount; i++) {
+		ColorVarRectInstanceType temp = DataList[i];
+		int a = 1;
+		a = a + 1;
+	}
+	memcpy(mappedSubresource.pData, DataList, sizeof(ColorVarRectInstanceType) * UsedCount);//第3変数を変えることで書き換える数を変えられる
+	//ここでGPUにアクセスを許可してる
+	D3D.m_deviceContext->Unmap(Buffer.Get(), 0);
+	// 頂点バッファを描画で使えるようにセットする
+	UINT stride = sizeof(ColorVarRectInstanceType);
+	UINT offset = 0;
+	//頂点バッファのうち何番から(第1引数)何個を(第2引数)を使うのか
+	//vbは配列の先頭のアドレスを指すことになる
+	//strideとoffsetも各頂点バッファごとに指定することになるのでこれらも配列
+	D3D.m_deviceContext->IASetDrawCallBuffers(1, 1, Buffer.GetAddressOf(), &stride, &offset);
+}
+*/
 
 
 
@@ -205,7 +301,7 @@ void IndexBuffer::UpdateAndSet() {
 ConstantBuffer::ConstantBuffer() {
 	D3D11_BUFFER_DESC bDesc = {};
 	bDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;	// デバイスにバインドするときの種類(頂点バッファ、インデックスバッファ、定数バッファなど)
-	bDesc.ByteWidth = sizeof(ConstantData);					// 作成するバッファのバイトサイズ
+	bDesc.ByteWidth = sizeof(Data);					// 作成するバッファのバイトサイズ
 	//起動時に確保して使いまわす場合ここのサイズをあらかじめ決める必要があり、それが描画可能量の限界となる
 	bDesc.MiscFlags = 0;							// その他のフラグ
 	bDesc.StructureByteStride = 0;					// 構造化バッファの場合、その構造体のサイズ
@@ -215,7 +311,7 @@ ConstantBuffer::ConstantBuffer() {
 	// 上の仕様を渡して頂点バッファを作ってもらう
 	// もちろんデバイスさんにお願いする
 	// 頂点バッファについては最初の変数以外は関係ないらしい？
-	D3D11_SUBRESOURCE_DATA initData = { &Data, sizeof(ConstantData), 0 };	// 書き込むデータ
+	D3D11_SUBRESOURCE_DATA initData = { &Data, sizeof(Data), 0 };	// 書き込むデータ
 	initData.pSysMem = &Data;
 	initData.SysMemPitch = 0;
 	initData.SysMemSlicePitch = 0;
@@ -231,7 +327,7 @@ void ConstantBuffer::UpdateAndSet() {
 		return;
 	}
 	//ここでCPUによる処理でバッファの内容を変えている
-	memcpy(mappedSubresource.pData, &Data , sizeof(ConstantData));//第3変数を変えることで書き換える数を変えられる
+	memcpy(mappedSubresource.pData, &Data , sizeof(Data));//第3変数を変えることで書き換える数を変えられる
 	//ここでGPUにアクセスを許可してる
 	D3D.m_deviceContext->Unmap(Buffer.Get(), 0);
 	D3D.m_deviceContext->VSSetConstantBuffers(0, 1, Buffer.GetAddressOf());
@@ -239,7 +335,7 @@ void ConstantBuffer::UpdateAndSet() {
 
 
 
-
+/*
 LightBuffer::LightBuffer() {
 	DataList = new LightBufferData[BLENGTHLIGHT];
 	D3D11_BUFFER_DESC bDesc = {};
@@ -282,4 +378,13 @@ void LightBuffer::UpdateAndSet() {
 	//ここでGPUにアクセスを許可してる
 	D3D.m_deviceContext->Unmap(Buffer.Get(), 0);
 	D3D.m_deviceContext->VSSetShaderResources(0, 1, SRV.GetAddressOf());
+}
+*/
+RectDrawCallType* AllBuffers::GetNextRectDCPointer() {
+	RectDCBuffer.UsedCount++;
+	return &(RectDCBuffer.DataList[RectDCBuffer.UsedCount - 1]);
+}
+RectInstanceType* AllBuffers::GetNextRectIPointer() {
+	RectIBuffer.UsedCount++;
+	return &(RectIBuffer.DataList[RectIBuffer.UsedCount - 1]);
 }

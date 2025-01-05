@@ -4,6 +4,7 @@
 
 #include "iostream"
 #include "framework.h"
+#include "Interfaces.h"
 #include "DirectX11_Test.h"
 #include "Source/DirectX/Direct3D.h"
 #include "Source/Game/Game.h"

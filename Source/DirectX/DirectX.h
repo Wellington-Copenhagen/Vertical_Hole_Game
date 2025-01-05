@@ -1,6 +1,8 @@
 #pragma once
-
+#include "framework.h"
 #define PI 3.1415926535
+#define TeamCount 2
+#define StatusCount 3
 //DirectX系のファイルは全部こいつ経由でincludeする
 
 // Direct3Dのライブラリを使用できるようにする
@@ -24,6 +26,9 @@
 using Microsoft::WRL::ComPtr;
 
 // 自作のDirectX関係のヘッダーをインクルード
+
+/*
 #include "Direct3D.h"
 #include "Texture.h"
 #include "Buffers.h"
+*/

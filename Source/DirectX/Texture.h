@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DirectX.h"
+#include "Interfaces.h"
 
 //=========================================
 // テクスチャクラス

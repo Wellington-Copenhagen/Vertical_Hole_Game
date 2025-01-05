@@ -4,159 +4,12 @@
 #include "DrawPipe.h"
 #include "Source/Game/Camera.h"
 
-DrawPipe* DrawPipe::pInstance = nullptr;
 DrawPipe::DrawPipe(int width, int height) {
 	Width = width;
 	Height = height;
-	IndexPerInstance = 0;
-	DrawingIndex = 0;
-}
-void DrawPipe::AddRectInstance(DirectX::XMMATRIX world) {
-	//PCount回のループの内側で構造化バッファに1つのローカル→ワールド行列を追加するのとインデックスバッファと頂点バッファに1つ分のデータを入れるのをやる
-	DirectX::XMStoreFloat4(&(pBuffer.DataList[pBuffer.UsedCount].Row1), world.r[0]);
-	DirectX::XMStoreFloat4(&(pBuffer.DataList[pBuffer.UsedCount].Row2), world.r[1]);
-	DirectX::XMStoreFloat4(&(pBuffer.DataList[pBuffer.UsedCount].Row3), world.r[2]);
-	DirectX::XMStoreFloat4(&(pBuffer.DataList[pBuffer.UsedCount].Row4), world.r[3]);
-	pBuffer.UsedCount++;
-}
-void DrawPipe::AddRectInstance(DirectX::XMMATRIX* world) {
-	//PCount回のループの内側で構造化バッファに1つのローカル→ワールド行列を追加するのとインデックスバッファと頂点バッファに1つ分のデータを入れるのをやる
-	DirectX::XMStoreFloat4(&(pBuffer.DataList[pBuffer.UsedCount].Row1), world->r[0]);
-	DirectX::XMStoreFloat4(&(pBuffer.DataList[pBuffer.UsedCount].Row2), world->r[1]);
-	DirectX::XMStoreFloat4(&(pBuffer.DataList[pBuffer.UsedCount].Row3), world->r[2]);
-	DirectX::XMStoreFloat4(&(pBuffer.DataList[pBuffer.UsedCount].Row4), world->r[3]);
-	pBuffer.UsedCount++;
-}
-void DrawPipe::SetRectVertexes(RectVertexType vDataList[4]) {
-	rBuffer.DataList[0] = vDataList[0];
-	rBuffer.DataList[1] = vDataList[1];
-	rBuffer.DataList[2] = vDataList[2];
-	rBuffer.DataList[3] = vDataList[3];
-	rBuffer.UsedCount = 4;
-}
-void DrawPipe::SetTexture(Texture tex) {
-	TextureToDraw = tex;
-}
-void DrawPipe::SetTextureArray(TextureArray texArray) {
-	tArrayToDraw = texArray;
-}
-void DrawPipe::AddStrip(DirectX::XMVECTOR* wpos,DirectX::XMFLOAT2* uvs,int count) {
-	if (sBuffer.UsedCount != 0) {
-		sBuffer.DataList[sBuffer.UsedCount] = sBuffer.DataList[sBuffer.UsedCount - 1];
-		sBuffer.UsedCount++;
-		DirectX::XMStoreFloat3(&(sBuffer.DataList[sBuffer.UsedCount].Pos), wpos[0]);
-		sBuffer.DataList[sBuffer.UsedCount].UV = uvs[0];
-		sBuffer.UsedCount++;
-	}
-	for (int i = 0; i < count; i++) {
-		DirectX::XMStoreFloat3(&(sBuffer.DataList[sBuffer.UsedCount].Pos), wpos[i]);
-		sBuffer.DataList[sBuffer.UsedCount].UV = uvs[i];
-		sBuffer.UsedCount++;
-	}
-}
-void DrawPipe::AddStrip(StripVertexType* vDatas, int* count) {
-	if (sBuffer.UsedCount != 0) {
-		sBuffer.DataList[sBuffer.UsedCount] = sBuffer.DataList[sBuffer.UsedCount - 1];
-		sBuffer.UsedCount++;
-		sBuffer.DataList[sBuffer.UsedCount] = vDatas[0];
-		sBuffer.UsedCount++;
-	}
-	for (int i = 0; i < *count; i++) {
-		sBuffer.DataList[sBuffer.UsedCount] = vDatas[i];
-		sBuffer.UsedCount++;
-	}
-}
-void DrawPipe::AddLight(DirectX::XMVECTOR pos, DirectX::XMVECTOR color) {
-	DirectX::XMStoreFloat4(&(lBuffer.DataList[lBuffer.UsedCount].LightColor), color);
-	DirectX::XMStoreFloat4(&(lBuffer.DataList[lBuffer.UsedCount].LightPos), pos);
-}
-void DrawPipe::ResetPositionVertexBufferData() {
-	pBuffer.UsedCount = 0;
-	rBuffer.UsedCount = 0;
-	sBuffer.UsedCount = 0;
-}
-void DrawPipe::ResetLightConstantBufferData() {
-	lBuffer.UsedCount = 0;
-}
-void DrawPipe::DrawAsRectOpaque() {
-	rBuffer.UpdateAndSet();
-	pBuffer.UpdateAndSet();
-	D3D.m_deviceContext->OMSetDepthStencilState(m_depthStencilStateEnable.Get(), 0);
-	D3D.m_deviceContext->PSSetShaderResources(0, 1, TextureToDraw.m_srv.GetAddressOf());
-	float blendFactor[4]{ D3D11_BLEND_ZERO,D3D11_BLEND_ZERO, D3D11_BLEND_ZERO, D3D11_BLEND_ZERO };
-	D3D.m_deviceContext->OMSetBlendState(m_blendStateDisable.Get(), blendFactor, 0xffffffff);
-	{
-		D3D11_VIEWPORT vp = { 0.0f, 0.0f, (float)Width, (float)Height, 0.0f, 1.0f };
-		vp.TopLeftX = 0.0f;
-		vp.TopLeftY = 0.0f;
-		vp.Width = (float)Width;
-		vp.Height = (float)Height;
-		vp.MinDepth = 0.0f;
-		vp.MaxDepth = 1.0f;
-		D3D.m_deviceContext->RSSetViewports(1, &vp);
-	}
-	D3D.m_deviceContext->RSSetState(m_rasterizerState.Get());
-	D3D.m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	D3D.m_deviceContext->PSSetSamplers(0, 1, m_samplerState.GetAddressOf());
-	D3D.m_deviceContext->VSSetShader(m_vertexShaderForRect.Get(), 0, 0);
-	D3D.m_deviceContext->PSSetShader(m_pixelShader.Get(), 0, 0);
-	D3D.m_deviceContext->IASetInputLayout(m_inputLayoutForRect.Get());
-	D3D.m_deviceContext->OMSetRenderTargets(1, D3D.m_backBufferView.GetAddressOf(), D3D.m_depthStencilView.Get());
-	D3D.m_deviceContext->DrawInstanced(4, pBuffer.UsedCount, 0, 0);
-}
-void DrawPipe::DrawAsStripTransparent() {
-	sBuffer.UpdateAndSet();
-	pBuffer.UpdateAndSet();
-	D3D.m_deviceContext->OMSetDepthStencilState(m_depthStencilStateEnable.Get(), 0);
-	D3D.m_deviceContext->PSSetShaderResources(0, 1, TextureToDraw.m_srv.GetAddressOf());
-	float blendFactor[4]{ D3D11_BLEND_ZERO,D3D11_BLEND_ZERO, D3D11_BLEND_ZERO, D3D11_BLEND_ZERO };
-	D3D.m_deviceContext->OMSetBlendState(m_blendStateEnable.Get(), blendFactor, 0xffffffff);
-	{
-		D3D11_VIEWPORT vp = { 0.0f, 0.0f, (float)Width, (float)Height, 0.0f, 1.0f };
-		vp.TopLeftX = 0.0f;
-		vp.TopLeftY = 0.0f;
-		vp.Width = (float)Width;
-		vp.Height = (float)Height;
-		vp.MinDepth = 0.0f;
-		vp.MaxDepth = 1.0f;
-		D3D.m_deviceContext->RSSetViewports(1, &vp);
-	}
-	D3D.m_deviceContext->RSSetState(m_rasterizerState.Get());
-	D3D.m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	D3D.m_deviceContext->PSSetSamplers(0, 1, m_samplerState.GetAddressOf());
-	D3D.m_deviceContext->VSSetShader(m_vertexShaderForRect.Get(), 0, 0);
-	D3D.m_deviceContext->PSSetShader(m_pixelShader.Get(), 0, 0);
-	D3D.m_deviceContext->IASetInputLayout(m_inputLayoutForStrip.Get());
-	D3D.m_deviceContext->OMSetRenderTargets(1, D3D.m_backBufferView.GetAddressOf(), D3D.m_depthStencilView.Get());
-	D3D.m_deviceContext->Draw(sBuffer.UsedCount, 0);
-}
-void DrawPipe::DrawAsRectTransparent() {
-	rBuffer.UpdateAndSet();
-	pBuffer.UpdateAndSet();
-	D3D.m_deviceContext->OMSetDepthStencilState(m_depthStencilStateEnable.Get(), 0);
-	D3D.m_deviceContext->PSSetShaderResources(0, 1, TextureToDraw.m_srv.GetAddressOf());
-	float blendFactor[4]{ D3D11_BLEND_ZERO,D3D11_BLEND_ZERO, D3D11_BLEND_ZERO, D3D11_BLEND_ZERO };
-	D3D.m_deviceContext->OMSetBlendState(m_blendStateEnable.Get(), blendFactor, 0xffffffff);
-	{
-		D3D11_VIEWPORT vp = { 0.0f, 0.0f, (float)Width, (float)Height, 0.0f, 1.0f };
-		vp.TopLeftX = 0.0f;
-		vp.TopLeftY = 0.0f;
-		vp.Width = (float)Width;
-		vp.Height = (float)Height;
-		vp.MinDepth = 0.0f;
-		vp.MaxDepth = 1.0f;
-		D3D.m_deviceContext->RSSetViewports(1, &vp);
-	}
-	D3D.m_deviceContext->RSSetState(m_rasterizerState.Get());
-	D3D.m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	D3D.m_deviceContext->PSSetSamplers(0, 1, m_samplerState.GetAddressOf());
-	D3D.m_deviceContext->VSSetShader(m_vertexShaderForRect.Get(), 0, 0);
-	D3D.m_deviceContext->PSSetShader(m_pixelShader.Get(), 0, 0);
-	D3D.m_deviceContext->IASetInputLayout(m_inputLayoutForRect.Get());
-	D3D.m_deviceContext->OMSetRenderTargets(1, D3D.m_backBufferView.GetAddressOf(), D3D.m_depthStencilView.Get());
-	D3D.m_deviceContext->DrawInstanced(4, pBuffer.UsedCount, 0, 0);
-}
-void DrawPipe::Init() {
+	Buffers = AllBuffers();
+
+
 	//深度ステンシルステート
 	{
 		D3D11_DEPTH_STENCIL_DESC dsDesc = {};
@@ -290,7 +143,7 @@ void DrawPipe::Init() {
 		//セマンティック、
 		std::vector<D3D11_INPUT_ELEMENT_DESC> layout = {//頂点ごとであるのか、インスタンスごとであるのかは上手く使えば面白そう
 			{ "TEXCOORD",		0, DXGI_FORMAT_R32G32_FLOAT,		0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "NORMAL",		0, DXGI_FORMAT_R32G32B32_FLOAT,		0,  8, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "POSITIONT",		0, DXGI_FORMAT_R32G32B32A32_FLOAT,		0,  8, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 			{"MATRIX",0,DXGI_FORMAT_R32G32B32A32_FLOAT,1,0,D3D11_INPUT_PER_INSTANCE_DATA,1},
 			{"MATRIX",1,DXGI_FORMAT_R32G32B32A32_FLOAT,1,16,D3D11_INPUT_PER_INSTANCE_DATA,1},
 			{"MATRIX",2,DXGI_FORMAT_R32G32B32A32_FLOAT,1,32,D3D11_INPUT_PER_INSTANCE_DATA,1},
@@ -303,6 +156,7 @@ void DrawPipe::Init() {
 			throw("頂点インプットレイアウトの生成に失敗");
 		}
 	}
+	/*
 	{
 		// 頂点シェーダーを読み込み＆コンパイル
 		ComPtr<ID3DBlob> compiledVS;
@@ -332,6 +186,7 @@ void DrawPipe::Init() {
 			throw("頂点インプットレイアウトの生成に失敗");
 		}
 	}
+	*/
 	{
 		// ピクセルシェーダーを読み込み＆コンパイル
 		ComPtr<ID3DBlob> compiledPS;
@@ -348,7 +203,7 @@ void DrawPipe::Init() {
 		//インスタンス毎バッファも用意してそっちを使いたい
 
 
-		
+
 	}
 	//サンプラー
 	{
@@ -364,4 +219,39 @@ void DrawPipe::Init() {
 			throw("サンプラの生成に失敗");
 		}
 	}
+}
+void DrawPipe::SetTextureArray(TextureArray texArray) {
+	tArrayToDraw = texArray;
+}
+void DrawPipe::ResetEveryDrawCall() {
+	Buffers.RectDCBuffer.UsedCount = 0;
+	Buffers.RectIBuffer.UsedCount = 0;
+}
+void DrawPipe::ResetEveryTick() {
+}
+void DrawPipe::DrawAsRectTransparent() {
+	Buffers.RectDCBuffer.UpdateAndSet();
+	Buffers.RectIBuffer.UpdateAndSet();
+	D3D.m_deviceContext->OMSetDepthStencilState(m_depthStencilStateEnable.Get(), 0);
+	D3D.m_deviceContext->PSSetShaderResources(0, 1, tArrayToDraw.m_srv.GetAddressOf());
+	float blendFactor[4]{ D3D11_BLEND_ZERO,D3D11_BLEND_ZERO, D3D11_BLEND_ZERO, D3D11_BLEND_ZERO };
+	D3D.m_deviceContext->OMSetBlendState(m_blendStateEnable.Get(), blendFactor, 0xffffffff);
+	{
+		D3D11_VIEWPORT vp = { 0.0f, 0.0f, (float)Width, (float)Height, 0.0f, 1.0f };
+		vp.TopLeftX = 0.0f;
+		vp.TopLeftY = 0.0f;
+		vp.Width = (float)Width;
+		vp.Height = (float)Height;
+		vp.MinDepth = 0.0f;
+		vp.MaxDepth = 1.0f;
+		D3D.m_deviceContext->RSSetViewports(1, &vp);
+	}
+	D3D.m_deviceContext->RSSetState(m_rasterizerState.Get());
+	D3D.m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	D3D.m_deviceContext->PSSetSamplers(0, 1, m_samplerState.GetAddressOf());
+	D3D.m_deviceContext->VSSetShader(m_vertexShaderForRect.Get(), 0, 0);
+	D3D.m_deviceContext->PSSetShader(m_pixelShader.Get(), 0, 0);
+	D3D.m_deviceContext->IASetInputLayout(m_inputLayoutForRect.Get());
+	D3D.m_deviceContext->OMSetRenderTargets(1, D3D.m_backBufferView.GetAddressOf(), D3D.m_depthStencilView.Get());
+	D3D.m_deviceContext->DrawInstanced(4, Buffers.RectIBuffer.UsedCount, 0, 0);
 }
