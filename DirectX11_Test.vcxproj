@@ -145,14 +145,11 @@
     <ClInclude Include="Source\DirectX\DrawPipe.h" />
     <ClInclude Include="Source\DirectX\Texture.h" />
     <ClInclude Include="Source\Game\Appearence.h" />
-    <ClInclude Include="Source\Game\Block.h" />
-    <ClInclude Include="Source\Game\Bullet.h" />
     <ClInclude Include="Source\Game\Camera.h" />
-    <ClInclude Include="Source\Game\CombatUnit.h" />
-    <ClInclude Include="Source\Game\Environment.h" />
+    <ClInclude Include="Source\Game\Component.h" />
+    <ClInclude Include="Source\Game\Entity.h" />
     <ClInclude Include="Source\Game\Game.h" />
     <ClInclude Include="Source\Game\HitBox.h" />
-    <ClInclude Include="Source\Game\OnFieldObject.h" />
     <ClInclude Include="Source\Game\Routing.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
@@ -163,14 +160,11 @@
     <ClCompile Include="Source\DirectX\DrawPipe.cpp" />
     <ClCompile Include="Source\DirectX\Texture.cpp" />
     <ClCompile Include="Source\Game\Appearence.cpp" />
-    <ClCompile Include="Source\Game\Block.cpp" />
-    <ClCompile Include="Source\Game\Bullet.cpp" />
     <ClCompile Include="Source\Game\Camera.cpp" />
-    <ClCompile Include="Source\Game\CombatUnit.cpp" />
-    <ClCompile Include="Source\Game\Environment.cpp" />
+    <ClCompile Include="Source\Game\Component.cpp" />
+    <ClCompile Include="Source\Game\Entity.cpp" />
     <ClCompile Include="Source\Game\Game.cpp" />
     <ClCompile Include="Source\Game\HitBox.cpp" />
-    <ClCompile Include="Source\Game\OnFieldObject.cpp" />
     <ClCompile Include="Source\Game\Routing.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -2,12 +2,12 @@
 #include "Source/DirectX/DirectX.h"
 #include "framework.h"
 #include "Interfaces.h"
-class BaseHitbox {
+class BaseCollidbox {
 public:
 	DirectX::XMVECTOR RelativeCenter;
 	DirectX::XMVECTOR AbsoluteCenter;
 	DirectX::XMVECTOR TentativeCenter;
-	BaseHitbox(DirectX::XMVECTOR relativeCenter) {
+	BaseCollidbox(DirectX::XMVECTOR relativeCenter) {
 		RelativeCenter = relativeCenter;
 	}
 	void UpdateAbsoluteCenter(MotionInfo* Parent);
@@ -15,15 +15,15 @@ public:
 	inline virtual float GetWidth() = 0;
 	inline virtual float GetHeight() = 0;
 	inline virtual float GetRadius() = 0;
-	inline virtual BaseHitbox* Copy() = 0;
+	inline virtual BaseCollidbox* Copy() = 0;
 };
-class RectHitbox: public BaseHitbox {
+class RectCollidbox: public BaseCollidbox {
 private:
 	float HalfWidth;
 	float HalfHeight;
 public:
-	RectHitbox(Json::Value fromLoad);
-	RectHitbox(float Width,float Height,DirectX::XMVECTOR relativeCenter) : BaseHitbox(relativeCenter) {
+	RectCollidbox(Json::Value fromLoad);
+	RectCollidbox(float Width,float Height,DirectX::XMVECTOR relativeCenter) : BaseCollidbox(relativeCenter) {
 		HalfHeight = Height/2;
 		HalfWidth = Width/2;
 	}
@@ -36,16 +36,16 @@ public:
 	inline float GetRadius() override {
 		return 0;
 	}
-	inline BaseHitbox* Copy() override {
-		return new RectHitbox(*this);
+	inline BaseCollidbox* Copy() override {
+		return new RectCollidbox(*this);
 	}
 };
-class CircleHitbox : public BaseHitbox{
+class CircleCollidbox : public BaseCollidbox{
 private:
 	float Radius;
 public:
-	CircleHitbox(Json::Value fromLoad);
-	CircleHitbox(float diameter, DirectX::XMVECTOR relativeCenter) : BaseHitbox(relativeCenter) {
+	CircleCollidbox(Json::Value fromLoad);
+	CircleCollidbox(float diameter, DirectX::XMVECTOR relativeCenter) : BaseCollidbox(relativeCenter) {
 		Radius = diameter/2;
 	}
 	inline float GetWidth() override {
@@ -57,40 +57,34 @@ public:
 	inline float GetRadius() override {
 		return Radius;
 	}
-	inline BaseHitbox* Copy() override {
-		return new CircleHitbox(*this);
+	inline BaseCollidbox* Copy() override {
+		return new CircleCollidbox(*this);
 	}
 };
-class HitboxArray {//ì ëΩäpå`
+class CollidboxArray {//ì ëΩäpå`
 public:
 	MotionInfo* Parent;
-	std::vector<BaseHitbox*> Hitboxes;
-	HitboxArray(Json::Value fromLoad);
+	std::vector<CircleCollidbox> Collidboxes;
+	CollidboxArray(Json::Value fromLoad);
 	void UpdateAbsoluteCenter();
 	void UpdateTentativeCenter();
-	HitboxArray() {
+	CollidboxArray() {
 		Parent = nullptr;
-		Hitboxes = std::vector<BaseHitbox*>();
+		Collidboxes = std::vector<CircleCollidbox>();
 	}
-	HitboxArray(MotionInfo* aboutMotion,HitboxArray* prototype) {
+	CollidboxArray(MotionInfo* aboutMotion,CollidboxArray* prototype) {
 		Parent = aboutMotion;
-		Hitboxes = std::vector<BaseHitbox*>();
-		int size = prototype->Hitboxes.size();
+		Collidboxes = std::vector<CircleCollidbox>();
+		int size = prototype->Collidboxes.size();
 		for (int i = 0; i < size; i++) {
-			Hitboxes.push_back(prototype->Hitboxes[i]);
-		}
-	}
-	~HitboxArray() {
-		int size = Hitboxes.size();
-		for (int i = 0; i < size; i++) {
-			delete Hitboxes[i];
+			Collidboxes.push_back(prototype->Collidboxes[i]);
 		}
 	}
 };
 static class Collision {
 public:
-	inline static bool IsColliding(BaseHitbox* A, BaseHitbox* B);
-	static bool IsColliding(HitboxArray* A, HitboxArray* B,bool AlwaysCollidPair);
-	inline static void PenetDepth(BaseHitbox* ToMove, BaseHitbox* B, MotionInfo* parent);
-	static void PenetDepth(HitboxArray* ToMove, HitboxArray* B);
+	inline static bool IsColliding(BaseCollidbox* A, BaseCollidbox* B);
+	static bool IsColliding(CollidboxArray* A, CollidboxArray* B,bool AlwaysCollidPair);
+	inline static void PenetDepth(BaseCollidbox* ToMove, BaseCollidbox* B, MotionInfo* parent);
+	static void PenetDepth(CollidboxArray* ToMove, CollidboxArray* B);
 };

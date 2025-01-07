@@ -158,3 +158,9 @@ class IAllAppearance {
 //CombatUnitê∂ê¨óp
 //Appearanceê∂ê¨óp
 //Hitboxê∂ê¨óp
+
+struct EntityPointer {
+	int Archetype;
+	UINT16 Index;
+};
+typedef int EntityIdentifyN;

@@ -21,4 +21,5 @@
 #include <numbers>
 #include <unordered_map>
 #include <algorithm>
+#include <bitset>
 #define _USE_MATH_DEFINES
