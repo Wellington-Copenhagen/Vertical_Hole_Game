@@ -1,0 +1,20 @@
+{
+    "effectFlame":{
+        "RectAppearance":{
+            "tex1SamePageIndex":0,
+            "tex1FilePath":"Data/Textures/Flame.tif",
+            "tex2SamePageIndex":0,
+            "tex2FilePath":"Data/Textures/Flame.tif",
+            "tex3SamePageIndex":0,
+            "tex3FilePath":"Data/Textures/Flame.tif",
+            "maskSamePageIndex":1,
+            "maskFilePath":"Data/Textures/OneColor.tif"
+        },
+        "WorldPosition":{
+            "width":1,
+            "parallel":[
+                0,0,0,1
+            ]
+        }
+    }
+}

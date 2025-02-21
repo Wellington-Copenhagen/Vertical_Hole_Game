@@ -1,9 +1,198 @@
 ﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(531,5): warning MSB8028: 中間ディレクトリ (x64\Debug\) に別のプロジェクト (DirectX11_Test.vcxproj) と共有されているファイルが含まれています。これにより、クリーンしてリビルド動作が適切に行われない可能性があります。
-  compilation object save succeeded; see C:\Users\1011g\source\repos\UnitTestForCppGame\x64\Debug\ColoredShader.cso
-  compilation object save succeeded; see C:\Users\1011g\source\repos\UnitTestForCppGame\x64\Debug\SpriteShader.cso
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Shader\SpriteShader_TestBed.hlsl(48,5-49): warning X3206: implicit truncation of vector type
+  DirectX11_Test.cpp
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(254,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-  compilation object save succeeded; see C:\Users\1011g\source\repos\UnitTestForCppGame\x64\Debug\SpriteShader_TestBed.cso
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Shader\Shader.hlsl(61,32-42): error X3018: invalid subscript 'World'
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Camera.h(5,14): warning C4091: 'static ': 変数が何も宣言されていないときは、'Camera' の左辺を無視します。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-  compilation failed; no code produced
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(467,71): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(483,71): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(484,84): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(485,80): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(486,82): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.h(105,74): warning C4267: '引数': 'size_t' から 'Interface::EntId' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.h(108,27): warning C4267: 'return': 'size_t' から 'Interface::EntId' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.h(146,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\HitBox.h(8,14): warning C4091: 'static ': 変数が何も宣言されていないときは、'Hurtboxes' の左辺を無視します。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(22,22): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(28,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(58,49): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(789,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\DirectX11_Test.cpp(217,18): warning C4244: '初期化中': 'WPARAM' から 'int' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\DirectX11_Test.cpp(224,18): warning C4244: '初期化中': 'WPARAM' から 'int' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Appearance.h(79,10): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+      C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Appearance.h(79,10):
+      テンプレートインスタンス化コンテキスト (最初に最も古いもの) は
+          C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(624,7):
+          コンパイル対象の クラス テンプレート インスタンス化 'Appearances<Interface::BulletDrawCallType,Interface::BulletInstanceType,1,65536>' のリファレンスを確認してください
+          C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Appearance.h(65,34):
+          クラス テンプレート メンバー関数 'Interface::SameArchIndex Appearances<Interface::BulletDrawCallType,Interface::BulletInstanceType,1,65536>::Delete(Interface::RectAppId)' のコンパイル中
+              C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(643,40):
+              'Systems::BulletAppearance::Update' の 'Appearances<Interface::BulletDrawCallType,Interface::BulletInstanceType,1,65536>::Delete' への最初の参照を参照してください
+  
+  Appearance.cpp
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(254,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/Appearance.cpp' をコンパイルしています)
+  
+  Game.cpp
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Camera.h(5,14): warning C4091: 'static ': 変数が何も宣言されていないときは、'Camera' の左辺を無視します。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(254,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(467,71): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(483,71): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(484,84): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(485,80): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(486,82): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.h(105,74): warning C4267: '引数': 'size_t' から 'Interface::EntId' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.h(108,27): warning C4267: 'return': 'size_t' から 'Interface::EntId' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.h(146,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\HitBox.h(8,14): warning C4091: 'static ': 変数が何も宣言されていないときは、'Hurtboxes' の左辺を無視します。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(22,22): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(28,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(58,49): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(789,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(23,124): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(23,119): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(23,114): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(23,109): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(27,120): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(27,116): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(27,112): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(27,108): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(71,34): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(71,22): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(82,8): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(201,123): warning C4244: '引数': 'float' から 'UINT8' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(389,20): warning C4018: '<': signed と unsigned の数値を比較しようとしました。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(403,20): warning C4018: '<': signed と unsigned の数値を比較しようとしました。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(473,38): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Appearance.h(79,10): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+      C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Appearance.h(79,10):
+      テンプレートインスタンス化コンテキスト (最初に最も古いもの) は
+          C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(624,7):
+          コンパイル対象の クラス テンプレート インスタンス化 'Appearances<Interface::BulletDrawCallType,Interface::BulletInstanceType,1,65536>' のリファレンスを確認してください
+          C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Appearance.h(65,34):
+          クラス テンプレート メンバー関数 'Interface::SameArchIndex Appearances<Interface::BulletDrawCallType,Interface::BulletInstanceType,1,65536>::Delete(Interface::RectAppId)' のコンパイル中
+              C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(643,40):
+              'Systems::BulletAppearance::Update' の 'Appearances<Interface::BulletDrawCallType,Interface::BulletInstanceType,1,65536>::Delete' への最初の参照を参照してください
+  
+  Routing.cpp
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(254,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/Routing.cpp' をコンパイルしています)
+  
+  System.cpp
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(254,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(467,71): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(483,71): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(484,84): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(485,80): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(486,82): warning C4244: '=': 'float' から 'UINT16' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.h(105,74): warning C4267: '引数': 'size_t' から 'Interface::EntId' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.h(108,27): warning C4267: 'return': 'size_t' から 'Interface::EntId' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.h(146,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\HitBox.h(8,14): warning C4091: 'static ': 変数が何も宣言されていないときは、'Hurtboxes' の左辺を無視します。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(22,22): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(28,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(58,49): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(789,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Appearance.h(79,10): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/Game/System.cpp' をコンパイルしています)
+      C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Appearance.h(79,10):
+      テンプレートインスタンス化コンテキスト (最初に最も古いもの) は
+          C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(624,7):
+          コンパイル対象の クラス テンプレート インスタンス化 'Appearances<Interface::BulletDrawCallType,Interface::BulletInstanceType,1,65536>' のリファレンスを確認してください
+          C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Appearance.h(65,34):
+          クラス テンプレート メンバー関数 'Interface::SameArchIndex Appearances<Interface::BulletDrawCallType,Interface::BulletInstanceType,1,65536>::Delete(Interface::RectAppId)' のコンパイル中
+              C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(643,40):
+              'Systems::BulletAppearance::Update' の 'Appearances<Interface::BulletDrawCallType,Interface::BulletInstanceType,1,65536>::Delete' への最初の参照を参照してください
+  
+  コードを生成中...
+  DirectX11_Test.vcxproj -> C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\DirectX11_2DGame.exe
+  'pwsh.exe' は、内部コマンドまたは外部コマンド、
+  操作可能なプログラムまたはバッチ ファイルとして認識されていません。

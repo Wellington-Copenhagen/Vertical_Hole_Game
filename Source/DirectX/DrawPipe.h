@@ -2,34 +2,41 @@
 #include "DirectX.h"
 #include "framework.h"
 #include "Interfaces.h"
-#include "Texture.h"
-#include "Buffers.h"
-
-class DrawPipe {
+//描画パイプラインにおけるシェーダーリソース以外の設定
+class GraphicProcessSetter {
 public:
 	int Width;
 	int Height;
 	
+	GraphicProcessSetter() {
 
-	AllBuffers Buffers;
+	}
+
 	ComPtr<ID3D11DepthStencilState> m_depthStencilStateEnable;
 	ComPtr<ID3D11DepthStencilState> m_depthStencilStateDisable;
+
 	ComPtr<ID3D11BlendState> m_blendStateEnable;
 	ComPtr<ID3D11BlendState> m_blendStateDisable;
+
 	ComPtr<ID3D11RasterizerState> m_rasterizerState;
+
 	ComPtr<ID3D11SamplerState> m_samplerState;
 
-	ComPtr<ID3D11VertexShader> m_vertexShaderForStrip;
-	ComPtr<ID3D11VertexShader> m_vertexShaderForRect;
-	ComPtr<ID3D11PixelShader> m_pixelShader;
-	ComPtr<ID3D11InputLayout> m_inputLayoutForStrip;
-	ComPtr<ID3D11InputLayout> m_inputLayoutForRect;
-	TextureArray tArrayToDraw;
+	ComPtr<ID3D11VertexShader> mBlockVertexShader;
+	ComPtr<ID3D11PixelShader> mBlockPixelShader;
+	ComPtr<ID3D11InputLayout> mBlockInputLayout;
 
-	void SetTextureArray(TextureArray texArray);
-	void ResetEveryDrawCall();
-	void ResetEveryTick();
-	void DrawAsRectTransparent();
-	DrawPipe(int width, int height);
+	ComPtr<ID3D11VertexShader> mCharacterVertexShader;
+	ComPtr<ID3D11PixelShader> mCharacterPixelShader;
+	ComPtr<ID3D11InputLayout> mCharacterInputLayout;
+
+	ComPtr<ID3D11VertexShader> mBulletVertexShader;
+	ComPtr<ID3D11PixelShader> mBulletPixelShader;
+	ComPtr<ID3D11InputLayout> mBulletInputLayout;
+
+	void SetAsBlock();
+	void SetAsCharacter();
+	void SetAsBullet();
+	GraphicProcessSetter(int width, int height);
 };
-#define DP DrawPipe::GetInstance()
+#define DP GraphicProcessSetter::GetInstance()

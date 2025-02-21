@@ -1,80 +1,198 @@
 #include "HitBox.h"
-void BaseCollidbox::UpdateAbsoluteCenter(MotionInfo* Parent) {
-	AbsoluteCenter = DirectX::XMVector4Transform(RelativeCenter, Parent->WorldMatrix);
-}
-void BaseCollidbox::UpdateTentativeCenter(MotionInfo* Parent) {
-	TentativeCenter = DirectX::XMVectorAdd(Parent->WorldMatrix.r[3], Parent->Velocity.r[3]);
-}
-void CollidboxArray::UpdateAbsoluteCenter() {
-	int size = Collidboxes.size();
-	for (int i = 0; i < size; i++) {
-		Collidboxes[i].UpdateAbsoluteCenter(Parent);
+
+
+void Hurtboxes::DeleteCharacter(int x, int y, Interface::EntId id){
+	int pos = y * Width + x;
+	if (OccupyingCharacterCount[pos] < 0) {
+		return;
+	}
+	for (int i = 0; i < 4; i++) {
+		if (OccupyingCharacters[pos * 4 + i] == id) {
+			OccupyingCharacters[pos * 4 + i] = OccupyingCharacters[pos * 4 + OccupyingCharacterCount[pos]-1];
+			OccupyingCharacterCount[pos]--;
+			break;
+		}
+	}
+	if (OccupyingCharacterCount[pos] == 0) {
+		Interface::OccupiedMap[pos] = false;
 	}
 }
-void CollidboxArray::UpdateTentativeCenter() {
-	int size = Collidboxes.size();
-	for (int i = 0; i < size; i++) {
-		Collidboxes[i].UpdateTentativeCenter(Parent);
+//衝突時の運動として貫通、消滅、阻害の3つのパターンが考えられる
+bool Hurtboxes::CheckCircleCollid(DirectX::XMVECTOR center, float radius, Interface::Damage damage, Interface::Damage* gotDamage, bool checkOnlyOnce,int team,bool collidToWall,bool collidToCharacter,bool collidToAllTeamCharacter,int CoreId){
+	//判定対象が含むエリア
+	int left = (int)roundf(center.m128_f32[0] - radius);
+	int right = (int)roundf(center.m128_f32[0] + radius);
+	int top = (int)roundf(center.m128_f32[1] + radius);
+	int bottom = (int)roundf(center.m128_f32[1] - radius);
+	//衝突したかどうかの変数
+	bool collided = false;
+	if (collidToWall) {
+		for (int x = left; x <= right; x++) {
+			for (int y = bottom; y <= top; y++) {
+				int pos = y * Width + x;
+				//壁との衝突　壁はそこにあるなら衝突している
+				if (WallIsThere[pos]) {
+					if (checkOnlyOnce) {
+						return true;
+					}
+					collided = true;
+				}
+			}
+		}
 	}
+	//すでにチェックしたキャラクターのリスト
+	std::vector<Interface::EntId> checkedCharacter = std::vector<Interface::EntId>();
+	if (collidToCharacter) {
+		for (int x = left; x <= right; x++) {
+			for (int y = bottom; y <= top; y++) {
+				int pos = y * Width + x;
+				//キャラクターとの衝突
+				for (int i = 0; i < OccupyingCharacterCount[pos]; i++) {
+					//すでにチェックしたか調べる
+					auto index = std::find(checkedCharacter.begin(), checkedCharacter.end(), OccupyingCharacters[pos * 4 + i]);
+					if (index != checkedCharacter.end()) {
+						continue;
+					}
+					//チェック済みに含める
+					checkedCharacter.push_back(OccupyingCharacters[pos * 4 + i]);
+					Interface::EntityPointer pointer = pAllEntities->INtoIndex[OccupyingCharacters[pos * 4 + i]];
+					//敵味方の判定
+					bool hostiling = Interface::HostilityTable[team * 8 + pAllEntities->EntityArraies[pointer.Archetype].CharacterData.Components[pointer.Index].Team];
+					//敵対しているか全チームと衝突するかつ同じCoreに繋がってないなら
+					if ((hostiling || collidToAllTeamCharacter) && 
+						(CoreId==-1 || CoreId != pAllEntities->EntityArraies[pointer.Archetype].PositionReference.Components[pointer.Index].ReferenceTo)) {
+						//距離の算出
+						float length = DirectX::XMVector2Length(DirectX::XMVectorSubtract(center,
+							pAllEntities->EntityArraies[pointer.Archetype].
+							CharacterHurtbox.Components[pointer.Index].Center)).m128_f32[0];
+						if (length < radius + pAllEntities->EntityArraies[pointer.Archetype].CharacterHurtbox.Components[pointer.Index].Radius) {
+							//衝突していてなおかつ敵対しているならダメージを与える
+							if (hostiling) {
+								pAllEntities->EntityArraies[pointer.Archetype].DamagePool.Components[pointer.Index].Damage += damage;
+								if (gotDamage != nullptr) {
+									(*gotDamage) += pAllEntities->EntityArraies[pointer.Archetype].DamagePool.Components[pointer.Index].Damage;
+								}
+							}
+							if (checkOnlyOnce) {
+								return true;
+							}
+							collided = true;
+						}
+					}
+				}
+			}
+		}
+	}
+	return collided;
 }
-bool Collision::IsColliding(BaseCollidbox* A, BaseCollidbox* B) {
-	if (typeid(*A) == typeid(CircleCollidbox) && typeid(*B) == typeid(CircleCollidbox)) {
-		float length = DirectX::XMVector4Length(DirectX::XMVectorSubtract(A->AbsoluteCenter, B->AbsoluteCenter)).m128_f32[0];
-		if (length < A->GetRadius() + B->GetRadius()) {
-			return true;
+bool Hurtboxes::LimitateInOneBlock(DirectX::XMVECTOR* center, DirectX::XMVECTOR* moveTo, DirectX::XMVECTOR* velocity, float* limitation, float radius, std::vector<Interface::EntId>* pCheckedCharacter, int x, int y) {
+	int pos = y * Width + x;
+	bool limitated = false;
+	//壁との衝突
+	if (WallIsThere[pos]) {
+		Interface::EntityPointer wallPointer = pAllEntities->INtoIndex[OccupyingWalls[pos]];
+		DirectX::XMVECTOR E_S = DirectX::XMVectorSubtract(*moveTo, *center);
+		DirectX::XMVECTOR Clow_S = DirectX::XMVectorSubtract(
+			DirectX::XMVectorAdd(pAllEntities->EntityArraies[wallPointer.Archetype].WorldPosition.Components[wallPointer.Index].WorldPos.Parallel,
+				{ -1 * (radius + 0.5f),-1 * (radius + 0.5f) ,0.0f,0.0f }), *center);
+		DirectX::XMVECTOR Chigh_S = DirectX::XMVectorSubtract(
+			DirectX::XMVectorAdd(pAllEntities->EntityArraies[wallPointer.Archetype].WorldPosition.Components[wallPointer.Index].WorldPos.Parallel,
+				{ radius + 0.5f, radius + 0.5f, 0.0f, 0.0f }), *center);
+		float tLowX = Clow_S.m128_f32[0] / E_S.m128_f32[0];
+		float tHighX = Chigh_S.m128_f32[0] / E_S.m128_f32[0];
+		float tLowY = Clow_S.m128_f32[1] / E_S.m128_f32[1];
+		float tHighY = Chigh_S.m128_f32[1] / E_S.m128_f32[1];
+		float alpha = max(min(tLowX, tHighX), min(tLowY, tHighY));
+		float beta = min(max(tLowX, tHighX), max(tLowY, tHighY));
+		if (alpha + beta >= 0 && alpha >= beta && alpha < *limitation) {
+			*limitation = alpha;
+			limitated = true;
+		}
+	}
+	//キャラクターとの衝突
+	for (int i = 0; i < OccupyingCharacterCount[pos]; i++) {
+		auto index = std::find(pCheckedCharacter->begin(), pCheckedCharacter->end(), OccupyingCharacters[pos * 4 + i]);
+		if (index != pCheckedCharacter->end()) {
+			continue;
+		}
+		Interface::EntityPointer characterPointer = pAllEntities->INtoIndex[OccupyingCharacters[pos * 4 + i]];
+		DirectX::XMVECTOR S_E = DirectX::XMVectorSubtract(*center, *moveTo);
+		DirectX::XMVECTOR E_C = DirectX::XMVectorSubtract(*moveTo,
+			pAllEntities->EntityArraies[characterPointer.Archetype].CharacterHurtbox.Components[characterPointer.Index].Center);
+		float a = DirectX::XMVector2Dot(S_E, S_E).m128_f32[0];
+		float b = DirectX::XMVector2Dot(S_E, E_C).m128_f32[0];
+		float c = DirectX::XMVector2Dot(E_C, E_C).m128_f32[0] - std::powf(
+			radius + pAllEntities->EntityArraies[characterPointer.Archetype].CharacterHurtbox.Components[characterPointer.Index].Radius, 2);
+
+		if (b * b - 4 * a * c >= 0) {
+			float t = (-1 * b - std::sqrt(b * b - 4 * a * c)) / (2 * a);
+			if (t <= 1 && t >= 0 && t < *limitation) {
+				*limitation = t;
+				limitated = true;
+			}
+		}
+	}
+	return limitated;
+}
+void Hurtboxes::Limitate(DirectX::XMVECTOR* center, float radius, DirectX::XMVECTOR* velocity, Interface::EntId id){
+	DirectX::XMVECTOR moveTo = DirectX::XMVectorAdd(*center, *velocity);
+	bool toRight = velocity->m128_f32[0] > 0;
+	bool toTop = velocity->m128_f32[1] > 0;
+	int centerX = (int)roundf(center->m128_f32[0] + radius * toRight ? -1 : 1);
+	int moveToX = (int)roundf(moveTo.m128_f32[0] + radius * toRight ? 1 : -1);
+	int centerY = (int)roundf(center->m128_f32[1] + radius * toTop ? -1 : 1);
+	int moveToY = (int)roundf(moveTo.m128_f32[1] + radius * toTop ? 1 : -1);
+	std::vector<Interface::EntId> CheckedCharacter = std::vector<Interface::EntId>();
+	float limitation = 1;
+	if (toRight) {
+		if (toTop) {
+			for (int x = centerX; x <= moveToX; x++) {
+				for (int y = centerY; y <= moveToY; y++) {
+					if (LimitateInOneBlock(center, &moveTo, velocity, &limitation, radius, &CheckedCharacter, x, y)) {
+						moveTo = DirectX::XMVectorAdd(*center, DirectX::XMVectorScale(*velocity, limitation));
+						moveToX = (int)roundf(moveTo.m128_f32[0] + radius * toRight ? 1 : -1);
+						moveToY = (int)roundf(moveTo.m128_f32[1] + radius * toTop ? 1 : -1);
+					}
+				}
+			}
+		}
+		else {
+			for (int x = centerX; x <= moveToX; x++) {
+				for (int y = centerY; y >= moveToY; y--) {
+					if (LimitateInOneBlock(center, &moveTo, velocity, &limitation, radius, &CheckedCharacter, x, y)) {
+						moveTo = DirectX::XMVectorAdd(*center, DirectX::XMVectorScale(*velocity, limitation));
+						moveToX = (int)roundf(moveTo.m128_f32[0] + radius * toRight ? 1 : -1);
+						moveToY = (int)roundf(moveTo.m128_f32[1] + radius * toTop ? 1 : -1);
+					}
+				}
+			}
 		}
 	}
 	else {
-		DirectX::XMVECTOR diff = DirectX::XMVectorAbs(DirectX::XMVectorSubtract(A->AbsoluteCenter, B->AbsoluteCenter));
-		if (diff.m128_f32[0] < A->GetWidth() + B->GetWidth() && diff.m128_f32[1] < A->GetHeight() + B->GetHeight()) {
-			return true;
+		if (toTop) {
+			for (int x = centerX; x >= moveToX; x--) {
+				for (int y = centerY; y <= moveToY; y++) {
+					if (LimitateInOneBlock(center, &moveTo, velocity, &limitation, radius, &CheckedCharacter, x, y)) {
+						moveTo = DirectX::XMVectorAdd(*center, DirectX::XMVectorScale(*velocity, limitation));
+						moveToX = (int)roundf(moveTo.m128_f32[0] + radius * toRight ? 1 : -1);
+						moveToY = (int)roundf(moveTo.m128_f32[1] + radius * toTop ? 1 : -1);
+					}
+				}
+			}
+		}
+		else {
+			for (int x = centerX; x >= moveToX; x--) {
+				for (int y = centerY; y >= moveToY; y--) {
+					if (LimitateInOneBlock(center, &moveTo, velocity, &limitation, radius, &CheckedCharacter, x, y)) {
+						moveTo = DirectX::XMVectorAdd(*center, DirectX::XMVectorScale(*velocity, limitation));
+						moveToX = (int)roundf(moveTo.m128_f32[0] + radius * toRight ? 1 : -1);
+						moveToY = (int)roundf(moveTo.m128_f32[1] + radius * toTop ? 1 : -1);
+					}
+				}
+			}
 		}
 	}
-	return false;
-}
-bool Collision::IsColliding(CollidboxArray* A, CollidboxArray* B, bool AlwaysCollidPair) {
-	if (A->Parent->CollisionGroup != B->Parent->CollisionGroup || AlwaysCollidPair)return false;
-	int Asize = A->Collidboxes.size();
-	int Bsize = B->Collidboxes.size();
-	for (int a = 0; a < Asize; a++) {
-		for (int b = 0; b < Bsize; b++) {
-			if (IsColliding(&A->Collidboxes[a], &B->Collidboxes[b]))return true;
-		}
-	}
-	return false;
-}
-void Collision::PenetDepth(BaseCollidbox* ToMove, BaseCollidbox* B, MotionInfo* parent) {
-	DirectX::XMVECTOR dif = DirectX::XMVectorSubtract(ToMove->TentativeCenter, ToMove->AbsoluteCenter);
-	if (dif.m128_f32[0] == 0 &&	dif.m128_f32[1] == 0) {
-		return;
-	}
-	float xHigher = B->AbsoluteCenter.m128_f32[0] + (B->GetWidth() + ToMove->GetWidth());
-	float xLower = B->AbsoluteCenter.m128_f32[0] - (B->GetWidth() + ToMove->GetWidth());
-	float yHigher = B->AbsoluteCenter.m128_f32[1] + (B->GetHeight() + ToMove->GetHeight());
-	float yLower = B->AbsoluteCenter.m128_f32[1] - (B->GetHeight() + ToMove->GetHeight());
-	xHigher = (xHigher - ToMove->AbsoluteCenter.m128_f32[0]) / dif.m128_f32[0];
-	xLower = (xLower - ToMove->AbsoluteCenter.m128_f32[0]) / dif.m128_f32[0];
-	yHigher = (yHigher - ToMove->AbsoluteCenter.m128_f32[1]) / dif.m128_f32[1];
-	yLower = (yLower - ToMove->AbsoluteCenter.m128_f32[1]) / dif.m128_f32[1];
-	if (parent->MoveLimit > xHigher && ((yLower<xHigher)^ (yHigher < xHigher))) {
-		parent->MoveLimit = xHigher;
-	}
-	if (parent->MoveLimit > xLower && ((yLower < xLower) ^ (yHigher < xLower))) {
-		parent->MoveLimit = xLower;
-	}
-	if (parent->MoveLimit > yHigher && ((xLower < yHigher) ^ (xHigher < yHigher))) {
-		parent->MoveLimit = yHigher;
-	}
-	if (parent->MoveLimit > yLower && ((xLower < yLower) ^ (xHigher < yLower))) {
-		parent->MoveLimit = yLower;
-	}
-}
-void Collision::PenetDepth(CollidboxArray* ToMove, CollidboxArray* B) {
-	int Asize = ToMove->Collidboxes.size();
-	int Bsize = B->Collidboxes.size();
-	for (int a = 0; a < Asize; a++) {
-		for (int b = 0; b < Bsize; b++) {
-			PenetDepth(&ToMove->Collidboxes[a], &B->Collidboxes[b], ToMove->Parent);
-		}
+	if (limitation < 1) {
+		*velocity = { 0.0f,0.0f, 0.0f, 0.0f };
 	}
 }

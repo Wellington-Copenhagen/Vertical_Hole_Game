@@ -2,37 +2,60 @@
 
 #include "framework.h"
 #include "Source/DirectX/DirectX.h"
-
-
-
-#include "Source/Game/Game.h"
-#include "Source/Game/Camera.h"
+#include "Camera.h"
+#include "Appearance.h"
+#include "Input.h"
+#include "HitBox.h"
+#include "System.h"
+#include "Entity.h"
+#include "Source/DirectX/Buffers.h"
+#include "Source/DirectX/Texture.h"
+#include "Source/DirectX/DrawPipe.h"
 //=========================================
 // GameSystemクラス
 // ・このゲームの土台となるもの
 //=========================================
 class GameSystem
 {
-public:
-	int timeCount;
+public :
+	AllEntities mAllEntities;
+	AllSystem mAllSystem;
+	//マップ最大サイズに床と壁全部配置した場合の大きさ
+	Appearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, 256 * 256 * 2> mBlockAppearances;
+	//影、本体、模様
+	Appearances<Interface::CharacterDrawCallType, Interface::CharacterInstanceType, 1, 1024> mCharacterAppearances[3];
+	Appearances<Interface::BulletDrawCallType, Interface::BulletInstanceType, 1, 256 * 256> mBulletAppearances;
+	Hurtboxes mHurtboxes;
+	ConstantBuffer mCBuffer;
+	VertexBuffer<Interface::BlockDrawCallType, 4,0> mBlockDrawCallBuffer;
+	VertexBuffer<Interface::BlockInstanceType, 256 * 256 * 2,1> mBlockInstanceBuffer;
+	//影、本体、模様、影
+	VertexBuffer<Interface::CharacterDrawCallType, 4,0> mCharacterDrawCallBuffer[3];
+	//影、本体、模様
+	VertexBuffer<Interface::CharacterInstanceType, 1024,1> mCharacterInstanceBuffer[3];
+	VertexBuffer<Interface::BulletDrawCallType, 4,0> mBulletDrawCallBuffer;
+	VertexBuffer<Interface::BulletInstanceType, 256 * 256,1> mBulletInstanceBuffer;
+	GraphicProcessSetter mGraphicProcessSetter;
+	int DrawCallUsed;
+	Camera mCamera;
+	int Tick;
+	std::mt19937 RandEngine;
 
-
-	Object Root;
-	Object Sphere;
-	Object Ground;
-	//頂点バッファを使いまわせないか確かめているもの
-
-
-
+	SameFormatTextureArray mSameFormatTextureArray;
 	// このゲームの初期設定を行う
-	void Initialize();
+	void Initialize(HWND hWnd);
 
 	// このゲーム世界の時間を進める(処理を実行する)
-	void Execute();
+	void Execute(HWND hWnd);
+
+	void LoadMap(std::string mapFileName);
+
+	void ApplyInput();
+
+	void LoadUnits(std::vector<std::string> filePathes);
 
 	// その他、ゲーム用のデータなどをココに書く
 
-	Texture m_tex;
 	/*
 	struct ConstantBufferData {
 		DirectX::XMFLOAT4X4 ViewProjection;

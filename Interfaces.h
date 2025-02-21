@@ -8,159 +8,294 @@
 // 
 // 見た目や当たり判定や派生処理間でデータを共有できるオブジェクト
 // 
-class MotionInfo {
-public:
-	DirectX::XMMATRIX WorldMatrix;
-	DirectX::XMMATRIX Velocity;
-	float MoveLimit;
-	int CollisionGroup;
-	int TexIndex;
-	bool Delete;
-	// 回転部(A):移動部(B)*回転部(C):移動部(D) = 回転部(E):移動部(F)
-	// E = A*C
-	// F = B*C+(ABの44が1なら D)
-	// 
-	// 
-	// 
-	inline void UpdateWorldMatrix() {
-		WorldMatrix = WorldMatrix + (Velocity * MoveLimit);
-	}
-	inline void ResetMoveLimit() {
-		MoveLimit = 1.0;
-	}
-	static inline DirectX::XMMATRIX RotateOnly3x3(float heading, DirectX::XMMATRIX input) {
-		DirectX::XMVECTOR pos = input.r[3];
-		input = input * DirectX::XMMatrixRotationZ(heading);
-		input.r[3] = pos;
-	}
-	// 基本的には親オブジェクトのMotionInfoを突っ込めば問題ないはず
-	// 方向は速度も状態もcoefのworld基準となる
-	// 
-	static MotionInfo GetCorrected(MotionInfo* prototype,MotionInfo* coef) {
-		MotionInfo output;
-		output.CollisionGroup = coef->CollisionGroup;
-		output.TexIndex = coef->TexIndex;
-		output.Velocity = prototype->Velocity;//回転速度は原型依存 
-		//方向は原形のものを修正のworldの回転角で修正し修正の速度を足す
-		output.Velocity.r[3] = DirectX::XMVector4Transform(output.Velocity.r[3], coef->WorldMatrix);
-		output.Velocity.r[3] = DirectX::XMVectorAdd(output.Velocity.r[3], coef->Velocity.r[3]);
-		output.WorldMatrix = DirectX::XMMatrixMultiply(prototype->WorldMatrix, coef->WorldMatrix);
-		return output;
-	}
-};
-struct Damage {
-	float physical;
-	Damage() {
-		physical = 1;
-	}
-	static Damage GetCorrectedDamage(Damage* Basic, Damage* Coef) {
-		Damage output;
-		output.physical = Basic->physical * Coef->physical;
-		return output;
-	}
-};
-//プロトタイプにないデータで指定したいものはすべてこれ経由
-struct CombatUnitGenerateCoef {
-	int PrototypeIndex;
-	float HealthMultiply;
-	Damage DamageMultiply;
-	float SpeedMultiply;
-	CombatUnitGenerateCoef(int index) {
-		PrototypeIndex = index;
-		HealthMultiply = 1;
-		DamageMultiply = Damage();
-		SpeedMultiply = 1;
-	}
-};
-//プロトタイプにないデータで指定したいものはすべてこれ経由
-struct BulletGenerateCoef {
-	int PrototypeIndex;
-	Damage DamageCoef;
-	BulletGenerateCoef(int index) {
-		PrototypeIndex = index;
-		DamageCoef = Damage();
-	}
-};
-struct TimeCounter {
-	int CurrentTick;
-	TimeCounter() {
-		CurrentTick = 0;
-	}
-	void Reset() {
-		CurrentTick = 0;
-	}
-	void CountUp() {
-		CurrentTick++;
-	}
-};
-class IAppearanceHandle {
-public:
-	virtual void Delete(){}
-	virtual void SetTexIndex(int index){}
-};
-//描画バッファに入れる構造体
-struct RectInstanceType{
-public:
-	DirectX::XMFLOAT4 World1;
-	DirectX::XMFLOAT4 World2;
-	DirectX::XMFLOAT4 World3;
-	DirectX::XMFLOAT4 World4;
-};
-/*
-struct ColorVarRectInstanceType {
-public:
-	DirectX::XMFLOAT4 World1;
-	DirectX::XMFLOAT4 World2;
-	DirectX::XMFLOAT4 World3;
-	DirectX::XMFLOAT4 World4;
-	DirectX::XMFLOAT4 Color1;
-	DirectX::XMFLOAT4 Color2;
-};
-*/
-struct RectDrawCallType{
-public:
-	DirectX::XMFLOAT2 UV;
-	DirectX::XMFLOAT3 Pos;
-};
-/*
-struct ColorVarRectDrawCallType {
-public:
-	DirectX::XMFLOAT2 UV;
-	DirectX::XMFLOAT3 Pos;
-};
-*/
-struct ConstantType
-{
-public:
-	DirectX::XMFLOAT4X4 ViewProjection;
-};
-//描画バッファに入れる構造体
-class IAllGraphicBuffer {
-public:
-	//取得するごとにインデックスを進めること！
-	virtual RectDrawCallType* GetNextRectDCPointer();
-	virtual RectInstanceType* GetNextRectIPointer();
-};
-class IEnvironment {
-public:
-	virtual int GetCurrentTick();
-	virtual void AddCombatUnit(CombatUnitGenerateCoef* coef, MotionInfo* motionCorr);
-	virtual void AddBullet(BulletGenerateCoef* coef, MotionInfo* motionCorr);
-	virtual IAppearanceHandle SetNewAppearance(int index,MotionInfo* pParent);
-};
-class IAllAppearance {
-	virtual void Load(std::string AppearanceFileName);
-	virtual IAppearanceHandle AddNew(MotionInfo* pWorld, int drawCallIndex);
-	virtual void Draw();
-};
-//必要なインターフェイス
-//Bullet生成用
-//CombatUnit生成用
-//Appearance生成用
-//Hitbox生成用
 
-struct EntityPointer {
-	int Archetype;
-	UINT16 Index;
+namespace Interface {
+	//プロトタイプにないデータで指定したいものはすべてこれ経由
+	/*
+	//プロトタイプにないデータで指定したいものはすべてこれ経由
+	struct BulletGenerateCoef {
+		int PrototypeIndex;
+		Damage DamageCoef;
+		BulletGenerateCoef(int index) {
+			PrototypeIndex = index;
+			DamageCoef = Damage();
+		}
+	};
+	struct TimeCounter {
+		int CurrentTick;
+		TimeCounter() {
+			CurrentTick = 0;
+		}
+		void Reset() {
+			CurrentTick = 0;
+		}
+		void CountUp() {
+			CurrentTick++;
+		}
+	};
+	*/
+
+
+
+	//描画バッファに入れる構造体
+	struct BlockInstanceType {
+	public:
+		void Set(DirectX::XMMATRIX* world, DirectX::XMVECTOR* texCoord12, DirectX::XMVECTOR* texCoord3M) {
+			DirectX::XMStoreFloat2(&World, world->r[3]);
+			DirectX::XMStoreFloat4(&TexCoord12, *texCoord12);
+			DirectX::XMStoreFloat4(&TexCoord3M, *texCoord3M);
+			Stain = DirectX::XMFLOAT4{
+				0,0,0,0
+			};
+		}
+		DirectX::XMFLOAT2 World;
+		//同じテクスチャ画像内での位置のインデックス(左上→右上→左下→右下順),TexArray内でのインデックス
+		//画像1,2,3,マスクの順
+		DirectX::XMFLOAT4 TexCoord12;
+		//同じテクスチャ画像内での位置のインデックス(左上→右上→左下→右下順),TexArray内でのインデックス
+		//画像1,2,3,マスクの順
+		DirectX::XMFLOAT4 TexCoord3M;
+
+		DirectX::XMFLOAT4 Stain;
+		
+	};
+	struct BlockDrawCallType {
+	public:
+		DirectX::XMFLOAT3 UV;//各頂点のU,各頂点のV,分割数
+		DirectX::XMFLOAT4 Pos;
+	};
+
+
+	struct CharacterInstanceType {
+	public:
+		void Set(DirectX::XMMATRIX* world, DirectX::XMVECTOR* texCoordMask, DirectX::XMVECTOR* color0, DirectX::XMVECTOR* color1, DirectX::XMVECTOR* color2) {
+			DirectX::XMStoreFloat4x4(&World, *world);
+			DirectX::XMStoreFloat2(&TexCoordMask, *texCoordMask);
+			DirectX::XMStoreFloat4(&Color0, *color0);
+			DirectX::XMStoreFloat4(&Color1, *color1);
+			DirectX::XMStoreFloat4(&Color2, *color2);
+		}
+		DirectX::XMFLOAT4X4 World;
+		//同じテクスチャ画像内での位置のインデックス(左上→右上→左下→右下順),TexArray内でのインデックス
+		//マスクの順
+		DirectX::XMFLOAT2 TexCoordMask;
+		//マスクに従って塗る色の情報
+		DirectX::XMFLOAT4 Color0;
+		DirectX::XMFLOAT4 Color1;
+		DirectX::XMFLOAT4 Color2;
+
+	};
+	struct CharacterDrawCallType {
+	public:
+		DirectX::XMFLOAT3 UV;//各頂点のU,各頂点のV,分割数
+		DirectX::XMFLOAT4 Pos;
+	};
+
+
+	struct BulletInstanceType {
+	public:
+		void Set(DirectX::XMMATRIX* world, DirectX::XMVECTOR* texCoordMask, DirectX::XMVECTOR* color0, DirectX::XMVECTOR* color1) {
+			DirectX::XMStoreFloat4x4(&World, *world);
+			DirectX::XMStoreFloat2(&TexCoordMask, *texCoordMask);
+			DirectX::XMStoreFloat4(&Color0, *color0);
+			DirectX::XMStoreFloat4(&Color1, *color1);
+		}
+		DirectX::XMFLOAT4X4 World;
+		//同じテクスチャ画像内での位置のインデックス(左上→右上→左下→右下順),TexArray内でのインデックス
+		//マスクの順
+		DirectX::XMFLOAT2 TexCoordMask;
+		//マスクに従って塗る色の情報
+		DirectX::XMFLOAT4 Color0;
+		DirectX::XMFLOAT4 Color1;
+
+	};
+	struct BulletDrawCallType {
+	public:
+		DirectX::XMFLOAT3 UV;//各頂点のU,各頂点のV,分割数
+		DirectX::XMFLOAT4 Pos;
+	};
+
+
+
+	struct ConstantType
+	{
+	public:
+		DirectX::XMFLOAT4X4 ViewProjection;
+	};
+
+
+
+
+
+	typedef int EntId;
+#define ComponentCount 32
+#define TeamCount 2
+	typedef std::bitset<ComponentCount> RawArchetype;
+	typedef int HostilityTeam;
+	typedef int ArchetypeIndex;
+	typedef int SameArchIndex;
+	typedef int RectAppId;
+	struct RelationOfCoord {
+		float Rotate;
+		float Ratio;
+		DirectX::XMVECTOR Parallel;
+		RelationOfCoord operator+(RelationOfCoord& other) {
+			RelationOfCoord output;
+			output.Rotate = Rotate + other.Rotate;
+			output.Ratio = Ratio * other.Ratio;
+			output.Parallel = DirectX::XMVectorAdd(Parallel,other.Parallel);
+			output.Parallel.m128_f32[3] = 1;
+			return output;
+		}
+		RelationOfCoord operator*(RelationOfCoord& other) {
+			RelationOfCoord output;
+			output.Rotate = Rotate + other.Rotate;
+			output.Ratio = Ratio * other.Ratio;
+			output.Parallel = DirectX::XMVectorAdd(
+				DirectX::XMVector4Transform(
+				DirectX::XMVectorScale(Parallel,other.Ratio),
+					DirectX::XMMatrixRotationZ(other.Rotate))
+				, other.Parallel);
+			output.Parallel.m128_f32[3] = 1;
+			return output;
+		}
+		DirectX::XMMATRIX GetMatrix() {
+			DirectX::XMMATRIX output{
+				Ratio,0.0f,0.0f,0.0f,
+				0.0f,Ratio,0.0f,0.0f,
+				0.0f,0.0f,1.0f,0.0f,
+				0.0f,0.0f,0.0f,1.0f,
+			};
+			output = output * DirectX::XMMatrixRotationZ(Rotate);
+			output.r[3] = Parallel;
+			return output;
+		}
+		void Identity() {
+			Parallel = { 0.0f,0.0f, 0.0f, 0.0f };
+			Rotate = 0;
+			Ratio = 1;
+		}
+	};
+	static DirectX::XMVECTOR operator*(DirectX::XMVECTOR& prescding, Interface::RelationOfCoord subsequent) {
+		DirectX::XMVECTOR output;
+		output = DirectX::XMVectorAdd(
+			DirectX::XMVector4Transform(
+				DirectX::XMVectorScale(prescding, subsequent.Ratio),
+				DirectX::XMMatrixRotationZ(subsequent.Rotate))
+			, subsequent.Parallel);
+		return output;
+	}
+#define CompCount 32
+	struct EntityPointer {
+		EntityPointer() {
+			Archetype = -1;
+			Index = -1;
+		}
+		EntityPointer(Interface::ArchetypeIndex archetype, Interface::SameArchIndex index) {
+			Archetype = archetype;
+			Index = index;
+		}
+		Interface::ArchetypeIndex Archetype;
+		Interface::SameArchIndex Index;
+		bool operator==(Interface::EntityPointer& other) {
+			return (Archetype == other.Archetype) && (Index = other.Index);
+		}
+	};
+	struct Damage {
+	public:
+		float physical;
+		HostilityTeam Team;
+		Damage() {
+			physical = 0;
+		}
+		Damage operator+(Damage& other) {
+			Damage output;
+			output.physical = other.physical + physical;
+			return output;
+		}
+		void operator+=(Damage& other) {
+			physical = other.physical + physical;
+		}
+		Damage(Json::Value fromLoad) {
+			physical = fromLoad.get("physical", "").asFloat();
+		}
+	};
+	struct IntXY {
+		UINT8 X;
+		UINT8 Y;
+	};
+	struct CircleCollidbox {
+		DirectX::XMVECTOR RelativeCenter;
+		float radius;
+	};
+
+	static bool SameString(std::string A, std::string B) {
+		if (A.length() != B.length()) {
+			return false;
+		}
+		int size = A.length();
+		for (int i = 0; i < size; i++) {
+			if (A[i] != B[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	struct CombatUnitInitData {
+		float HealthMultiply;
+		float DamageMultiply;
+		float SpeedMultiply;
+		Interface::HostilityTeam Team;
+		Interface::EntId CoreId;
+		bool isCore;
+		CombatUnitInitData() {
+			HealthMultiply = 1;
+			DamageMultiply = 1;
+			SpeedMultiply = 1;
+		}
+	};
+	static std::map<std::string, Interface::EntityPointer> EntNameHash;
+	static std::map<std::string, int> AppearanceNameHash;
+	static Interface::EntId PlayingCharacter;
+	static std::bitset<256 * 256> OccupiedMap;
+	static std::bitset<64> HostilityTable;//8team*8teamのテーブルでtrueの場所は敵対する
+	inline DirectX::XMVECTOR GetVectorFromJson(Json::Value input) {
+		DirectX::XMVECTOR output = {
+			input[0].asFloat(),
+			input[1].asFloat(),
+			input[2].asFloat(),
+			input[3].asFloat(),
+		};
+		return output;
+	}
+	struct UnitInfo {
+		std::vector<Interface::EntityPointer> PrototypePointer;
+		std::vector<DirectX::XMVECTOR> RelativePosFromCore;
+		std::vector<DirectX::XMVECTOR> BaseColor0;
+		std::vector<DirectX::XMVECTOR> BaseColor1;
+		UnitInfo() {
+			PrototypePointer = std::vector<Interface::EntityPointer>();
+			RelativePosFromCore = std::vector<DirectX::XMVECTOR>();
+			BaseColor0 = std::vector<DirectX::XMVECTOR>();
+			BaseColor1 = std::vector<DirectX::XMVECTOR>();
+		}
+		UnitInfo(Json::Value jsonOfThisUnit) {
+			PrototypePointer = std::vector<Interface::EntityPointer>();
+			RelativePosFromCore = std::vector<DirectX::XMVECTOR>();
+			BaseColor0 = std::vector<DirectX::XMVECTOR>();
+			BaseColor1 = std::vector<DirectX::XMVECTOR>();
+			for (int i = 0; i < jsonOfThisUnit.size(); i++) {
+				PrototypePointer.push_back(EntNameHash[jsonOfThisUnit[i].get("characterName", "").asString()]);
+				RelativePosFromCore.push_back({
+					jsonOfThisUnit[i].get("relativePos","")[0].asFloat(),
+					jsonOfThisUnit[i].get("relativePos","")[1].asFloat(),
+					0,1
+				});
+				BaseColor0.push_back(Interface::GetVectorFromJson(jsonOfThisUnit[i].get("baseColor0", "")));
+				BaseColor1.push_back(Interface::GetVectorFromJson(jsonOfThisUnit[i].get("baseColor1", "")));
+			}
+		}
+	};
+	static std::map<std::string, Interface::UnitInfo> UnitInfoTable;
 };
-typedef int EntityIdentifyN;

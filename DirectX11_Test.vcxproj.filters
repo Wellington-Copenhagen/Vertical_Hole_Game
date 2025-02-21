@@ -48,7 +48,7 @@
     <ClInclude Include="Source\DirectX\Buffers.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Appearence.h">
+    <ClInclude Include="Source\Game\Appearance.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\HitBox.h">
@@ -64,6 +64,12 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Entity.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\System.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Input.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -89,7 +95,7 @@
     <ClCompile Include="Source\DirectX\Buffers.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Appearence.cpp">
+    <ClCompile Include="Source\Game\Appearance.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\HitBox.cpp">
@@ -102,6 +108,15 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Entity.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\System.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Interfaces.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Input.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -123,6 +138,12 @@
     <FxCompile Include="Shader\SpriteShader_TestBed.hlsl" />
     <FxCompile Include="Shader\ColoredShader.hlsl" />
     <FxCompile Include="Shader\Shader.hlsl" />
+    <FxCompile Include="Shader\BlockPixelShader.hlsl" />
+    <FxCompile Include="Shader\BlockVertexShader.hlsl" />
+    <FxCompile Include="Shader\BulletPixelShader.hlsl" />
+    <FxCompile Include="Shader\BulletVertexShader.hlsl" />
+    <FxCompile Include="Shader\CharacterPixelShader.hlsl" />
+    <FxCompile Include="Shader\CharacterVertexShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

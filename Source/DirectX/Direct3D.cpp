@@ -4,7 +4,7 @@
 #include "Source/DirectX/DirectX.h"
 
 #include <windows.h>
-
+#define _DEBUG
 bool Direct3D::Initialize(HWND hWnd, int width, int height)
 {
 	Height = height;

@@ -2,89 +2,55 @@
 #include "Source/DirectX/DirectX.h"
 #include "framework.h"
 #include "Interfaces.h"
-class BaseCollidbox {
+#include "Entity.h"
+#define WorldWidth 256
+#define WorldHeight 256
+static class Hurtboxes {
 public:
-	DirectX::XMVECTOR RelativeCenter;
-	DirectX::XMVECTOR AbsoluteCenter;
-	DirectX::XMVECTOR TentativeCenter;
-	BaseCollidbox(DirectX::XMVECTOR relativeCenter) {
-		RelativeCenter = relativeCenter;
+	AllEntities* pAllEntities;
+	std::bitset<WorldHeight* WorldWidth> WallIsThere;
+	std::vector<Interface::EntId> OccupyingWalls;
+	std::vector<int> OccupyingCharacterCount;
+	std::vector < Interface::EntId> OccupyingCharacters;
+	int Width;
+	int Height;
+	Hurtboxes() {
+
 	}
-	void UpdateAbsoluteCenter(MotionInfo* Parent);
-	void UpdateTentativeCenter(MotionInfo* Parent);
-	inline virtual float GetWidth() = 0;
-	inline virtual float GetHeight() = 0;
-	inline virtual float GetRadius() = 0;
-	inline virtual BaseCollidbox* Copy() = 0;
-};
-class RectCollidbox: public BaseCollidbox {
-private:
-	float HalfWidth;
-	float HalfHeight;
-public:
-	RectCollidbox(Json::Value fromLoad);
-	RectCollidbox(float Width,float Height,DirectX::XMVECTOR relativeCenter) : BaseCollidbox(relativeCenter) {
-		HalfHeight = Height/2;
-		HalfWidth = Width/2;
+	Hurtboxes(AllEntities* pallentities, int mapWidth, int mapHeight) {
+		pAllEntities = pallentities;
+		WallIsThere.reset();
+		OccupyingCharacterCount = std::vector<int>(mapWidth * mapHeight);
+		OccupyingWalls = std::vector<Interface::EntId>(mapWidth * mapHeight);
+		OccupyingCharacters = std::vector<Interface::EntId>(mapWidth * mapHeight * 4);
+		Width = mapWidth;
+		Height = mapHeight;
 	}
-	inline float GetWidth() override {
-		return HalfWidth;
+	inline void SetWall(int x, int y, Interface::EntId id) {
+		int pos = y * Width + x;
+		WallIsThere[pos] = true;
+		Interface::OccupiedMap[pos] = true;
+		OccupyingWalls[pos] = id;
 	}
-	inline float GetHeight() override {
-		return HalfHeight;
+	inline void DeleteWall(int x, int y) {
+		int pos = y * Width + x;
+		WallIsThere[pos] = false;
+		Interface::OccupiedMap[pos] = false;
 	}
-	inline float GetRadius() override {
-		return 0;
-	}
-	inline BaseCollidbox* Copy() override {
-		return new RectCollidbox(*this);
-	}
-};
-class CircleCollidbox : public BaseCollidbox{
-private:
-	float Radius;
-public:
-	CircleCollidbox(Json::Value fromLoad);
-	CircleCollidbox(float diameter, DirectX::XMVECTOR relativeCenter) : BaseCollidbox(relativeCenter) {
-		Radius = diameter/2;
-	}
-	inline float GetWidth() override {
-		return Radius;
-	}
-	inline float GetHeight() override {
-		return Radius;
-	}
-	inline float GetRadius() override {
-		return Radius;
-	}
-	inline BaseCollidbox* Copy() override {
-		return new CircleCollidbox(*this);
-	}
-};
-class CollidboxArray {//ì ëΩäpå`
-public:
-	MotionInfo* Parent;
-	std::vector<CircleCollidbox> Collidboxes;
-	CollidboxArray(Json::Value fromLoad);
-	void UpdateAbsoluteCenter();
-	void UpdateTentativeCenter();
-	CollidboxArray() {
-		Parent = nullptr;
-		Collidboxes = std::vector<CircleCollidbox>();
-	}
-	CollidboxArray(MotionInfo* aboutMotion,CollidboxArray* prototype) {
-		Parent = aboutMotion;
-		Collidboxes = std::vector<CircleCollidbox>();
-		int size = prototype->Collidboxes.size();
-		for (int i = 0; i < size; i++) {
-			Collidboxes.push_back(prototype->Collidboxes[i]);
+	inline void SetCharacter(int x, int y, Interface::EntId id) {
+		int pos = y * Width + x;
+		if (OccupyingCharacterCount[pos] >= 4) {
+			return;
 		}
+		OccupyingCharacters[pos * 4 + OccupyingCharacterCount[pos]] = id;
+		Interface::OccupiedMap[pos] = true;
+		OccupyingCharacterCount[pos]++;
 	}
-};
-static class Collision {
-public:
-	inline static bool IsColliding(BaseCollidbox* A, BaseCollidbox* B);
-	static bool IsColliding(CollidboxArray* A, CollidboxArray* B,bool AlwaysCollidPair);
-	inline static void PenetDepth(BaseCollidbox* ToMove, BaseCollidbox* B, MotionInfo* parent);
-	static void PenetDepth(CollidboxArray* ToMove, CollidboxArray* B);
+	void DeleteCharacter(int x, int y, Interface::EntId id);
+	bool CheckCircleCollid(DirectX::XMVECTOR center, float radius, Interface::Damage damage, Interface::Damage* gotDamage,
+		bool checkOnlyOnce, int team, bool collidToWall,
+		bool collidToCharacter, bool collidToAllTeamCharacter, int CoreId);
+	bool LimitateInOneBlock(DirectX::XMVECTOR* center, DirectX::XMVECTOR* moveTo, DirectX::XMVECTOR* velocity, float* limitation,
+		float radius, std::vector<Interface::EntId>* pCheckedCharacter, int x, int y);
+	void Limitate(DirectX::XMVECTOR* center, float radius, DirectX::XMVECTOR* velocity, Interface::EntId id);
 };

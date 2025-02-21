@@ -1,0 +1,45 @@
+{
+    "floorStoneFloor":{
+        "GenerateFlag":{
+
+        },
+        "BlockAppearance":{
+            "tex1SamePageIndex":0,
+            "tex1FilePath":"Data/Textures/Block.tif",
+            "tex2SamePageIndex":0,
+            "tex2FilePath":"Data/Textures/Block.tif",
+            "tex3SamePageIndex":0,
+            "tex3FilePath":"Data/Textures/OneColor.tif",
+            "maskSamePageIndex":0,
+            "maskFilePath":"Data/Textures/FloorShadowMask.tif"
+        },
+        "WorldPosition":{
+            "width":1,
+            "parallel":[
+                0,0,0,1
+            ]
+        }
+    },
+    "wallBrick":{
+        "GenerateFlag":0,
+        "BlockAppearance":{
+            "tex1SamePageIndex":1,
+            "tex1FilePath":"Data/Textures/Block.tif",
+            "tex2SamePageIndex":1,
+            "tex2FilePath":"Data/Textures/Block.tif",
+            "tex3SamePageIndex":0,
+            "tex3FilePath":"Data/Textures/OneColor.tif",
+            "maskSamePageIndex":0,
+            "maskFilePath":"Data/Textures/WallShadowMask.tif"
+        },
+        "WorldPosition":{
+            "width":1,
+            "parallel":[
+                0,0,0,1
+            ]
+        },
+        "WallHurtbox":{
+            
+        }
+    }
+}

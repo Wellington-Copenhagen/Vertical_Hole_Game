@@ -1,0 +1,10 @@
+#include "Input.h"
+std::bitset<256> Input::KeyPushed;
+std::bitset<256> Input::KeyDown;
+bool Input::MouseLeftPushed;
+bool Input::MouseRightPushed;
+bool Input::MouseLeftDown;
+bool Input::MouseRightDown;
+int Input::WheelRotate;
+int Input::MouseX;
+int Input::MouseY;

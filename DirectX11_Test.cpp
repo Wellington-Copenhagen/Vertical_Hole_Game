@@ -9,6 +9,7 @@
 #include "Source/DirectX/Direct3D.h"
 #include "Source/Game/Game.h"
 #include "Source/Game/Camera.h"
+#include "Source/Game/Input.h"
 #define MAX_LOADSTRING 100
 
 // グローバル変数:
@@ -18,6 +19,8 @@ HINSTANCE hInst;                                // 現在のインターフェ�
 WCHAR szTitle[MAX_LOADSTRING];                  // タイトル バーのテキスト
 //こっちはよく分からん
 WCHAR szWindowClass[MAX_LOADSTRING];            // メイン ウィンドウ クラス名
+
+HWND hWnd;
 
 // このコード モジュールに含まれる関数の宣言を転送します:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -60,7 +63,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     //GameSystemの方の初期化
     GameSystem:: CreateInstance();
-    GAMESYS.Initialize();
+    GAMESYS.Initialize(hWnd);
 
     /*
     // メイン メッセージ ループ:
@@ -105,7 +108,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         //表示させる部分
         D3D.m_swapChain->Present(1, 0);
         */
-        GAMESYS.Execute();
+        GAMESYS.Execute(hWnd);
     }
     GameSystem::DeleteInstance();
     Direct3D::DeleteInstance();
@@ -164,7 +167,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    //メニュー
    //インスタンスのハンドル
    //CREATESTRUCTをどうもここで渡すらしい…
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+   hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW-WS_THICKFRAME,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
@@ -174,6 +177,15 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    //Direct3Dクラス唯一のインスタンスの生成及び初期化
    Direct3D::CreateInstance();
    D3D.Initialize(hWnd, 1280, 720);
+   RECT rectWindow;
+   RECT rectClient;
+   GetWindowRect(hWnd, &rectWindow);
+   GetClientRect(hWnd, &rectClient);
+   int newHeight = 720 + (rectWindow.bottom - rectWindow.top) - (rectClient.bottom - rectClient.top);
+   int newWidth = 1280 + (rectWindow.right - rectWindow.left) - (rectClient.right - rectClient.left);
+   SetWindowPos(hWnd, nullptr, 0, 0, newWidth, newHeight, 0);
+   GetWindowRect(hWnd, &rectWindow);
+   GetClientRect(hWnd, &rectClient);
    //表示するだけ
    //nCmdShowをSW_~に帰れば初期表示の大きさとかが変わる
    ShowWindow(hWnd, nCmdShow);
@@ -194,62 +206,63 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY  - 中止メッセージを表示して戻る
 //
 //
+static int counter = 0;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     //要はイベントの処理が書いてあるだけ
     switch (message)
     {
     case WM_KEYDOWN:
-        {
-            DirectX::XMMATRIX rotation = CAMERA.GetRotationMatrix();
-            int vkId = wParam;
-            switch (vkId)
-            {
-            case 0x53://s
-                CAMERA.ParallelMovement = DirectX::XMVectorAdd(CAMERA.ParallelMovement
-                    ,DirectX::XMVector3Transform({ 0,0,-1 }, rotation));
-                break;
-            case 0x57://w
-                CAMERA.ParallelMovement = DirectX::XMVectorAdd(CAMERA.ParallelMovement
-                    , DirectX::XMVector3Transform({ 0,0,1 }, rotation));
-                break;
-            case 0x41://a
-                CAMERA.ParallelMovement = DirectX::XMVectorAdd(CAMERA.ParallelMovement
-                    , DirectX::XMVector3Transform({ -1,0,0 }, rotation));
-                break;
-            case 0x44://d
-                CAMERA.ParallelMovement = DirectX::XMVectorAdd(CAMERA.ParallelMovement
-                    , DirectX::XMVector3Transform({ 1,0,0 }, rotation));
-                break;
-            case 0x43://c
-                CAMERA.FOV = CAMERA.FOV * 1.03;
-                break;
-            case 0x5A://z
-                CAMERA.FOV = CAMERA.FOV / 1.03;
-                break;
-            case VK_SPACE:
-                CAMERA.ParallelMovement = DirectX::XMVectorAdd(CAMERA.ParallelMovement, {0,1,0});
-                break;
-            case VK_CONTROL:
-                CAMERA.ParallelMovement = DirectX::XMVectorAdd(CAMERA.ParallelMovement, { 0,-1,0 });
-                break;
-            case VK_LEFT:
-                CAMERA.rotationYaxis -= PI / 90;
-                break;
-            case VK_RIGHT:
-                CAMERA.rotationYaxis += PI / 90;
-                break;
-            case VK_UP:
-                CAMERA.rotationXaxis -= PI / 90;
-                break;
-            case VK_DOWN:
-                CAMERA.rotationXaxis += PI / 90;
-                break;
-            default:
-                break;
-            }
-        }
-        break;
+    {
+        int vkId = wParam;
+        Input::KeyPushed.set(vkId);
+        Input::KeyDown.set(vkId);
+    }
+    break;
+    case WM_KEYUP:
+    {
+        int vkId = wParam;
+        Input::KeyPushed.reset(vkId);
+    }
+    break;
+	case WM_MOUSEWHEEL:
+	{
+        int wheelRotate = GET_WHEEL_DELTA_WPARAM(wParam);
+		Input::WheelRotate += wheelRotate;
+        Input::SetMousePos(lParam);
+	}
+    break;
+    case WM_MOUSEMOVE:
+	{
+		Input::SetMousePos(lParam);
+    }
+    break;
+    case WM_LBUTTONDOWN:
+    {
+        Input::MouseLeftDown = true;
+        Input::MouseLeftPushed = true;
+        Input::SetMousePos(lParam);
+    }
+    break;
+    case WM_LBUTTONUP:
+    {
+        Input::SetMousePos(lParam);
+        Input::MouseLeftPushed = false;
+    }
+    break;
+    case WM_RBUTTONDOWN:
+    {
+        Input::MouseRightDown = true;
+        Input::MouseRightPushed = true;
+        Input::SetMousePos(lParam);
+    }
+    break;
+    case WM_RBUTTONUP:
+    {
+        Input::SetMousePos(lParam);
+        Input::MouseRightPushed = false;
+    }
+    break;
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
