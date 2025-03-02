@@ -1,13 +1,11 @@
 #include "Entity.h"
-#define AddCompMacro(CompName) CompName.Add(Prototypes->CompName, prototypeIndex)
+#define AddCompMacro(CompName) CompName.Add(Prototypes->CompName, pInitData)
 #define DeleteCompMacro(CompName) CompName.Delete(toDelete)
 #define InitCompWrapper(CompName) CompName = ComponentWrapper<Component::CompName>(thisArchetype, CompNames::CompName)
 #define InitPrototypeCompWrapper(CompName) Prototypes->CompName.Add(oneObject, CompNameArray[CompNames::CompName])
 
 // coreWorldはcoreである場合はcoreの位置、coreでない場合はcoreとの位置関係
-Interface::SameArchIndex SameArchetype::Add(Interface::SameArchIndex prototypeIndex, Interface::EntId nextId,
-	Interface::CombatUnitInitData* pCombatUnitInit,Interface::RelationOfCoord* coreWorld,int initialMaskCoord,
-	bool isCore,Interface::EntId positionReference) {
+Interface::SameArchIndex SameArchetype::Add(Interface::EntId nextId, Interface::EntityInitData* pInitData) {
 	IdArray.push_back(nextId);
 
 	// Componentの種類が増えたらここを増やす必要がある
@@ -21,19 +19,21 @@ Interface::SameArchIndex SameArchetype::Add(Interface::SameArchIndex prototypeIn
 	AddCompMacro(AI);
 	//当たり判定にかかわる性質
 	AddCompMacro(CircleHitbox);
-	AddCompMacro(CharacterHurtbox);
+	AddCompMacro(BallHurtbox);
+	AddCompMacro(UnitOccupationbox);
 	AddCompMacro(WallHurtbox);
 	AddCompMacro(GiveDamage);
 	AddCompMacro(DamagePool);
 	//内部にかかわる性質
-	AddCompMacro(CharacterData);
+	AddCompMacro(BallData);
+	AddCompMacro(UnitData);
 	AddCompMacro(BulletData);
 	//他のオブジェクトの生成にかかわる性質
 	AddCompMacro(HitEffect);
 	AddCompMacro(Trajectory);
 	//見た目にかかわる性質
 	AddCompMacro(BlockAppearance);
-	AddCompMacro(CharacterAppearance);
+	AddCompMacro(BallAppearance);
 	AddCompMacro(BulletAppearance);
 	//運動にかかわる性質
 	AddCompMacro(Motion);
@@ -44,38 +44,6 @@ Interface::SameArchIndex SameArchetype::Add(Interface::SameArchIndex prototypeIn
 	AddCompMacro(Test2);
 	AddCompMacro(TestResult);
 	AddCompMacro(Test3);
-	if (GenerateFlag.UsedFlag) {
-		GenerateFlag.Components.back().Init();
-	}
-	if (KillFlag.UsedFlag) {
-		KillFlag.Components.back().Init();
-	}
-	if (MoveFlag.UsedFlag) {
-		MoveFlag.Components.back().Init();
-	}
-	if (AppearanceChanged.UsedFlag) {
-		AppearanceChanged.Components.back().Init();
-	}
-	if (HitFlag.UsedFlag) {
-		HitFlag.Components.back().Init();
-	}
-	if (CharacterData.UsedFlag&& pCombatUnitInit != nullptr) {
-		CharacterData.Components.back().Init(pCombatUnitInit);
-	}
-	if (WorldPosition.UsedFlag && coreWorld != nullptr) {
-		WorldPosition.Components.back().Init(coreWorld,isCore);
-	}
-	if (PositionReference.UsedFlag) {
-		if (isCore) {
-			PositionReference.Components.back().Init(isCore, IdArray.back());
-		}
-		else {
-			PositionReference.Components.back().Init(isCore, positionReference);
-		}
-	}
-	if (BlockAppearance.UsedFlag) {
-		BlockAppearance.Components.back().Init(initialMaskCoord);
-	}
 	//Motion.Components.back().Init();
 	//Rotate.Components.back().Init();
 	return IdArray.size() - 1;
@@ -101,24 +69,30 @@ void SameArchetype::Delete(AllEntities* pAllEntities,Interface::SameArchIndex to
 	DeleteCompMacro(AI);
 	//当たり判定にかかわる性質
 	DeleteCompMacro(CircleHitbox);
-	DeleteCompMacro(CharacterHurtbox);
+	DeleteCompMacro(BallHurtbox);
+	DeleteCompMacro(UnitOccupationbox);
 	DeleteCompMacro(WallHurtbox);
 	DeleteCompMacro(GiveDamage);
 	DeleteCompMacro(DamagePool);
 	//内部にかかわる性質
-	DeleteCompMacro(CharacterData);
+	DeleteCompMacro(BallData);
+	DeleteCompMacro(UnitData);
 	DeleteCompMacro(BulletData);
 	//他のオブジェクトの生成にかかわる性質
 	DeleteCompMacro(HitEffect);
 	DeleteCompMacro(Trajectory);
 	//見た目にかかわる性質
 	DeleteCompMacro(BlockAppearance);
-	DeleteCompMacro(CharacterAppearance);
+	DeleteCompMacro(BallAppearance);
 	DeleteCompMacro(BulletAppearance);
 	//運動にかかわる性質
 	DeleteCompMacro(Motion);
 	DeleteCompMacro(LinearAcceralation);
 	DeleteCompMacro(WorldPosition);
+	//ミッション進行にかかわる性質
+	DeleteCompMacro(InvationObservance);
+	DeleteCompMacro(UnitCountObservance);
+	DeleteCompMacro(Spawn);
 	//テスト用
 	DeleteCompMacro(Test1);
 	DeleteCompMacro(Test2);
@@ -133,6 +107,7 @@ SameArchetype::SameArchetype(Interface::RawArchetype thisArchetype, bool IsProto
 	}
 	IdArray = std::vector<Interface::EntId>();
 	ValidEntityCount = 0;
+	RealEntityCount = 0;
 
 	//共通するデータ
 	InitCompWrapper(HitFlag);
@@ -145,24 +120,30 @@ SameArchetype::SameArchetype(Interface::RawArchetype thisArchetype, bool IsProto
 	InitCompWrapper(AI);
 	//当たり判定にかかわる性質
 	InitCompWrapper(CircleHitbox);
-	InitCompWrapper(CharacterHurtbox);
+	InitCompWrapper(BallHurtbox);
+	InitCompWrapper(UnitOccupationbox);
 	InitCompWrapper(WallHurtbox);
 	InitCompWrapper(GiveDamage);
 	InitCompWrapper(DamagePool);
 	//内部にかかわる性質
-	InitCompWrapper(CharacterData);
+	InitCompWrapper(BallData);
+	InitCompWrapper(UnitData);
 	InitCompWrapper(BulletData);
 	//他のオブジェクトの生成にかかわる性質
 	InitCompWrapper(HitEffect);
 	InitCompWrapper(Trajectory);
 	//見た目にかかわる性質
 	InitCompWrapper(BlockAppearance);
-	InitCompWrapper(CharacterAppearance);
+	InitCompWrapper(BallAppearance);
 	InitCompWrapper(BulletAppearance);
 	//運動にかかわる性質
 	InitCompWrapper(Motion);
 	InitCompWrapper(LinearAcceralation);
 	InitCompWrapper(WorldPosition);
+	//ミッション進行にかかわる性質
+	InitCompWrapper(InvationObservance);
+	InitCompWrapper(UnitCountObservance);
+	InitCompWrapper(Spawn);
 	//テスト用
 	InitCompWrapper(Test1);
 	InitCompWrapper(Test2);
@@ -181,31 +162,38 @@ void SameArchetype::LoadToPrototype(Json::Value oneObject) {
 	InitPrototypeCompWrapper(AI);
 	//当たり判定にかかわる性質
 	InitPrototypeCompWrapper(CircleHitbox);
-	InitPrototypeCompWrapper(CharacterHurtbox);
+	InitPrototypeCompWrapper(BallHurtbox);
+	InitPrototypeCompWrapper(UnitOccupationbox);
 	InitPrototypeCompWrapper(WallHurtbox);
+
 	InitPrototypeCompWrapper(GiveDamage);
 	InitPrototypeCompWrapper(DamagePool);
 	//内部にかかわる性質
-	InitPrototypeCompWrapper(CharacterData);
+	InitPrototypeCompWrapper(BallData);
+	InitPrototypeCompWrapper(UnitData);
 	InitPrototypeCompWrapper(BulletData);
 	//他のオブジェクトの生成にかかわる性質
 	InitPrototypeCompWrapper(HitEffect);
 	InitPrototypeCompWrapper(Trajectory);
 	//見た目にかかわる性質
 	InitPrototypeCompWrapper(BlockAppearance);
-	InitPrototypeCompWrapper(CharacterAppearance);
+	InitPrototypeCompWrapper(BallAppearance);
 	InitPrototypeCompWrapper(BulletAppearance);
 	//運動にかかわる性質
 	InitPrototypeCompWrapper(Motion);
 	InitPrototypeCompWrapper(LinearAcceralation);
 	InitPrototypeCompWrapper(WorldPosition);
+	//ミッション進行にかかわる性質
+	InitPrototypeCompWrapper(InvationObservance);
+	InitPrototypeCompWrapper(UnitCountObservance);
+	InitPrototypeCompWrapper(Spawn);
 	//テスト用
 	InitPrototypeCompWrapper(Test1);
 	InitPrototypeCompWrapper(Test2);
 	InitPrototypeCompWrapper(TestResult);
 	InitPrototypeCompWrapper(Test3);
 }
-std::map<std::string, Interface::EntityPointer> AllEntities::LoadFromFile(std::vector<std::string> fileNames) {
+void AllEntities::LoadEntities(std::vector<std::string> fileNames) {
 	//まず全エンティティの名前とプロトタイプのEntPointerを紐づける
 	for (int i = 0; i < fileNames.size(); i++) {
 		Json::Value root;
@@ -237,7 +225,6 @@ std::map<std::string, Interface::EntityPointer> AllEntities::LoadFromFile(std::v
 			}
 			std::string name = entNames[j];
 			bool inserted = Interface::EntNameHash.emplace(std::pair<std::string, Interface::EntityPointer>(name, prototypePointer)).second;
-			int a = Interface::EntNameHash.size();
 		}
 	}
 	//次に実際のデータを読み込んでいく
@@ -253,5 +240,83 @@ std::map<std::string, Interface::EntityPointer> AllEntities::LoadFromFile(std::v
 			EntityArraies[prototypePointer.Archetype].LoadToPrototype(root.get(entNames[j], ""));
 		}
 	}
-	return Interface::EntNameHash;
+}
+void AllEntities::LoadUnits(std::vector<std::string> filePathes) {
+	for (int i = 0; i < filePathes.size(); i++) {
+		Json::Value root;
+		std::ifstream file = std::ifstream(filePathes[i]);
+		file >> root;
+		file.close();
+		auto unitNames = root.getMemberNames();
+		for (int i = 0; i < unitNames.size(); i++) {
+			UnitInfos.push_back(UnitInfo(root.get(unitNames[i], ""),this));
+			Interface::UnitNameHash.emplace(std::pair<std::string, int>(unitNames[i], i));
+		}
+	}
+}
+Interface::EntId AllEntities::AddUnitWithMagnification(int unitIndex, Interface::EntityInitData* pInitData, Interface::RelationOfCoord* CorePos) {
+	Interface::EntId core;
+	pInitData->Pos = *CorePos;
+	pInitData->Prototype = UnitInfos[unitIndex].CorePrototype;
+
+	pInitData->IsCore = true;
+	// 初期のサイズの指定
+	pInitData->Ratio = UnitInfos[unitIndex].Ratio;
+
+	core = AddFromEntPointer(pInitData);
+	pInitData->CoreId = core;
+	pInitData->IsCore = false;
+	//1つのユニットには7このボールを置く
+	for (int i = 0; i < 7; i++) {
+		pInitData->BaseColor0 = UnitInfos[unitIndex].BaseColor0[i];
+		pInitData->BaseColor1 = UnitInfos[unitIndex].BaseColor1[i];
+		pInitData->Pos = UnitInfos[unitIndex].RelativePosFromCore[i];
+		pInitData->Prototype = UnitInfos[unitIndex].PrototypePointer[i];
+		AddFromEntPointer(pInitData);
+	}
+	return core;
+}
+void AllEntities::LoadMission(std::string fileName) {
+	Json::Value root;
+	std::ifstream file = std::ifstream(fileName);
+	file >> root;
+	file.close();
+	Json::Value EnemySpawnCondition = root.get("enemySpawnCondition", "");
+	// エリア侵入によってスポーン
+	{
+		Interface::RawArchetype rawArchetype;
+		rawArchetype.reset();
+		rawArchetype.set(CompNames::Spawn);
+		rawArchetype.set(CompNames::InvationObservance);
+		rawArchetype.set(CompNames::GenerateFlag);
+		rawArchetype.set(CompNames::KillFlag);
+		Archetypes.push_back(rawArchetype);
+		EntityArraies.push_back(SameArchetype(rawArchetype, true));
+		for (int i = 0; i < EnemySpawnCondition.size(); i++) {
+			if (Interface::SameString(EnemySpawnCondition[i].get("conditionType", "").asString(), "areaInvation")) {
+				EntityArraies.back().Spawn.Add(root.get("enemySpawnCondition","")[i], "");
+				EntityArraies.back().InvationObservance.Add(root.get("enemySpawnCondition", "")[i], "");
+			}
+		}
+	}
+	// ユニット残数によってスポーン
+	{
+		Interface::RawArchetype rawArchetype;
+		rawArchetype.reset();
+		rawArchetype.set(CompNames::Spawn);
+		rawArchetype.set(CompNames::UnitCountObservance);
+		rawArchetype.set(CompNames::GenerateFlag);
+		rawArchetype.set(CompNames::KillFlag);
+		Archetypes.push_back(rawArchetype);
+		EntityArraies.push_back(SameArchetype(rawArchetype, true));
+		for (int i = 0; i < EnemySpawnCondition.size(); i++) {
+			if (Interface::SameString(EnemySpawnCondition[i].get("conditionType", "").asString(), "unitCount")) {
+				EntityArraies.back().Spawn.Add(root.get("enemySpawnCondition", "")[i], "");
+				EntityArraies.back().UnitCountObservance.Add(root.get("enemySpawnCondition", "")[i], "");
+				EntityArraies.back().GenerateFlag.Add(root.get("enemySpawnCondition", "")[i], "");
+				EntityArraies.back().KillFlag.Add(root.get("enemySpawnCondition", "")[i], "");
+				EntityArraies.back().ValidEntityCount++;
+			}
+		}
+	}
 }

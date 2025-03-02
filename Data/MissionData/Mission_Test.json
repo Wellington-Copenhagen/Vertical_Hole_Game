@@ -1,0 +1,34 @@
+{
+    "mapFilePath":"Data/MapData/TestMap.json",
+    "enemySpawnCondition":[
+        {
+            "conditionType":"unitCount",
+            "borderCount":0,
+            "team":0,
+            "observeArea":{
+                "left":0,
+                "right":0,
+                "top":0,
+                "bottom":0
+            },
+            "count":1,
+            "timeGap":{
+                "since":0,
+                "howManyInEachTick":1
+            },
+            "unitName":"unitTest",
+            "initData":{
+                "team":0,
+                "health":1,
+                "attack":1,
+                "speed":1
+            },
+            "spawnArea":{
+                "left":0,
+                "right":10,
+                "bottom":0,
+                "top":10
+            }
+        }
+    ]
+}

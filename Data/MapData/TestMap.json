@@ -57,6 +57,22 @@
             "left":5,
             "isWall":true,
             "name":"wallBrick"
+        },
+        {
+            "top":30,
+            "bottom":8,
+            "right":38,
+            "left":35,
+            "isWall":true,
+            "name":"wallBrick"
+        },
+        {
+            "top":45,
+            "bottom":40,
+            "right":48,
+            "left":30,
+            "isWall":true,
+            "name":"wallBrick"
         }
     ]
 }

@@ -170,14 +170,14 @@ GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 		// 頂点シェーダーを読み込み＆コンパイル
 		ComPtr<ID3DBlob> compiledVS;
 		ComPtr<ID3DBlob> pError;
-		if (FAILED(D3DCompileFromFile(L"Shader/CharacterVertexShader.hlsl", nullptr, nullptr, "main", "vs_5_0", 0, 0, &compiledVS, &pError)))
+		if (FAILED(D3DCompileFromFile(L"Shader/BallVertexShader.hlsl", nullptr, nullptr, "main", "vs_5_0", 0, 0, &compiledVS, &pError)))
 		{
 			OutputDebugStringA((char*)pError->GetBufferPointer());
 			throw("頂点シェーダのコンパイルに失敗");
 		}
 
 		// 頂点シェーダー作成
-		if (FAILED(D3D.m_device->CreateVertexShader(compiledVS->GetBufferPointer(), compiledVS->GetBufferSize(), nullptr, &mCharacterVertexShader)))
+		if (FAILED(D3D.m_device->CreateVertexShader(compiledVS->GetBufferPointer(), compiledVS->GetBufferSize(), nullptr, &mBallVertexShader)))
 		{
 			throw("頂点シェーダの生成に失敗");
 		}
@@ -199,18 +199,18 @@ GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 		};
 
 		// 頂点インプットレイアウト作成
-		if (FAILED(D3D.m_device->CreateInputLayout(&layout[0], layout.size(), compiledVS->GetBufferPointer(), compiledVS->GetBufferSize(), &mCharacterInputLayout)))
+		if (FAILED(D3D.m_device->CreateInputLayout(&layout[0], layout.size(), compiledVS->GetBufferPointer(), compiledVS->GetBufferSize(), &mBallInputLayout)))
 		{
 			throw("頂点インプットレイアウトの生成に失敗");
 		}
 		// ピクセルシェーダーを読み込み＆コンパイル
 		ComPtr<ID3DBlob> compiledPS;
-		if (FAILED(D3DCompileFromFile(L"Shader/CharacterPixelShader.hlsl", nullptr, nullptr, "main", "ps_5_0", 0, 0, &compiledPS, nullptr)))
+		if (FAILED(D3DCompileFromFile(L"Shader/BallPixelShader.hlsl", nullptr, nullptr, "main", "ps_5_0", 0, 0, &compiledPS, nullptr)))
 		{
 			throw("ピクセルシェーダのコンパイルに失敗");
 		}
 		// ピクセルシェーダー作成
-		if (FAILED(D3D.m_device->CreatePixelShader(compiledPS->GetBufferPointer(), compiledPS->GetBufferSize(), nullptr, &mCharacterPixelShader)))
+		if (FAILED(D3D.m_device->CreatePixelShader(compiledPS->GetBufferPointer(), compiledPS->GetBufferSize(), nullptr, &mBallPixelShader)))
 		{
 			throw("頂点シェーダのコンパイルに失敗");
 		}
@@ -302,7 +302,7 @@ void GraphicProcessSetter::SetAsBlock() {
 	D3D.m_deviceContext->OMSetRenderTargets(1, D3D.m_backBufferView.GetAddressOf(), D3D.m_depthStencilView.Get());
 
 }
-void GraphicProcessSetter::SetAsCharacter() {
+void GraphicProcessSetter::SetAsBall() {
 	D3D.m_deviceContext->OMSetDepthStencilState(m_depthStencilStateEnable.Get(), 0);
 	float blendFactor[4]{ D3D11_BLEND_ZERO,D3D11_BLEND_ZERO, D3D11_BLEND_ZERO, D3D11_BLEND_ZERO };
 	D3D.m_deviceContext->OMSetBlendState(m_blendStateEnable.Get(), blendFactor, 0xffffffff);
@@ -319,9 +319,9 @@ void GraphicProcessSetter::SetAsCharacter() {
 	D3D.m_deviceContext->RSSetState(m_rasterizerState.Get());
 	D3D.m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	D3D.m_deviceContext->PSSetSamplers(0, 1, m_samplerState.GetAddressOf());
-	D3D.m_deviceContext->VSSetShader(mCharacterVertexShader.Get(), 0, 0);
-	D3D.m_deviceContext->PSSetShader(mCharacterPixelShader.Get(), 0, 0);
-	D3D.m_deviceContext->IASetInputLayout(mCharacterInputLayout.Get());
+	D3D.m_deviceContext->VSSetShader(mBallVertexShader.Get(), 0, 0);
+	D3D.m_deviceContext->PSSetShader(mBallPixelShader.Get(), 0, 0);
+	D3D.m_deviceContext->IASetInputLayout(mBallInputLayout.Get());
 	D3D.m_deviceContext->OMSetRenderTargets(1, D3D.m_backBufferView.GetAddressOf(), D3D.m_depthStencilView.Get());
 
 }

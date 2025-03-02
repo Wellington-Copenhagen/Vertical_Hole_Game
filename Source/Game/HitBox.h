@@ -10,8 +10,16 @@ public:
 	AllEntities* pAllEntities;
 	std::bitset<WorldHeight* WorldWidth> WallIsThere;
 	std::vector<Interface::EntId> OccupyingWalls;
-	std::vector<int> OccupyingCharacterCount;
-	std::vector < Interface::EntId> OccupyingCharacters;
+	std::vector<int> OccupyingUnitCount;
+	std::vector <Interface::EntId> OccupyingUnits;
+	std::bitset<256 * 256> OccupiedMap;
+	// 4分木でエリアを管理する
+	// 256*256 128*128左下 128*128左上 128*128右下 128*128右上 64*64左上の左上 ...
+	// しかし、1*1のエリアはOccupiedMapでも問題がないのでOccupiedMapを使う
+	// trueがあるエリアは占有されていない
+	// サイズは等比数列の総和の性質よりfloor(256*256*(4/3))-256*256=21845となる
+	// 2.5kB
+	std::bitset<21845> PassableMap;
 	int Width;
 	int Height;
 	Hurtboxes() {
@@ -20,37 +28,44 @@ public:
 	Hurtboxes(AllEntities* pallentities, int mapWidth, int mapHeight) {
 		pAllEntities = pallentities;
 		WallIsThere.reset();
-		OccupyingCharacterCount = std::vector<int>(mapWidth * mapHeight);
+		OccupyingUnitCount = std::vector<int>(mapWidth * mapHeight);
 		OccupyingWalls = std::vector<Interface::EntId>(mapWidth * mapHeight);
-		OccupyingCharacters = std::vector<Interface::EntId>(mapWidth * mapHeight * 4);
+		OccupyingUnits = std::vector<Interface::EntId>(mapWidth * mapHeight * 4);
+		OccupiedMap.reset();
 		Width = mapWidth;
 		Height = mapHeight;
 	}
 	inline void SetWall(int x, int y, Interface::EntId id) {
 		int pos = y * Width + x;
 		WallIsThere[pos] = true;
-		Interface::OccupiedMap[pos] = true;
+		OccupiedMap[pos] = true;
 		OccupyingWalls[pos] = id;
 	}
 	inline void DeleteWall(int x, int y) {
 		int pos = y * Width + x;
 		WallIsThere[pos] = false;
-		Interface::OccupiedMap[pos] = false;
+		OccupiedMap[pos] = false;
 	}
-	inline void SetCharacter(int x, int y, Interface::EntId id) {
+	inline void SetUnit(int x, int y, Interface::EntId id) {
 		int pos = y * Width + x;
-		if (OccupyingCharacterCount[pos] >= 4) {
+		if (OccupyingUnitCount[pos] >= 4) {
 			return;
 		}
-		OccupyingCharacters[pos * 4 + OccupyingCharacterCount[pos]] = id;
-		Interface::OccupiedMap[pos] = true;
-		OccupyingCharacterCount[pos]++;
+		OccupyingUnits[pos * 4 + OccupyingUnitCount[pos]] = id;
+		OccupiedMap[pos] = true;
+		OccupyingUnitCount[pos]++;
 	}
-	void DeleteCharacter(int x, int y, Interface::EntId id);
-	bool CheckCircleCollid(DirectX::XMVECTOR center, float radius, Interface::Damage damage, Interface::Damage* gotDamage,
-		bool checkOnlyOnce, int team, bool collidToWall,
-		bool collidToCharacter, bool collidToAllTeamCharacter, int CoreId);
-	bool LimitateInOneBlock(DirectX::XMVECTOR* center, DirectX::XMVECTOR* moveTo, DirectX::XMVECTOR* velocity, float* limitation,
-		float radius, std::vector<Interface::EntId>* pCheckedCharacter, int x, int y);
-	void Limitate(DirectX::XMVECTOR* center, float radius, DirectX::XMVECTOR* velocity, Interface::EntId id);
+	void DeleteUnit(int x, int y, Interface::EntId id);
+	// ボール→壁 ボール⇔ボール エフェクト→ボール エフェクト→壁の向きでダメージが与えられる可能性がある
+	bool CheckUnitCollid(Interface::EntId coreId);
+	bool CheckCircleCollid(DirectX::XMVECTOR center, float radius, Interface::Damage* giveDamage,
+		bool checkOnlyOnce, int team);
+	bool CheckCircleInterfare(DirectX::XMVECTOR center, float radius, bool collidToWall, bool collidToBall);
+	bool IsAbleToSpawn(float left, float right, float top, float bottom, float posX, float posY);
+	void SetOccupation(float left, float right, float top, float bottom, float posX, float posY);
+	// まずエリアは必ず凸(多少はどうにかなるかもしれんが)
+	// 触れていて、なおかつエリアの間を移動する場合に経由する領域を指定し、その中からランダムに選んだ地点を経由させる
+	void UpdatePassableMap();
+	bool CheckSetPassable(int currentIndex,int currentSize);
+	DirectX::XMVECTOR NextWayPoint(DirectX::XMVECTOR current, DirectX::XMVECTOR target);
 };

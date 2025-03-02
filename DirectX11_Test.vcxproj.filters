@@ -142,8 +142,8 @@
     <FxCompile Include="Shader\BlockVertexShader.hlsl" />
     <FxCompile Include="Shader\BulletPixelShader.hlsl" />
     <FxCompile Include="Shader\BulletVertexShader.hlsl" />
-    <FxCompile Include="Shader\CharacterPixelShader.hlsl" />
-    <FxCompile Include="Shader\CharacterVertexShader.hlsl" />
+    <FxCompile Include="Shader\BallPixelShader.hlsl" />
+    <FxCompile Include="Shader\BallVertexShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

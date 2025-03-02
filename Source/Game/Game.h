@@ -11,6 +11,7 @@
 #include "Source/DirectX/Buffers.h"
 #include "Source/DirectX/Texture.h"
 #include "Source/DirectX/DrawPipe.h"
+
 //=========================================
 // GameSystemクラス
 // ・このゲームの土台となるもの
@@ -23,23 +24,23 @@ public :
 	//マップ最大サイズに床と壁全部配置した場合の大きさ
 	Appearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, 256 * 256 * 2> mBlockAppearances;
 	//影、本体、模様
-	Appearances<Interface::CharacterDrawCallType, Interface::CharacterInstanceType, 1, 1024> mCharacterAppearances[3];
+	Appearances<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount> mBallAppearances[3];
 	Appearances<Interface::BulletDrawCallType, Interface::BulletInstanceType, 1, 256 * 256> mBulletAppearances;
 	Hurtboxes mHurtboxes;
 	ConstantBuffer mCBuffer;
 	VertexBuffer<Interface::BlockDrawCallType, 4,0> mBlockDrawCallBuffer;
 	VertexBuffer<Interface::BlockInstanceType, 256 * 256 * 2,1> mBlockInstanceBuffer;
 	//影、本体、模様、影
-	VertexBuffer<Interface::CharacterDrawCallType, 4,0> mCharacterDrawCallBuffer[3];
+	VertexBuffer<Interface::BallDrawCallType, 4,0> mBallDrawCallBuffer[3];
 	//影、本体、模様
-	VertexBuffer<Interface::CharacterInstanceType, 1024,1> mCharacterInstanceBuffer[3];
+	VertexBuffer<Interface::BallInstanceType, MaxBallCount,1> mBallInstanceBuffer[3];
 	VertexBuffer<Interface::BulletDrawCallType, 4,0> mBulletDrawCallBuffer;
 	VertexBuffer<Interface::BulletInstanceType, 256 * 256,1> mBulletInstanceBuffer;
 	GraphicProcessSetter mGraphicProcessSetter;
 	int DrawCallUsed;
 	Camera mCamera;
 	int Tick;
-	std::mt19937 RandEngine;
+
 
 	SameFormatTextureArray mSameFormatTextureArray;
 	// このゲームの初期設定を行う
@@ -51,8 +52,6 @@ public :
 	void LoadMap(std::string mapFileName);
 
 	void ApplyInput();
-
-	void LoadUnits(std::vector<std::string> filePathes);
 
 	// その他、ゲーム用のデータなどをココに書く
 

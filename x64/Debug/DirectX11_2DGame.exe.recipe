@@ -19,10 +19,10 @@
       <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\BulletVertexShader.cso</FullPath>
     </ContentFile>
     <ContentFile>
-      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\CharacterPixelShader.cso</FullPath>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\BallPixelShader.cso</FullPath>
     </ContentFile>
     <ContentFile>
-      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\CharacterVertexShader.cso</FullPath>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\BallVertexShader.cso</FullPath>
     </ContentFile>
     <ContentFile>
       <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\ColoredShader.cso</FullPath>

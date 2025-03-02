@@ -26,16 +26,16 @@ public:
 	ComPtr<ID3D11PixelShader> mBlockPixelShader;
 	ComPtr<ID3D11InputLayout> mBlockInputLayout;
 
-	ComPtr<ID3D11VertexShader> mCharacterVertexShader;
-	ComPtr<ID3D11PixelShader> mCharacterPixelShader;
-	ComPtr<ID3D11InputLayout> mCharacterInputLayout;
+	ComPtr<ID3D11VertexShader> mBallVertexShader;
+	ComPtr<ID3D11PixelShader> mBallPixelShader;
+	ComPtr<ID3D11InputLayout> mBallInputLayout;
 
 	ComPtr<ID3D11VertexShader> mBulletVertexShader;
 	ComPtr<ID3D11PixelShader> mBulletPixelShader;
 	ComPtr<ID3D11InputLayout> mBulletInputLayout;
 
 	void SetAsBlock();
-	void SetAsCharacter();
+	void SetAsBall();
 	void SetAsBullet();
 	GraphicProcessSetter(int width, int height);
 };

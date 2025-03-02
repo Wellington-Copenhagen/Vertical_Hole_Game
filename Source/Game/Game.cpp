@@ -9,50 +9,37 @@
 //設定を作りやすそうな意味ではダンジョン
 //
 
+// この辺の監視も極力entityで行いたい
+// 決まるタイミング
+// 開発による指定
+// ・Entity.jsonとUnit.jsonに指定
+// ・多くの性質
+// ミッションによる指定
+// ・Mission.jsonに指定
+// ・攻撃、耐久などの倍率
+// ・出現位置、出現タイミング
+// プレイヤーによるカスタマイズ
+// ・Unit.jsonによる指定
+// ・色、Ballの組み方
+// 
+
 DirectX::XMMATRIX rotation;
 // ゲームの初期設定を行う
 GameSystem::GameSystem() {
 }
 void GameSystem::Initialize(HWND hWnd)
 {
-	Interface::EntNameHash = std::map<std::string, Interface::EntityPointer>();
 	Tick = 0;
+	Interface::UnitNameHash = std::map<std::string, Interface::UnitIndex>();
+	Interface::EntNameHash = std::map<std::string, Interface::EntityPointer>();
 	mBlockAppearances = Appearances
 		<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, 256 * 256 * 2>(&mAllEntities.INtoIndex, 4);
-	mCharacterAppearances[0] = Appearances
-		<Interface::CharacterDrawCallType, Interface::CharacterInstanceType, 1, 1024>(&mAllEntities.INtoIndex, 4, 0.8, 0.8, 0.8, -0.3);
-	mCharacterAppearances[1] = Appearances
-		<Interface::CharacterDrawCallType, Interface::CharacterInstanceType, 1, 1024>(&mAllEntities.INtoIndex, 4);
-	mCharacterAppearances[2] = Appearances
-		<Interface::CharacterDrawCallType, Interface::CharacterInstanceType, 1, 1024>(&mAllEntities.INtoIndex, 4,0.3,0.3,0.3,0.2);
-
-
-	mCharacterAppearances[0].DrawCall[0].Pos = {
-		-0.4f,-0.6f,0.0f,1.0f
-	};
-	mCharacterAppearances[0].DrawCall[1].Pos = {
-		-0.4f,0.2f,0.0f,1.0f
-	};
-	mCharacterAppearances[0].DrawCall[2].Pos = {
-		0.4f,-0.6f,0.0f,1.0f
-	};
-	mCharacterAppearances[0].DrawCall[3].Pos = {
-		0.4f,0.2f,0.0f,1.0f
-	};
-
-
-	mCharacterAppearances[2].DrawCall[0].Pos = {
-		-0.25f,-0.25f,0.0f,1.0f
-	};
-	mCharacterAppearances[2].DrawCall[1].Pos = {
-		-0.25f,0.25f,0.0f,1.0f
-	};
-	mCharacterAppearances[2].DrawCall[2].Pos = {
-		0.25f,-0.25f,0.0f,1.0f
-	};
-	mCharacterAppearances[2].DrawCall[3].Pos = {
-		0.25f,0.25f,0.0f,1.0f
-	};
+	mBallAppearances[0] = Appearances
+		<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount>(&mAllEntities.INtoIndex, 4, 0.4, 0.4, 0.4, -0.01);
+	mBallAppearances[1] = Appearances
+		<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount>(&mAllEntities.INtoIndex, 4,0.5, 0.5, 0.5,0);
+	mBallAppearances[2] = Appearances
+		<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount>(&mAllEntities.INtoIndex, 4,0.2,0.2,0.2,-0.1);
 
 	mBulletAppearances = Appearances
 		<Interface::BulletDrawCallType, Interface::BulletInstanceType, 1, 256 * 256>(&mAllEntities.INtoIndex, 4);
@@ -61,8 +48,8 @@ void GameSystem::Initialize(HWND hWnd)
 	mBlockInstanceBuffer = VertexBuffer<Interface::BlockInstanceType, 256 * 256 * 2, 1>(mBlockAppearances.Instances);
 
 	for (int i = 0; i < 3; i++) {
-		mCharacterDrawCallBuffer[i] = VertexBuffer<Interface::CharacterDrawCallType, 4, 0>(mCharacterAppearances[i].DrawCall);
-		mCharacterInstanceBuffer[i] = VertexBuffer<Interface::CharacterInstanceType, 1024, 1>(mCharacterAppearances[i].Instances);
+		mBallDrawCallBuffer[i] = VertexBuffer<Interface::BallDrawCallType, 4, 0>(mBallAppearances[i].DrawCall);
+		mBallInstanceBuffer[i] = VertexBuffer<Interface::BallInstanceType, MaxBallCount, 1>(mBallAppearances[i].Instances);
 	}
 
 	mBulletDrawCallBuffer = VertexBuffer<Interface::BulletDrawCallType, 4, 0>(mBulletAppearances.DrawCall);
@@ -75,58 +62,29 @@ void GameSystem::Initialize(HWND hWnd)
 	std::vector<std::string> EntityFileNames = {
 		"Data/EntityData/Block.json",
 		"Data/EntityData/Effect.json",
-		"Data/EntityData/Character.json"
+		"Data/EntityData/Ball.json"
 	};
-	Interface::EntNameHash = mAllEntities.LoadFromFile(EntityFileNames);
+	mAllEntities.LoadEntities(EntityFileNames);
+	std::vector<std::string> UnitFileNames = {
+		"Data/unitData/unit.json",
+	};
+	mAllEntities.LoadUnits(UnitFileNames);
 
-	int a = Interface::EntNameHash.size();
+	std::string mapName = "Data/MissionData/Mission_Test.json";
+
+	mAllEntities.LoadMission(mapName);
 	mAllSystem = AllSystem(this);
 
 	std::random_device RandSeedGen;
-	RandEngine = std::mt19937(RandSeedGen());
-	LoadMap("Data/MapData/TestMap.json");
+	Interface::RandEngine = std::mt19937(RandSeedGen());
 	{
-		Interface::RelationOfCoord initWorld;
-		initWorld.Parallel = { 3.0f,3.0f,0.0f,1.0f };
-		initWorld.Ratio = 1;
-		initWorld.Rotate = 0;
-		Interface::CombatUnitInitData initCombatUnit;
-		initCombatUnit.CoreId = 0;
-		initCombatUnit.Team = 0;
-		Interface::PlayingCharacter = mAllEntities.AddFromEntPointer({ 3,0 }, &initCombatUnit, &initWorld, 1, true, -1);
-	}
-	{
-		Interface::RelationOfCoord initWorld;
-		initWorld.Parallel = { 1.0f,0.0f,0.0f,1.0f };
-		initWorld.Ratio = 1;
-		initWorld.Rotate = 0;
-		Interface::CombatUnitInitData initCombatUnit;
-		initCombatUnit.CoreId = Interface::PlayingCharacter;
-		initCombatUnit.Team = 0;
-		mAllEntities.AddFromEntPointer({ 3,1 }, &initCombatUnit, &initWorld, 1, false, Interface::PlayingCharacter);
+		Json::Value root;
+		std::ifstream file = std::ifstream(mapName);
+		file >> root;
+		file.close();
+		LoadMap(root.get("mapFilePath","").asString());
 	}
 
-	Interface::EntId AnotherOne;
-	{
-		Interface::RelationOfCoord initWorld;
-		initWorld.Parallel = { 8.0f,3.0f,0.0f,1.0f };
-		initWorld.Ratio = 1;
-		initWorld.Rotate = 0;
-		Interface::CombatUnitInitData initCombatUnit;
-		initCombatUnit.CoreId = 0;
-		initCombatUnit.Team = 0;
-		AnotherOne = mAllEntities.AddFromEntPointer({ 3,0 }, &initCombatUnit, &initWorld, 1, true, -1);
-	}
-	{
-		Interface::RelationOfCoord initWorld;
-		initWorld.Parallel = { 1.0f,0.0f,0.0f,1.0f };
-		initWorld.Ratio = 1;
-		initWorld.Rotate = 0;
-		Interface::CombatUnitInitData initCombatUnit;
-		initCombatUnit.CoreId = Interface::PlayingCharacter;
-		initCombatUnit.Team = 0;
-		mAllEntities.AddFromEntPointer({ 3,1 }, &initCombatUnit, &initWorld, 1, false, AnotherOne);
-	}
 	/*
 	Texture Text = Texture("Data/Appearance/Test.tif");
 	Texture Block = Texture("Data/Appearance/Block.tif");
@@ -180,7 +138,7 @@ void GameSystem::Initialize(HWND hWnd)
 System::System(GameSystem* pGameSystem) {
 	pHurtboxes = &pGameSystem->mHurtboxes;
 	pBlockAppearance = &pGameSystem->mBlockAppearances;
-	pCharacterAppearance = pGameSystem->mCharacterAppearances;
+	pBallAppearance = pGameSystem->mBallAppearances;
 	pBulletAppearance = &pGameSystem->mBulletAppearances;
 	pAllEntities = &pGameSystem->mAllEntities;
 	TargetArchetypes = std::vector<Interface::ArchetypeIndex>();
@@ -196,7 +154,7 @@ void GameSystem::Execute(HWND hWnd)
 	try {
 		ApplyInput();
 		mAllSystem.Update();
-		float color[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
+		float color[4] = { 0.8f, 0.0f, 0.0f, 1.0f };
 		D3D.m_deviceContext->ClearRenderTargetView(D3D.m_backBufferView.Get(), color);
 		D3D.m_deviceContext->ClearDepthStencilView(D3D.m_depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0.0f);
 		/*
@@ -340,10 +298,10 @@ void GameSystem::Execute(HWND hWnd)
 		D3D.m_deviceContext->DrawInstanced(4, mBlockAppearances.InstanceCount, 0, 0);
 
 		for (int i = 0; i < 3; i++) {
-			mCharacterDrawCallBuffer[i].UpdateAndSet(mCharacterAppearances[i].DrawCall, 0, 4);
-			mCharacterInstanceBuffer[i].UpdateAndSet(mCharacterAppearances[i].Instances, 0, mCharacterAppearances[i].InstanceCount);
-			mGraphicProcessSetter.SetAsCharacter();
-			D3D.m_deviceContext->DrawInstanced(4, mCharacterAppearances[i].InstanceCount * 2, 0, 0);
+			mBallDrawCallBuffer[i].UpdateAndSet(mBallAppearances[i].DrawCall, 0, 4);
+			mBallInstanceBuffer[i].UpdateAndSet(mBallAppearances[i].Instances, 0, mBallAppearances[i].InstanceCount);
+			mGraphicProcessSetter.SetAsBall();
+			D3D.m_deviceContext->DrawInstanced(4, mBallAppearances[i].InstanceCount, 0, 0);
 		}
 
 
@@ -410,21 +368,22 @@ void GameSystem::LoadMap(std::string mapFileName)
 			for (int x = left; x < right; x++) {
 				for (int y = bottom; y < top; y++) {
 					if (!wallPlaced[256 * y + x]) {
+						Interface::EntityInitData init;
 						wallPlaced[256 * y + x] = true;
-						Interface::RelationOfCoord world;
-						world.Identity();
-						world.Parallel = { (float)x,(float)y,0.0f,1.0f };
-						int maskIndex = 0;
+						init.Pos.Identity();
+						init.Pos.Parallel = { (float)x,(float)y,0.0f,1.0f };
+						init.initialMaskIndex = 0;
+						init.Prototype = blockPointer;
 						if (x != 0 && !isWallMap[y * 256 + x - 1]) {
-							maskIndex += 1;
+							init.initialMaskIndex += 1;
 						}
 						if (x != width - 1 && !isWallMap[y * 256 + x + 1]) {
-							maskIndex += 2;
+							init.initialMaskIndex += 2;
 						}
 						if (y != 0 && !isWallMap[(y - 1) * 256 + x]) {
-							maskIndex += 4;
+							init.initialMaskIndex += 4;
 						}
-						mAllEntities.AddFromEntPointer(blockPointer, nullptr, &world, maskIndex,true,-1);
+						mAllEntities.AddFromEntPointer(&init);
 					}
 				}
 			}
@@ -433,24 +392,25 @@ void GameSystem::LoadMap(std::string mapFileName)
 			for (int x = left; x < right; x++) {
 				for (int y = bottom; y < top; y++) {
 					if (!floorPlaced[256 * y + x]) {
+						Interface::EntityInitData init;
 						floorPlaced[256 * y + x] = true;
-						Interface::RelationOfCoord world;
-						world.Identity();
-						world.Parallel = { (float)x,(float)y,0.0f,1.0f };
-						int maskIndex = 0;
+						init.Pos.Identity();
+						init.Pos.Parallel = { (float)x,(float)y,0.0f,1.0f };
+						init.initialMaskIndex = 0;
+						init.Prototype = blockPointer;
 						if (x != 0 && isWallMap[y * 256 + x - 1]) {
-							maskIndex += 1;
+							init.initialMaskIndex += 1;
 						}
 						if (x != width - 1 && isWallMap[y * 256 + x + 1]) {
-							maskIndex += 2;
+							init.initialMaskIndex += 2;
 						}
 						if (y != 0 && isWallMap[(y - 1) * 256 + x]) {
-							maskIndex += 4;
+							init.initialMaskIndex += 4;
 						}
 						if (y != height - 1 && isWallMap[(y + 1) * 256 + x]) {
-							maskIndex += 8;
+							init.initialMaskIndex += 8;
 						}
-						mAllEntities.AddFromEntPointer(blockPointer, nullptr, &world, maskIndex,true,-1);
+						mAllEntities.AddFromEntPointer(&init);
 					}
 				}
 			}
@@ -473,17 +433,4 @@ void GameSystem::ApplyInput() {
 	Camera::ZoomRate = Camera::ZoomRate * (1.0f + (float)Input::WheelRotate / 1200.0);
 
 	Input::Reset();
-}
-void GameSystem::LoadUnits(std::vector<std::string> filePathes) {
-	for (int i = 0; i < filePathes.size(); i++) {
-		Json::Value root;
-		std::ifstream file = std::ifstream(filePathes[i]);
-		file >> root;
-		file.close();
-		auto unitNames = root.getMemberNames();
-		for (int i = 0; i < unitNames.size(); i++) {
-			Interface::UnitInfoTable.emplace(std::pair<std::string, Interface::UnitInfo>(unitNames[i],
-				Interface::UnitInfo(root.get(unitNames[i], ""))));
-		}
-	}
 }

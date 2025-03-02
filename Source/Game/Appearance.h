@@ -32,7 +32,7 @@ public:
 		ZeroMemory(InstanceIds, sizeof(InstanceIds));
 		ZeroMemory(DrawCall, sizeof(DrawCall));
 		InstanceCount = 0;
-		float width = 4.0f / 6.0f;
+		float width = 0.5f;
 		DrawCall[0].Pos = { -1 * bottomXscale * width,-1 * Yscale * width + Yoffset,0.0f,1.0f };
 		DrawCall[1].Pos = { -1 * topXscale * width,Yscale * width+Yoffset,0.0f,1.0f };
 		DrawCall[2].Pos = { bottomXscale * width,-1 * Yscale * width + Yoffset,0.0f,1.0f };

@@ -8,8 +8,36 @@
 // 
 // 見た目や当たり判定や派生処理間でデータを共有できるオブジェクト
 // 
+#define MaxUnitCount 1024
+#define MaxBallCount MaxUnitCount * 7
 
 namespace Interface {
+	static void OutputMatrix(DirectX::XMMATRIX matrix,std::string suffix, std::string prefix) {
+		OutputDebugStringA(suffix.c_str());
+		for (int i = 0; i < 4; i++) {
+			OutputDebugStringA("[");
+			for (int j = 0; j < 4; j++) {
+				std::string output = std::to_string(matrix.r[i].m128_f32[j]);
+				OutputDebugStringA(output.c_str());
+				OutputDebugStringA(" ");
+			}
+			OutputDebugStringA("]\n");
+		}
+		OutputDebugStringA(prefix.c_str());
+	}
+	static void OutputVector(DirectX::XMVECTOR vector, std::string suffix, std::string prefix) {
+		OutputDebugStringA(suffix.c_str());
+		OutputDebugStringA("[");
+		for (int j = 0; j < 4; j++) {
+			std::string output = std::to_string(vector.m128_f32[j]);
+			OutputDebugStringA(output.c_str());
+			OutputDebugStringA(" ");
+		}
+		OutputDebugStringA("]\n");
+		OutputDebugStringA(prefix.c_str());
+	}
+	// 文字を表示するやつ
+
 	//プロトタイプにないデータで指定したいものはすべてこれ経由
 	/*
 	//プロトタイプにないデータで指定したいものはすべてこれ経由
@@ -66,7 +94,7 @@ namespace Interface {
 	};
 
 
-	struct CharacterInstanceType {
+	struct BallInstanceType {
 	public:
 		void Set(DirectX::XMMATRIX* world, DirectX::XMVECTOR* texCoordMask, DirectX::XMVECTOR* color0, DirectX::XMVECTOR* color1, DirectX::XMVECTOR* color2) {
 			DirectX::XMStoreFloat4x4(&World, *world);
@@ -85,7 +113,7 @@ namespace Interface {
 		DirectX::XMFLOAT4 Color2;
 
 	};
-	struct CharacterDrawCallType {
+	struct BallDrawCallType {
 	public:
 		DirectX::XMFLOAT3 UV;//各頂点のU,各頂点のV,分割数
 		DirectX::XMFLOAT4 Pos;
@@ -135,10 +163,16 @@ namespace Interface {
 	typedef int ArchetypeIndex;
 	typedef int SameArchIndex;
 	typedef int RectAppId;
+	typedef int UnitIndex;
 	struct RelationOfCoord {
 		float Rotate;
 		float Ratio;
 		DirectX::XMVECTOR Parallel;
+		RelationOfCoord() {
+			Rotate = 0;
+			Ratio = 1;
+			Parallel = { 0,0,0,1 };
+		}
 		RelationOfCoord operator+(RelationOfCoord& other) {
 			RelationOfCoord output;
 			output.Rotate = Rotate + other.Rotate;
@@ -241,25 +275,10 @@ namespace Interface {
 		}
 		return true;
 	}
-
-	struct CombatUnitInitData {
-		float HealthMultiply;
-		float DamageMultiply;
-		float SpeedMultiply;
-		Interface::HostilityTeam Team;
-		Interface::EntId CoreId;
-		bool isCore;
-		CombatUnitInitData() {
-			HealthMultiply = 1;
-			DamageMultiply = 1;
-			SpeedMultiply = 1;
-		}
-	};
-	static std::map<std::string, Interface::EntityPointer> EntNameHash;
 	static std::map<std::string, int> AppearanceNameHash;
-	static Interface::EntId PlayingCharacter;
-	static std::bitset<256 * 256> OccupiedMap;
-	static std::bitset<64> HostilityTable;//8team*8teamのテーブルでtrueの場所は敵対する
+	static Interface::EntId PlayingBall;
+	static std::bitset<TeamCount*TeamCount> HostilityTable;//8team*8teamのテーブルでtrueの場所は敵対する
+	static std::mt19937 RandEngine;
 	inline DirectX::XMVECTOR GetVectorFromJson(Json::Value input) {
 		DirectX::XMVECTOR output = {
 			input[0].asFloat(),
@@ -269,33 +288,46 @@ namespace Interface {
 		};
 		return output;
 	}
-	struct UnitInfo {
-		std::vector<Interface::EntityPointer> PrototypePointer;
-		std::vector<DirectX::XMVECTOR> RelativePosFromCore;
-		std::vector<DirectX::XMVECTOR> BaseColor0;
-		std::vector<DirectX::XMVECTOR> BaseColor1;
-		UnitInfo() {
-			PrototypePointer = std::vector<Interface::EntityPointer>();
-			RelativePosFromCore = std::vector<DirectX::XMVECTOR>();
-			BaseColor0 = std::vector<DirectX::XMVECTOR>();
-			BaseColor1 = std::vector<DirectX::XMVECTOR>();
+	inline std::map<std::string, Interface::UnitIndex> UnitNameHash;
+	inline std::map<std::string, Interface::EntityPointer> EntNameHash;
+	struct EntityInitData {
+		// 常に使う
+		EntityPointer Prototype;
+		bool IsCore;
+		// EffectとBallに使う
+		float HealthMultiply;
+		float DamageMultiply;
+		float SpeedMultiply;
+		Interface::HostilityTeam Team;
+		// Ballに使う
+		Interface::EntId CoreId;
+		RelationOfCoord Pos;//Coreの場合はCoreの位置、CoreではないならCoreに対しての位置
+		DirectX::XMVECTOR BaseColor0;
+		DirectX::XMVECTOR BaseColor1;
+		int initialMaskIndex;
+		float SplintTilePerTick[6];
+		float RadianPerTick;
+		float MoveTilePerTick;
+		float Ratio;
+		float Weight;
+		EntityInitData() {
+
 		}
-		UnitInfo(Json::Value jsonOfThisUnit) {
-			PrototypePointer = std::vector<Interface::EntityPointer>();
-			RelativePosFromCore = std::vector<DirectX::XMVECTOR>();
-			BaseColor0 = std::vector<DirectX::XMVECTOR>();
-			BaseColor1 = std::vector<DirectX::XMVECTOR>();
-			for (int i = 0; i < jsonOfThisUnit.size(); i++) {
-				PrototypePointer.push_back(EntNameHash[jsonOfThisUnit[i].get("characterName", "").asString()]);
-				RelativePosFromCore.push_back({
-					jsonOfThisUnit[i].get("relativePos","")[0].asFloat(),
-					jsonOfThisUnit[i].get("relativePos","")[1].asFloat(),
-					0,1
-				});
-				BaseColor0.push_back(Interface::GetVectorFromJson(jsonOfThisUnit[i].get("baseColor0", "")));
-				BaseColor1.push_back(Interface::GetVectorFromJson(jsonOfThisUnit[i].get("baseColor1", "")));
-			}
+		EntityInitData(Json::Value fromLoad) {
+			HealthMultiply = fromLoad.get("health", "").asFloat();
+			DamageMultiply = fromLoad.get("attack", "").asFloat();
+			SpeedMultiply = fromLoad.get("speed", "").asFloat();
+			Team = fromLoad.get("team", "").asInt();
 		}
 	};
-	static std::map<std::string, Interface::UnitInfo> UnitInfoTable;
+	enum WhatDoing {
+		Moving,
+		Chasing,
+	};
+	struct Order {
+		WhatDoing Doing;
+		EntId Target;
+		DirectX::XMVECTOR MoveFor;
+
+	};
 };

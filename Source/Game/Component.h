@@ -26,20 +26,26 @@ enum CompNames {
 	Motion,
 
 	BlockAppearance,
-	CharacterAppearance,
+	BallAppearance,
 	BulletAppearance,
 
 	CircleHitbox,
-	CharacterHurtbox,
+	BallHurtbox,
+	UnitOccupationbox,
 	WallHurtbox,
 
-	CharacterData,
+	BallData,
+	UnitData,
 	BulletData,
 	GiveDamage,
 	DamagePool,
 
 	HitEffect,
 	Trajectory,
+
+	InvationObservance,
+	UnitCountObservance,
+	Spawn,
 
 	Test1,
 	Test2,
@@ -61,20 +67,26 @@ static std::vector<std::string> CompNameArray = {
 	"Motion",
 
 	"BlockAppearance",
-	"CharacterAppearance",
+	"BallAppearance",
 	"BulletAppearance",
 
 	"CircleHitbox",
-	"CharacterHurtbox",
+	"BallHurtbox",
+	"UnitOccupationbox",
 	"WallHurtbox",
 
-	"CharacterData",
+	"BallData",
+	"UnitData",
 	"BulletData",
 	"GiveDamage",
 	"DamagePool",
 
 	"HitEffect",
 	"Trajectory",
+
+	"InvationObservance",
+	"UnitCountObservance",
+	"Spawn",
 
 	"Test1",
 	"Test2",
@@ -100,9 +112,10 @@ public:
 		}
 	}
 	//実行中にプロトタイプをコピーする用
-	inline void Add(ComponentWrapper<CompType> prototype, Interface::SameArchIndex prototypeIndex) {
+	inline void Add(ComponentWrapper<CompType> prototype, Interface::EntityInitData* pInitData) {
 		if (UsedFlag) {
-			Components.push_back(CompType(prototype.Components[prototypeIndex]));
+			Components.push_back(CompType(prototype.Components[pInitData->Prototype.Index]));
+			Components.back().Init(pInitData);
 		}
 	}
 	//プロトタイプを読み込むよう
@@ -115,8 +128,7 @@ public:
 namespace Component {
 	struct KillFlag {
 		bool KillOnThisTick;
-		void Init() {
-			KillOnThisTick = false;
+		void Init(Interface::EntityInitData* pInitData) {
 		}
 		KillFlag(Json::Value fromLoad, std::string compTypeName) {
 			KillOnThisTick = false;
@@ -124,8 +136,7 @@ namespace Component {
 	};
 	struct GenerateFlag {
 		bool GeneratedOnThisTick;
-		void Init() {
-			GeneratedOnThisTick = true;
+		void Init(Interface::EntityInitData* pInitData) {
 		}
 		GenerateFlag(Json::Value fromLoad, std::string compTypeName) {
 			GeneratedOnThisTick = true;
@@ -137,9 +148,7 @@ namespace Component {
 		bool Moved;
 		// このティック終了時に動きたい
 		bool TryMove;
-		void Init() {
-			Moved = true;
-			TryMove = false;
+		void Init(Interface::EntityInitData* pInitData) {
 		}
 		MoveFlag(Json::Value fromLoad, std::string compTypeName) {
 			Moved = true;
@@ -149,8 +158,7 @@ namespace Component {
 	struct AppearanceChanged {
 	public:
 		bool Changed;
-		void Init() {
-			Changed = false;
+		void Init(Interface::EntityInitData* pInitData) {
 		}
 		AppearanceChanged(Json::Value fromLoad, std::string compTypeName) {
 			Changed = false;
@@ -159,8 +167,7 @@ namespace Component {
 	struct HitFlag {
 	public:
 		bool IsHit;
-		void Init() {
-			IsHit = false;
+		void Init(Interface::EntityInitData* pInitData) {
 		}
 		HitFlag(Json::Value fromLoad, std::string compTypeName) {
 			IsHit = false;
@@ -170,26 +177,22 @@ namespace Component {
 	public:
 		Interface::EntId ReferenceTo;
 		bool IsCore;
-		void Init(bool isCore,Interface::EntId referenceTo) {
-			IsCore = isCore;
-			ReferenceTo = referenceTo;
+		void Init(Interface::EntityInitData* pInitData) {
+			IsCore = pInitData->IsCore;
+			ReferenceTo = pInitData->CoreId;
 		}
 		PositionReference(Json::Value fromLoad, std::string compTypeName) {
-			IsCore = true;
-			ReferenceTo = 0;
+
 		}
 	};
 	//AIに関する性質
 	struct AI {
 	public:
-		bool Move;
-		bool Attack;
-		float AttackDist;
-		Interface::IntXY From;
-		Interface::IntXY To;
-		float Progress;
-		AI(Json::Value fromLoad, std::string compTypeName) {
+		Interface::Order Orders[16];
+		void Init(Interface::EntityInitData* pInitData) {
 
+		}
+		AI(Json::Value fromLoad, std::string compTypeName) {
 		}
 	};
 
@@ -212,13 +215,13 @@ namespace Component {
 		Interface::RelationOfCoord WorldPos;
 		Interface::RelationOfCoord NextTickWorldPos;
 		bool NeedUpdate;
-		void Init(Interface::RelationOfCoord* CoreReferenceToWorld,bool isCore) {
-			if (isCore) {
-				WorldPos = LocalReferenceToCore * (*CoreReferenceToWorld);
+		void Init(Interface::EntityInitData* pInitData) {
+			if (pInitData->IsCore) {
+				WorldPos = LocalReferenceToCore * pInitData->Pos;
 				WorldMatrix = WorldPos.GetMatrix();
 			}
 			else {
-				LocalReferenceToCore = *CoreReferenceToWorld;
+				LocalReferenceToCore = pInitData->Pos;
 			}
 		}
 		WorldPosition(Json::Value fromLoad, std::string compTypeName) {
@@ -231,6 +234,9 @@ namespace Component {
 	struct LinearAcceralation {
 	public:
 		Interface::RelationOfCoord World;
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
 		LinearAcceralation(Json::Value fromLoad, std::string compTypeName) {
 			World.Parallel = Interface::GetVectorFromJson(fromLoad.get(compTypeName, "").get("parallel", ""));
 			World.Ratio = fromLoad.get(compTypeName, "").get("zoom", "").asFloat();
@@ -241,10 +247,10 @@ namespace Component {
 	public:
 		Interface::RelationOfCoord WorldDelta;
 		//コアの回転や拡縮はこのパーツの大きさや傾きに影響を与えているので同様に変化の方向、長さを変えないとおかしくなる
-		void Init(Interface::RelationOfCoord CoreReferenceToWorld) {
+		void Init(Interface::EntityInitData* pInitData) {
 			WorldDelta.Parallel = DirectX::XMVector4Transform(
-					DirectX::XMVectorScale(WorldDelta.Parallel, CoreReferenceToWorld.Ratio),
-					DirectX::XMMatrixRotationZ(CoreReferenceToWorld.Rotate));
+					DirectX::XMVectorScale(WorldDelta.Parallel, pInitData->Pos.Ratio),
+					DirectX::XMMatrixRotationZ(pInitData->Pos.Rotate));
 		}
 		Motion(Json::Value fromLoad, std::string compTypeName) {
 			if (fromLoad.get(compTypeName, "").isMember("parallel")) {
@@ -275,17 +281,14 @@ namespace Component {
 		DirectX::XMVECTOR TexCoord3M;
 		//ブロックに色がつくやつ
 		DirectX::XMVECTOR Stain;
-		void Init(int initialMaskIndex) {
+		void Init(Interface::EntityInitData* pInitData) {
 			TexCoord3M = DirectX::XMVECTOR
 			{
 				TexCoord3M.m128_f32[0],
 				TexCoord3M.m128_f32[1],
-				(float)initialMaskIndex,
+				(float)pInitData->initialMaskIndex,
 				TexCoord3M.m128_f32[3],
 			};
-		}
-		void Delete() {
-
 		}
 		BlockAppearance(Json::Value fromLoad, std::string compTypeName) {
 			TexCoord12 = DirectX::XMVECTOR
@@ -305,7 +308,7 @@ namespace Component {
 			Stain = { 0,0,0,0 };
 		}
 	};
-	struct CharacterAppearance {
+	struct BallAppearance {
 	public:
 		// 足元(落ち影)、本体色・陰、模様・ハイライト
 		Interface::RectAppId BufferDataIndex;
@@ -313,8 +316,10 @@ namespace Component {
 		DirectX::XMVECTOR Color1[3];
 		DirectX::XMVECTOR Color2[3];
 		DirectX::XMVECTOR TexCoord[3];
-		void Delete() {
-
+		void Init(Interface::EntityInitData* pInitData) {
+			// 1はBaseのインデックス
+			Color0[1] = pInitData->BaseColor0;
+			Color1[1] = pInitData->BaseColor1;
 		}
 		void Load(Json::Value fromLoad,std::string compTypeName,std::string layerName,int index) {
 			TexCoord[index] = DirectX::XMVECTOR
@@ -327,7 +332,7 @@ namespace Component {
 			Color1[index] = Interface::GetVectorFromJson(fromLoad.get(compTypeName, "").get(layerName, "").get("color1", ""));
 			Color2[index] = Interface::GetVectorFromJson(fromLoad.get(compTypeName, "").get(layerName, "").get("color2", ""));
 		}
-		CharacterAppearance(Json::Value fromLoad, std::string compTypeName) {
+		BallAppearance(Json::Value fromLoad, std::string compTypeName) {
 			Load(fromLoad, compTypeName, "shadow", 0);
 			Load(fromLoad, compTypeName, "base", 1);
 			Load(fromLoad, compTypeName, "pattern", 2);
@@ -339,7 +344,7 @@ namespace Component {
 		DirectX::XMVECTOR Color0;
 		DirectX::XMVECTOR Color1;
 		DirectX::XMVECTOR TexCoord;
-		void Delete() {
+		void Init(Interface::EntityInitData* pInitData) {
 
 		}
 		BulletAppearance(Json::Value fromLoad, std::string compTypeName) {
@@ -361,6 +366,9 @@ namespace Component {
 		float Radius;
 		// Worldの半径に対しての半径の比
 		float DiameterCoef;
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
 		CircleHitbox(Json::Value fromLoad, std::string compTypeName) {
 			DiameterCoef = fromLoad.get(compTypeName, "").get("diameterCoef","").asFloat();
 			RelativeCenter = {
@@ -370,22 +378,32 @@ namespace Component {
 			};
 		}
 	};
-	struct CharacterHurtbox {
+	// 各ボールに付随する当たり判定/喰らい判定に関する性質
+	struct BallHurtbox {
 	public:
-		DirectX::XMVECTOR Center;
-		float Radius;
 		// Worldの半径に対しての半径の比
 		float DiameterCoef;
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
+		BallHurtbox(Json::Value fromLoad, std::string compTypeName) {
+			DiameterCoef = fromLoad.get(compTypeName, "").get("diameterCoef", "").asFloat();
+		}
+	};
+	// コアに付随する占有に関する性質
+	struct UnitOccupationbox {
+	public:
+		bool AlredayChecked;
 
 		int OccupingRectTop;
 		int OccupingRectBottom;
 		int OccupingRectLeft;
 		int OccupingRectRight;
-		void Delete() {
+		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		CharacterHurtbox(Json::Value fromLoad, std::string compTypeName) {
-			DiameterCoef = fromLoad.get(compTypeName, "").get("diameterCoef", "").asFloat();
+		UnitOccupationbox(Json::Value fromLoad, std::string compTypeName) {
+			AlredayChecked = false;
 		}
 	};
 	struct WallHurtbox {
@@ -393,7 +411,7 @@ namespace Component {
 		bool RefleshOccupation;
 		Interface::IntXY Pos;
 		Interface::EntityPointer WrittenPointer;
-		void Delete() {
+		void Init(Interface::EntityInitData* pInitData) {
 
 		}
 		WallHurtbox(Json::Value fromLoad, std::string compTypeName) {
@@ -401,46 +419,70 @@ namespace Component {
 		}
 	};
 	//オブジェクト内部の性質
-	struct CharacterData {
+
+	//コアに関する性質
+	//バフの管理
+	struct UnitData {
 	public:
+		Interface::HostilityTeam Team;
+		float RadianPerTick;
+		float MoveTilePerTick;
+		float Weight;
+		float SpeedBuff;
+		Interface::EntId BallIds[7];
+		bool IsBallExist[7];
+		float AttackRange;
+		void Init(Interface::EntityInitData* pInitData) {
+			Team = pInitData->Team;
+			Weight = pInitData->Weight;
+			RadianPerTick = pInitData->RadianPerTick;
+			MoveTilePerTick = pInitData->MoveTilePerTick;
+			SpeedBuff = pInitData->SpeedMultiply;
+		}
+		UnitData(Json::Value fromLoad, std::string compTypeName) {
+			AttackRange = 10;
+		}
+	};
+	struct BallData {
+	public:
+		Interface::EntId CoreId;
 		float HP;
 		float Attack;
-		float TilePerTick;
-		Interface::HostilityTeam Team;
-		bool InterfareToWall;
-		void Init(Interface::CombatUnitInitData* pCombatUnitInit){
-			HP = HP * pCombatUnitInit->HealthMultiply;
-			Attack = Attack * pCombatUnitInit->DamageMultiply;
-			TilePerTick = TilePerTick * pCombatUnitInit->SpeedMultiply;
-			Team = pCombatUnitInit->Team;
+		float MovePower;
+		float RotatePower;
+		float Weight;
+
+		void Init(Interface::EntityInitData* pInitData){
+			HP = HP * pInitData->HealthMultiply;
+			Attack = Attack * pInitData->DamageMultiply;
+			CoreId = pInitData->CoreId;
 		}
-		CharacterData(Json::Value fromLoad, std::string compTypeName) {
+		BallData(Json::Value fromLoad, std::string compTypeName) {
 			HP = fromLoad.get(compTypeName,"").get("HP","").asFloat();
 			Attack = fromLoad.get(compTypeName,"").get("attack", "").asFloat();
-			TilePerTick = fromLoad.get(compTypeName,"").get("speed", "").asFloat();
-			Team = 0;
-			InterfareToWall = fromLoad.get(compTypeName, "").get("interfareToWall", "").asBool();
+			MovePower = fromLoad.get(compTypeName, "").get("movePower", "").asFloat();
+			RotatePower = fromLoad.get(compTypeName, "").get("rotatePower", "").asFloat();
+			Weight = fromLoad.get(compTypeName, "").get("weight", "").asFloat();
 		}
 	};
 	struct BulletData {
 		bool InterfareToWall;
-		bool InterfareToCharacter;
+		bool InterfareToBall;
 		Interface::HostilityTeam Team;
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
 		BulletData(Json::Value fromLoad, std::string compTypeName) {
 			InterfareToWall = fromLoad.get(compTypeName,"").get("interfareToWall", "").asBool();
-			InterfareToCharacter = fromLoad.get(compTypeName, "").get("interfareToCharacter", "").asBool();
+			InterfareToBall = fromLoad.get(compTypeName, "").get("interfareToBall", "").asBool();
 		}
-	};
-	struct BigCharacter {
-		int Diameter;//幅から1引いたもの
-		BigCharacter(BigCharacter* prototype) {
-			Diameter = prototype->Diameter;
-		}
-		
 	};
 	struct GiveDamage {
 	public:
 		Interface::Damage Damage;
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
 		GiveDamage(Json::Value fromLoad, std::string compTypeName) {
 			Damage = Interface::Damage(fromLoad.get(compTypeName,""));
 		}
@@ -448,6 +490,9 @@ namespace Component {
 	struct DamagePool {
 	public:
 		Interface::Damage Damage;
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
 		DamagePool(Json::Value fromLoad, std::string compTypeName) {
 			Damage = Interface::Damage(fromLoad.get(compTypeName, ""));
 		}
@@ -458,38 +503,102 @@ namespace Component {
 		Interface::EntityPointer PrototypeEntP;
 		float LeftRadian;// 生成の幅
 		float RightRadian;// 生成の幅
-		UINT16 EjectCount;// 生成数
+		int EjectCount;// 生成数
 
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
 		HitEffect(Json::Value fromLoad, std::string compTypeName) {
 			PrototypeEntP = Interface::EntNameHash[fromLoad.get(compTypeName,"").get("effectName", "").asString()];
 			LeftRadian = fromLoad.get(compTypeName,"").get("leftRadian", "").asFloat();
 			RightRadian = fromLoad.get(compTypeName,"").get("rightRadian", "").asFloat();
-			EjectCount = fromLoad.get(compTypeName,"").get("count", "").asFloat();
+			EjectCount = fromLoad.get(compTypeName,"").get("count", "").asInt();
 		}
 	};
 	struct Trajectory {
 	public:
 		Interface::EntityPointer PrototypeEntP;
-		UINT16 EjectStartTick;
-		UINT16 EjectEndTick;
-		UINT16 EjectInterval;
+		int EjectStartTick;
+		int EjectEndTick;
+		int EjectInterval;
 		float LeftRadian;// 生成の幅
 		float RightRadian;// 生成の幅
-		UINT16 EjectCount;
+		int EjectCount;
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
 		Trajectory(Json::Value fromLoad, std::string compTypeName) {
 			PrototypeEntP = Interface::EntNameHash[fromLoad.get(compTypeName,"").get("effectName", "").asString()];
 			LeftRadian = fromLoad.get(compTypeName,"").get("leftRadian", "").asFloat();
 			RightRadian = fromLoad.get(compTypeName,"").get("rightRadian", "").asFloat();
-			EjectCount = fromLoad.get(compTypeName,"").get("count", "").asFloat();
-			EjectStartTick = fromLoad.get(compTypeName,"").get("ejectStartTick", "").asFloat();
-			EjectEndTick = fromLoad.get(compTypeName,"").get("ejectEndTick", "").asFloat();
-			EjectInterval = fromLoad.get(compTypeName,"").get("ejectInterval", "").asFloat();
+			EjectCount = fromLoad.get(compTypeName,"").get("count", "").asInt();
+			EjectStartTick = fromLoad.get(compTypeName,"").get("ejectStartTick", "").asInt();
+			EjectEndTick = fromLoad.get(compTypeName,"").get("ejectEndTick", "").asInt();
+			EjectInterval = fromLoad.get(compTypeName,"").get("ejectInterval", "").asInt();
+		}
+	};
+
+	struct InvationObservance {
+	public:
+		int Left;
+		int Right;
+		int Bottom;
+		int Top;
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
+		InvationObservance(Json::Value fromLoad, std::string compTypeName) {
+			Left = fromLoad.get("observeArea", "").get("left", "").asInt();
+			Right = fromLoad.get("observeArea", "").get("right", "").asInt();
+			Bottom = fromLoad.get("observeArea", "").get("bottom", "").asInt();
+			Top = fromLoad.get("observeArea", "").get("top", "").asInt();
+		}
+	};
+	struct UnitCountObservance {
+		int Border;
+		Interface::HostilityTeam Team;
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
+		UnitCountObservance(Json::Value fromLoad, std::string compTypeName) {
+			Border = fromLoad.get("borderCount", "").asInt();
+			Team = fromLoad.get("team", "").asInt();
+		}
+	};
+	struct Spawn {
+		Interface::UnitIndex ToSpawn;
+		Interface::EntityInitData CoreData;
+		int CountLeft;// スポーン開始までの残りティック
+		int TimeGapSince;
+		bool SpawnFlag;
+		float HowManyInEachTick;
+		int SpawnAreaLeft;
+		int SpawnAreaRight;
+		int SpawnAreaTop;
+		int SpawnAreaBottom;
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
+		Spawn(Json::Value fromLoad, std::string compTypeName) {
+			ToSpawn = Interface::UnitNameHash[fromLoad.get("unitName", "").asString()];
+			CoreData = Interface::EntityInitData(fromLoad.get("initData", ""));
+			CountLeft = fromLoad.get("count", "").asInt();
+			TimeGapSince = fromLoad.get("timeGap", "").get("since", "").asInt();
+			SpawnFlag = false;
+			HowManyInEachTick = fromLoad.get("timeGap", "").get("howManyInEachTick", "").asFloat();
+			SpawnAreaLeft = fromLoad.get("spawnArea", "").get("left", "").asInt();
+			SpawnAreaRight = fromLoad.get("spawnArea", "").get("right", "").asInt();
+			SpawnAreaTop = fromLoad.get("spawnArea", "").get("top", "").asInt();
+			SpawnAreaBottom = fromLoad.get("spawnArea", "").get("bottom", "").asInt();
 		}
 	};
 
 	struct Test1
 	{
 		Test1() {
+
+		}
+		void Init(Interface::EntityInitData* pInitData) {
 
 		}
 		Test1(Json::Value fromLoad, std::string compTypeName) {
@@ -501,6 +610,9 @@ namespace Component {
 		Test2() {
 
 		}
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
 		Test2(Json::Value fromLoad, std::string compTypeName) {
 
 		}
@@ -510,6 +622,12 @@ namespace Component {
 		int Num;
 		Test3(int num) {
 			Num = num;
+		}
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
+		Test3() {
+
 		}
 		Test3(Json::Value fromLoad, std::string compTypeName) {
 
@@ -526,8 +644,14 @@ namespace Component {
 		bool UpdatedByTestB;
 		bool UpdatedByTestC;
 		bool UpdatedByTestD;
-		TestResult(Json::Value fromLoad, std::string compTypeName) {
+		void Init(Interface::EntityInitData* pInitData) {
 
+		}
+		TestResult(Json::Value fromLoad, std::string compTypeName) {
+			UpdatedByTestA = false;
+			UpdatedByTestB = false;
+			UpdatedByTestC = false;
+			UpdatedByTestD = false;
 		}
 	};
 };

@@ -4,13 +4,12 @@
 #define DefineCompWrapper(CompName) ComponentWrapper<Component::CompName> CompName
 //同じArchetypeを持つEntityの集合
 class AllEntities;
+struct UnitInfo;
 class SameArchetype {
 public:
 	Interface::RawArchetype ThisArchetype;
 	//新しいエンティティを作るときの付加情報はこの関数の引数にポインタを指定するくらいしか案はない(ないならnullptr)
-	Interface::SameArchIndex Add(Interface::SameArchIndex prototypeIndex, Interface::EntId nextId,
-		Interface::CombatUnitInitData* pCombatUnitInit, Interface::RelationOfCoord* coreWorld,int initialMaskCoord,
-		bool isCore,Interface::EntId positionReference);
+	Interface::SameArchIndex Add(Interface::EntId nextId, Interface::EntityInitData* pInitData);
 	//削除を一気にやらないと整合性の問題になりそう
 
 	//削除した後穴埋めに使ったデータのIdを返す
@@ -44,6 +43,7 @@ public:
 	SameArchetype* Prototypes;
 	//前ティック終了時点で存在していたエンティティの数
 	int ValidEntityCount;
+	int RealEntityCount;
 
 	int PrototypeCount;
 
@@ -62,24 +62,30 @@ public:
 	DefineCompWrapper(AI);
 	//当たり判定にかかわる性質
 	DefineCompWrapper(CircleHitbox);
-	DefineCompWrapper(CharacterHurtbox);
+	DefineCompWrapper(BallHurtbox);
+	DefineCompWrapper(UnitOccupationbox);
 	DefineCompWrapper(WallHurtbox);
 	DefineCompWrapper(GiveDamage);
 	DefineCompWrapper(DamagePool);
 	//内部にかかわる性質
-	DefineCompWrapper(CharacterData);
+	DefineCompWrapper(BallData);
+	DefineCompWrapper(UnitData);
 	DefineCompWrapper(BulletData);
 	//他のオブジェクトの生成にかかわる性質
 	DefineCompWrapper(HitEffect);
 	DefineCompWrapper(Trajectory);
 	//見た目にかかわる性質
 	DefineCompWrapper(BlockAppearance);
-	DefineCompWrapper(CharacterAppearance);
+	DefineCompWrapper(BallAppearance);
 	DefineCompWrapper(BulletAppearance);
 	//運動にかかわる性質
 	DefineCompWrapper(Motion);
 	DefineCompWrapper(LinearAcceralation);
 	DefineCompWrapper(WorldPosition);
+	//ミッション進行にかかわる性質
+	DefineCompWrapper(InvationObservance);
+	DefineCompWrapper(UnitCountObservance);
+	DefineCompWrapper(Spawn);
 	//テスト用
 	DefineCompWrapper(Test1);
 	DefineCompWrapper(Test2);
@@ -93,26 +99,30 @@ public:
 	std::vector<SameArchetype> EntityArraies;
 	//8MB
 	std::vector<Interface::EntityPointer> INtoIndex;
+	std::vector<UnitInfo> UnitInfos;
+	std::vector<int> UnitCount;
 	inline void SetAsDeleteFromEIN(Interface::EntId instanceEIN) {
 		Interface::EntityPointer pointer = INtoIndex[instanceEIN];
 		EntityArraies[pointer.Archetype].KillFlag.Components[pointer.Index].KillOnThisTick = true;
 	}
-	inline Interface::EntId AddFromEntPointer(Interface::EntityPointer prototype, 
-		Interface::CombatUnitInitData* pCombatUnitInit, Interface::RelationOfCoord* coreWorld,int initialMaskCoord,bool isCore
-	,Interface::EntId positionReference) {
+	inline Interface::EntId AddFromEntPointer(Interface::EntityInitData* pInitData) {
 		INtoIndex.push_back(Interface::EntityPointer(
-			prototype.Archetype,
-			EntityArraies[prototype.Archetype].Add(prototype.Index, INtoIndex.size(),
-				pCombatUnitInit, coreWorld, initialMaskCoord, isCore, positionReference)
-		));
+			pInitData->Prototype.Archetype,
+			EntityArraies[pInitData->Prototype.Archetype].Add(INtoIndex.size(),pInitData)));
 		return INtoIndex.size() - 1;
 	}
 	AllEntities() {
 		Archetypes = std::vector<Interface::RawArchetype>();
 		EntityArraies = std::vector<SameArchetype>();
 		INtoIndex = std::vector<Interface::EntityPointer>();
+		UnitInfos = std::vector<UnitInfo>();
+		UnitCount = std::vector<int>(TeamCount);
 	}
-	std::map<std::string, Interface::EntityPointer> LoadFromFile(std::vector<std::string> fileNames);
+	void LoadEntities(std::vector<std::string> fileNames);
+	void LoadUnits(std::vector<std::string> filePathes);
+	void LoadMission(std::string fileName);
+	// ミッションの中で出てくるユニットの召喚用
+	Interface::EntId AddUnitWithMagnification(int unitIndex,Interface::EntityInitData* pInitData, Interface::RelationOfCoord* CorePos);
 	//namesにあるコンポーネントの名前を含むアーキタイプを生成する
 	Interface::RawArchetype GetArchetypeFromCompNames(Json::Value::Members names) {
 		Interface::RawArchetype output;
@@ -191,5 +201,37 @@ public:
 		EntityArraies.push_back(SameArchetype(Archetypes[0]));
 		EntityArraies[0].LoadToPrototypeAsTest();
 
+	}
+};
+struct UnitInfo {
+	Interface::EntityPointer CorePrototype;
+	Interface::EntityPointer PrototypePointer[7];
+	Interface::RelationOfCoord RelativePosFromCore[7];
+	DirectX::XMVECTOR BaseColor0[7];
+	DirectX::XMVECTOR BaseColor1[7];
+	float Ratio;
+	UnitInfo() {
+	}
+	UnitInfo(Json::Value jsonOfThisUnit, AllEntities* pAllEntities) {
+		CorePrototype = Interface::EntNameHash[jsonOfThisUnit.get("coreName", "").asString()];
+		Ratio = jsonOfThisUnit.get("ratio", "").asFloat();
+		for (int i = 0; i < 7; i++) {
+			PrototypePointer[i] = Interface::EntNameHash[jsonOfThisUnit.get("balls", "")[i].get("ballName", "").asString()];
+			Interface::RelationOfCoord toPush;
+			//コアに対しての初期位置
+			toPush.Parallel = DirectX::XMVECTOR{
+				std::cosf(jsonOfThisUnit.get("balls","")[i].get("pos","").asInt() * PI / 3)/3,
+				std::sinf(jsonOfThisUnit.get("balls","")[i].get("pos","").asInt() * PI / 3)/3,
+				0,1
+			};
+			if (i == 0) {
+				toPush.Parallel = { 0,0,0,1 };
+			}
+			toPush.Ratio = 1;
+			toPush.Rotate = 0;
+			RelativePosFromCore[i] = toPush;
+			BaseColor0[i] = Interface::GetVectorFromJson(jsonOfThisUnit.get("balls", "")[i].get("baseColor0", ""));
+			BaseColor1[i] = Interface::GetVectorFromJson(jsonOfThisUnit.get("balls", "")[i].get("baseColor1", ""));
+		}
 	}
 };
