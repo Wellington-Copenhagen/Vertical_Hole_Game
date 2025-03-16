@@ -24,67 +24,116 @@
 // 
 
 DirectX::XMMATRIX rotation;
+GraphicalStringDraw<65536, 2048, 32> globalStringDraw;
+int Tick;
 // ゲームの初期設定を行う
 GameSystem::GameSystem() {
 }
 void GameSystem::Initialize(HWND hWnd)
 {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	Tick = 0;
 	Interface::UnitNameHash = std::map<std::string, Interface::UnitIndex>();
-	Interface::EntNameHash = std::map<std::string, Interface::EntityPointer>();
-	mBlockAppearances = Appearances
-		<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, 256 * 256 * 2>(&mAllEntities.INtoIndex, 4);
+	Interface::EntNameHash = std::map<std::string, entt::entity>();
+	mHurtboxes = Hurtboxes(&mEntities.Registry);
+	mFloorAppearances = Appearances
+		<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, WorldWidth* WorldHeight>(4);
+	mWallAppearances = Appearances
+		<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, WorldWidth* WorldHeight>(4);
 	mBallAppearances[0] = Appearances
-		<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount>(&mAllEntities.INtoIndex, 4, 0.4, 0.4, 0.4, -0.01);
+		<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount>(4, 0.4, 0.4, 0.4, -0.01);
 	mBallAppearances[1] = Appearances
-		<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount>(&mAllEntities.INtoIndex, 4,0.5, 0.5, 0.5,0);
+		<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount>(4,0.5, 0.5, 0.5,0);
 	mBallAppearances[2] = Appearances
-		<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount>(&mAllEntities.INtoIndex, 4,0.2,0.2,0.2,-0.1);
+		<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount>(4,0.2,0.2,0.2,-0.1);
 
 	mBulletAppearances = Appearances
-		<Interface::BulletDrawCallType, Interface::BulletInstanceType, 1, 256 * 256>(&mAllEntities.INtoIndex, 4);
-	SameFormatTextureArray(256, 256, 4, 32);//大4変数はArraySizeなので伸ばさないとオーバーする危険がある
-	mBlockDrawCallBuffer = VertexBuffer<Interface::BlockDrawCallType, 4, 0>(mBlockAppearances.DrawCall);
-	mBlockInstanceBuffer = VertexBuffer<Interface::BlockInstanceType, 256 * 256 * 2, 1>(mBlockAppearances.Instances);
+		<Interface::BulletDrawCallType, Interface::BulletInstanceType, 1, MaxBulletCount>(4);
+
+	BlockTextureArray = SameFormatTextureArray<256>(8, true);
+	BallTextureArray = SameFormatTextureArray<256>(8, true);
+	BulletTextureArray = SameFormatTextureArray<256>(8, true);
+
+	mFloorDrawCallBuffer = VertexBuffer<Interface::BlockDrawCallType, 4, 0>(mFloorAppearances.DrawCall);
+	mFloorInstanceBuffer = VertexBuffer<Interface::BlockInstanceType, WorldWidth * WorldHeight, 1>(mFloorAppearances.Instances);
+	mWallDrawCallBuffer = VertexBuffer<Interface::BlockDrawCallType, 4, 0>(mWallAppearances.DrawCall);
+	mWallInstanceBuffer = VertexBuffer<Interface::BlockInstanceType, WorldWidth* WorldHeight, 1>(mWallAppearances.Instances);
 
 	for (int i = 0; i < 3; i++) {
 		mBallDrawCallBuffer[i] = VertexBuffer<Interface::BallDrawCallType, 4, 0>(mBallAppearances[i].DrawCall);
 		mBallInstanceBuffer[i] = VertexBuffer<Interface::BallInstanceType, MaxBallCount, 1>(mBallAppearances[i].Instances);
 	}
 
+
 	mBulletDrawCallBuffer = VertexBuffer<Interface::BulletDrawCallType, 4, 0>(mBulletAppearances.DrawCall);
-	mBulletInstanceBuffer = VertexBuffer<Interface::BulletInstanceType, 256 * 256, 1>(mBulletAppearances.Instances);
-	mGraphicProcessSetter = GraphicProcessSetter(D3D.Width,D3D.Height);
+	mBulletInstanceBuffer = VertexBuffer<Interface::BulletInstanceType, MaxBulletCount, 1>(mBulletAppearances.Instances);
+	GraphicProcessSetter(D3D.Width,D3D.Height);
 	mCamera = Camera(D3D.Height, D3D.Width);
 
 	mCBuffer = ConstantBuffer();
-	mAllEntities = AllEntities();
+
+
+	HFONT hFont = CreateFontW(28,//文字の高さ
+		0,//文字の幅、0だと高さに合わせて調整される？
+		0,//文の傾き？
+		0,//文字の傾き？
+		1000,//太さ　大きいほど太い
+		FALSE,// 斜体
+		FALSE,// 下線
+		FALSE,// 取り消し線
+		SHIFTJIS_CHARSET,//文字セット SHIFT_JISもある
+		OUT_TT_ONLY_PRECIS,//精度　よくわからん
+		CLIP_DEFAULT_PRECIS,
+		ANTIALIASED_QUALITY,//品質 とりあえずアンチエイリアスは使う
+		DEFAULT_PITCH || FF_MODERN,//見た目のグループ？
+		L"ＭＳ 明朝"//フォントの名前
+	);
+	StringDrawTest = GraphicalStringDraw<65536, 2048, 32>(hFont);
+	globalStringDraw = GraphicalStringDraw<65536, 2048, 32>(hFont);
+	for (int x = 0; x < 256; x = x + 8) {
+		for (int y = 0; y < 256; y = y + 8) {
+			Interface::VisibleStringInfo toAppend = Interface::VisibleStringInfo();
+			std::string content = "(" + std::to_string(x) + "," + std::to_string(y) + ")";
+			DirectX::XMVECTOR pos = { (float)x,(float)y,0,1 };
+			DirectX::XMVECTOR color = { 0,0,0,1 };
+			StringDrawTest.Append(content, &color, &pos, 0.5f, 60000, StrDrawPos::AsCenter);
+		}
+	}
+
 	std::vector<std::string> EntityFileNames = {
 		"Data/EntityData/Block.json",
 		"Data/EntityData/Effect.json",
 		"Data/EntityData/Ball.json"
 	};
-	mAllEntities.LoadEntities(EntityFileNames);
+	mEntities.LoadEntities(EntityFileNames);
 	std::vector<std::string> UnitFileNames = {
 		"Data/unitData/unit.json",
 	};
-	mAllEntities.LoadUnits(UnitFileNames);
+	mEntities.LoadUnits(UnitFileNames);
 
-	std::string mapName = "Data/MissionData/Mission_Test.json";
+	std::string missionName = "Data/MissionData/Mission_Test.json";
 
-	mAllEntities.LoadMission(mapName);
+	mEntities.LoadMission(missionName);
 	mAllSystem = AllSystem(this);
 
 	std::random_device RandSeedGen;
 	Interface::RandEngine = std::mt19937(RandSeedGen());
-	{
-		Json::Value root;
-		std::ifstream file = std::ifstream(mapName);
-		file >> root;
-		file.close();
-		LoadMap(root.get("mapFilePath","").asString());
-	}
 
+	RefreshedTimeStamp = std::chrono::system_clock::now();
 	/*
 	Texture Text = Texture("Data/Appearance/Test.tif");
 	Texture Block = Texture("Data/Appearance/Block.tif");
@@ -137,13 +186,11 @@ void GameSystem::Initialize(HWND hWnd)
 
 System::System(GameSystem* pGameSystem) {
 	pHurtboxes = &pGameSystem->mHurtboxes;
-	pBlockAppearance = &pGameSystem->mBlockAppearances;
+	pFloorAppearance = &pGameSystem->mFloorAppearances;
+	pWallAppearance = &pGameSystem->mWallAppearances;
 	pBallAppearance = pGameSystem->mBallAppearances;
 	pBulletAppearance = &pGameSystem->mBulletAppearances;
-	pAllEntities = &pGameSystem->mAllEntities;
-	TargetArchetypes = std::vector<Interface::ArchetypeIndex>();
-	RequireComponents = Interface::RawArchetype();
-	RequireComponents.reset();
+	pEntities = &pGameSystem->mEntities;
 }
 // このゲームの時間を進める(処理を実行する)
 
@@ -288,133 +335,49 @@ void GameSystem::Execute(HWND hWnd)
 		DirectX::XMStoreFloat4x4(&mCBuffer.Data.ViewProjection, mCamera.CameraMatrix);
 		mCBuffer.UpdateAndSet();
 		// テクスチャ
-		mSameFormatTextureArray.SetToGraphicPipeLine();
+		BlockTextureArray.SetToGraphicPipeLine();
 		//IASetVertexBufferの順序が影響するみたい
 		// 実際の描画
+		GraphicProcessSetter::SetAsBlock();
+		mFloorInstanceBuffer.UpdateAndSet(mFloorAppearances.Instances, 0, mFloorAppearances.InstanceCount);
+		mFloorDrawCallBuffer.UpdateAndSet(mFloorAppearances.DrawCall, 0, 4);
+		D3D.m_deviceContext->DrawInstanced(4, mFloorAppearances.InstanceCount, 0, 0);
+		mWallInstanceBuffer.UpdateAndSet(mWallAppearances.Instances, 0, mWallAppearances.InstanceCount);
+		mWallDrawCallBuffer.UpdateAndSet(mWallAppearances.DrawCall, 0, 4);
+		D3D.m_deviceContext->DrawInstanced(4, mWallAppearances.InstanceCount, 0, 0);
 
-		mBlockInstanceBuffer.UpdateAndSet(mBlockAppearances.Instances, 0, mBlockAppearances.InstanceCount);
-		mBlockDrawCallBuffer.UpdateAndSet(mBlockAppearances.DrawCall, 0, 4);
-		mGraphicProcessSetter.SetAsBlock();
-		D3D.m_deviceContext->DrawInstanced(4, mBlockAppearances.InstanceCount, 0, 0);
 
+		BallTextureArray.SetToGraphicPipeLine();
 		for (int i = 0; i < 3; i++) {
 			mBallDrawCallBuffer[i].UpdateAndSet(mBallAppearances[i].DrawCall, 0, 4);
 			mBallInstanceBuffer[i].UpdateAndSet(mBallAppearances[i].Instances, 0, mBallAppearances[i].InstanceCount);
-			mGraphicProcessSetter.SetAsBall();
+			GraphicProcessSetter::SetAsBall();
 			D3D.m_deviceContext->DrawInstanced(4, mBallAppearances[i].InstanceCount, 0, 0);
 		}
 
 
+		BulletTextureArray.SetToGraphicPipeLine();
+
 		mBulletDrawCallBuffer.UpdateAndSet(mBulletAppearances.DrawCall, 0, 4);
 		mBulletInstanceBuffer.UpdateAndSet(mBulletAppearances.Instances, 0, mBulletAppearances.InstanceCount);
-		mGraphicProcessSetter.SetAsBullet();
+		GraphicProcessSetter::SetAsBullet();
 		D3D.m_deviceContext->DrawInstanced(4, mBulletAppearances.InstanceCount, 0, 0);
 
-
+		StringDrawTest.Draw();
+		globalStringDraw.Draw();
+		std::chrono::system_clock::time_point wakeUpTime = RefreshedTimeStamp + std::chrono::milliseconds(17);
+		std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+		long waitMilliSeconds = (wakeUpTime - now).count()/10000;
+		if (waitMilliSeconds > 0) {
+			//Sleep(waitMilliSeconds);
+		}
+		RefreshedTimeStamp = std::chrono::system_clock::now();
 		D3D.m_swapChain->Present(1, 0);
+		OutputDebugStringA(("Tick:" + std::to_string(Tick)).c_str());
 		Tick++;
 	}
 	catch (char* e) {
 		OutputDebugStringA(e);
-	}
-}
-//地面と壁は別オブジェクトとする
-void GameSystem::LoadMap(std::string mapFileName)
-{
-	//マップデータの読み込み
-	Json::Value root;
-	std::ifstream file = std::ifstream(mapFileName);
-	file >> root;
-	file.close();
-	//マップサイズの読み込み
-	int width = root.get("width", "").asInt();
-	int height = root.get("height", "").asInt();
-	if (width > 256 || height > 256) {
-		throw("マップのサイズが大きすぎます");
-	}
-	mHurtboxes = Hurtboxes(&mAllEntities, width, height);
-	Json::Value areaList = root.get("areaList", "");
-	//その場所に壁があるか
-	std::bitset<256 * 256> isWallMap;
-	//その場所の壁をすでに配置したか
-	std::bitset<256 * 256> wallPlaced;
-	//その場所の床をすでに配置したか
-	std::bitset<256 * 256> floorPlaced;
-	isWallMap.reset();
-	wallPlaced.reset();
-	floorPlaced.reset();
-	//壁がある場所を記録する
-	for (int i = 0; i < areaList.size(); i++) {
-		int top = areaList[i].get("top", "").asInt();
-		int bottom = areaList[i].get("bottom", "").asInt();
-		int left = areaList[i].get("left", "").asInt();
-		int right = areaList[i].get("right", "").asInt();
-		if (areaList[i].get("isWall", "").asBool()) {
-			for (int x = left; x < right; x++) {
-				for (int y = bottom; y < top; y++) {
-					isWallMap[y * 256 + x] = true;
-				}
-			}
-		}
-	}
-	//実際にブロックのデータをエンティティリストに記録する
-	for (int i = 0; i < areaList.size(); i++) {
-		int top = areaList[i].get("top", "").asInt();
-		int bottom = areaList[i].get("bottom", "").asInt();
-		int left = areaList[i].get("left", "").asInt();
-		int right = areaList[i].get("right", "").asInt();
-		Interface::EntityPointer blockPointer = Interface::EntNameHash[(std::string)areaList[i].get("name", "").asString()];
-		if (areaList[i].get("isWall", "").asBool()) {
-			for (int x = left; x < right; x++) {
-				for (int y = bottom; y < top; y++) {
-					if (!wallPlaced[256 * y + x]) {
-						Interface::EntityInitData init;
-						wallPlaced[256 * y + x] = true;
-						init.Pos.Identity();
-						init.Pos.Parallel = { (float)x,(float)y,0.0f,1.0f };
-						init.initialMaskIndex = 0;
-						init.Prototype = blockPointer;
-						if (x != 0 && !isWallMap[y * 256 + x - 1]) {
-							init.initialMaskIndex += 1;
-						}
-						if (x != width - 1 && !isWallMap[y * 256 + x + 1]) {
-							init.initialMaskIndex += 2;
-						}
-						if (y != 0 && !isWallMap[(y - 1) * 256 + x]) {
-							init.initialMaskIndex += 4;
-						}
-						mAllEntities.AddFromEntPointer(&init);
-					}
-				}
-			}
-		}
-		else {
-			for (int x = left; x < right; x++) {
-				for (int y = bottom; y < top; y++) {
-					if (!floorPlaced[256 * y + x]) {
-						Interface::EntityInitData init;
-						floorPlaced[256 * y + x] = true;
-						init.Pos.Identity();
-						init.Pos.Parallel = { (float)x,(float)y,0.0f,1.0f };
-						init.initialMaskIndex = 0;
-						init.Prototype = blockPointer;
-						if (x != 0 && isWallMap[y * 256 + x - 1]) {
-							init.initialMaskIndex += 1;
-						}
-						if (x != width - 1 && isWallMap[y * 256 + x + 1]) {
-							init.initialMaskIndex += 2;
-						}
-						if (y != 0 && isWallMap[(y - 1) * 256 + x]) {
-							init.initialMaskIndex += 4;
-						}
-						if (y != height - 1 && isWallMap[(y + 1) * 256 + x]) {
-							init.initialMaskIndex += 8;
-						}
-						mAllEntities.AddFromEntPointer(&init);
-					}
-				}
-			}
-		}
 	}
 }
 void GameSystem::ApplyInput() {

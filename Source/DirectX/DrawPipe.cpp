@@ -3,6 +3,41 @@
 #include "framework.h"
 #include "DrawPipe.h"
 
+
+int GraphicProcessSetter::Width;
+int GraphicProcessSetter::Height;
+
+ComPtr<ID3D11DepthStencilState> GraphicProcessSetter:: m_depthStencilStateEnable;
+ComPtr<ID3D11DepthStencilState> GraphicProcessSetter:: m_depthStencilStateDisable;
+
+ComPtr<ID3D11BlendState> GraphicProcessSetter:: m_blendStateEnable;
+ComPtr<ID3D11BlendState> GraphicProcessSetter:: m_blendStateDisable;
+
+ComPtr<ID3D11RasterizerState> GraphicProcessSetter:: m_rasterizerState;
+
+ComPtr<ID3D11SamplerState> GraphicProcessSetter:: m_samplerState;
+
+ComPtr<ID3D11VertexShader> GraphicProcessSetter:: mBlockVertexShader;
+ComPtr<ID3D11PixelShader> GraphicProcessSetter:: mBlockPixelShader;
+ComPtr<ID3D11InputLayout> GraphicProcessSetter:: mBlockInputLayout;
+
+ComPtr<ID3D11VertexShader> GraphicProcessSetter:: mBallVertexShader;
+ComPtr<ID3D11PixelShader> GraphicProcessSetter:: mBallPixelShader;
+ComPtr<ID3D11InputLayout> GraphicProcessSetter:: mBallInputLayout;
+
+ComPtr<ID3D11VertexShader> GraphicProcessSetter:: mBulletVertexShader;
+ComPtr<ID3D11PixelShader> GraphicProcessSetter:: mBulletPixelShader;
+ComPtr<ID3D11InputLayout> GraphicProcessSetter:: mBulletInputLayout;
+
+ComPtr<ID3D11VertexShader> GraphicProcessSetter:: mCharVertexShader;
+ComPtr<ID3D11PixelShader> GraphicProcessSetter:: mCharPixelShader;
+ComPtr<ID3D11InputLayout> GraphicProcessSetter:: mCharInputLayout;
+
+
+
+
+
+
 GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 	Width = width;
 	Height = height;
@@ -165,7 +200,7 @@ GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 			throw("頂点シェーダのコンパイルに失敗");
 		}
 	}
-	//キャラクター用の
+	//ボール用の
 	{
 		// 頂点シェーダーを読み込み＆コンパイル
 		ComPtr<ID3DBlob> compiledVS;
@@ -264,6 +299,55 @@ GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 			throw("頂点シェーダのコンパイルに失敗");
 		}
 	}
+	//文字用の
+	{
+		// 頂点シェーダーを読み込み＆コンパイル
+		ComPtr<ID3DBlob> compiledVS;
+		ComPtr<ID3DBlob> pError;
+		if (FAILED(D3DCompileFromFile(L"Shader/CharVertexShader.hlsl", nullptr, nullptr, "main", "vs_5_0", 0, 0, &compiledVS, &pError)))
+		{
+			OutputDebugStringA((char*)pError->GetBufferPointer());
+			throw("頂点シェーダのコンパイルに失敗");
+		}
+
+		// 頂点シェーダー作成
+		if (FAILED(D3D.m_device->CreateVertexShader(compiledVS->GetBufferPointer(), compiledVS->GetBufferSize(), nullptr, &mCharVertexShader)))
+		{
+			throw("頂点シェーダの生成に失敗");
+		}
+
+		// １頂点の詳細な情報
+		//頂点データの形式を示している
+		//セマンティック、
+		std::vector<D3D11_INPUT_ELEMENT_DESC> layout = {//頂点ごとであるのか、インスタンスごとであるのかは上手く使えば面白そう
+			{ "TEXCOORD",		0, DXGI_FORMAT_R32G32_FLOAT,		0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "POSITION",		0, DXGI_FORMAT_R32G32B32A32_FLOAT,		0,  8, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{"MWorld",0,DXGI_FORMAT_R32G32B32A32_FLOAT,1,0,D3D11_INPUT_PER_INSTANCE_DATA,1},
+			{"MWorld",1,DXGI_FORMAT_R32G32B32A32_FLOAT,1,16,D3D11_INPUT_PER_INSTANCE_DATA,1},
+			{"MWorld",2,DXGI_FORMAT_R32G32B32A32_FLOAT,1,32,D3D11_INPUT_PER_INSTANCE_DATA,1},
+			{"MWorld",3,DXGI_FORMAT_R32G32B32A32_FLOAT,1,48,D3D11_INPUT_PER_INSTANCE_DATA,1},
+			{"TEXCOORD",1,DXGI_FORMAT_R32_FLOAT,1,64,D3D11_INPUT_PER_INSTANCE_DATA,1},
+			{"COLOR",0,DXGI_FORMAT_R32G32B32A32_FLOAT,1,68,D3D11_INPUT_PER_INSTANCE_DATA,1},
+			{"BlackBox",0,DXGI_FORMAT_R32G32_FLOAT,1,84,D3D11_INPUT_PER_INSTANCE_DATA,1},
+		};
+
+		// 頂点インプットレイアウト作成
+		if (FAILED(D3D.m_device->CreateInputLayout(&layout[0], layout.size(), compiledVS->GetBufferPointer(), compiledVS->GetBufferSize(), &mCharInputLayout)))
+		{
+			throw("頂点インプットレイアウトの生成に失敗");
+		}
+		// ピクセルシェーダーを読み込み＆コンパイル
+		ComPtr<ID3DBlob> compiledPS;
+		if (FAILED(D3DCompileFromFile(L"Shader/CharPixelShader.hlsl", nullptr, nullptr, "main", "ps_5_0", 0, 0, &compiledPS, nullptr)))
+		{
+			throw("ピクセルシェーダのコンパイルに失敗");
+		}
+		// ピクセルシェーダー作成
+		if (FAILED(D3D.m_device->CreatePixelShader(compiledPS->GetBufferPointer(), compiledPS->GetBufferSize(), nullptr, &mCharPixelShader)))
+		{
+			throw("頂点シェーダのコンパイルに失敗");
+		}
+	}
 	//サンプラー
 	{
 		D3D11_SAMPLER_DESC samplerDesc;
@@ -345,6 +429,29 @@ void GraphicProcessSetter::SetAsBullet() {
 	D3D.m_deviceContext->VSSetShader(mBulletVertexShader.Get(), 0, 0);
 	D3D.m_deviceContext->PSSetShader(mBulletPixelShader.Get(), 0, 0);
 	D3D.m_deviceContext->IASetInputLayout(mBulletInputLayout.Get());
+	D3D.m_deviceContext->OMSetRenderTargets(1, D3D.m_backBufferView.GetAddressOf(), D3D.m_depthStencilView.Get());
+
+}
+void GraphicProcessSetter::SetAsCharacter() {
+	D3D.m_deviceContext->OMSetDepthStencilState(m_depthStencilStateDisable.Get(), 0);
+	float blendFactor[4]{ D3D11_BLEND_ZERO,D3D11_BLEND_ZERO, D3D11_BLEND_ZERO, D3D11_BLEND_ZERO };
+	D3D.m_deviceContext->OMSetBlendState(m_blendStateEnable.Get(), blendFactor, 0xffffffff);
+	{
+		D3D11_VIEWPORT vp;
+		vp.TopLeftX = 0.0f;
+		vp.TopLeftY = 0.0f;
+		vp.Width = (float)Width;
+		vp.Height = (float)Height;
+		vp.MinDepth = 0.0f;
+		vp.MaxDepth = 1.0f;
+		D3D.m_deviceContext->RSSetViewports(1, &vp);
+	}
+	D3D.m_deviceContext->RSSetState(m_rasterizerState.Get());
+	D3D.m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	D3D.m_deviceContext->PSSetSamplers(0, 1, m_samplerState.GetAddressOf());
+	D3D.m_deviceContext->VSSetShader(mCharVertexShader.Get(), 0, 0);
+	D3D.m_deviceContext->PSSetShader(mCharPixelShader.Get(), 0, 0);
+	D3D.m_deviceContext->IASetInputLayout(mCharInputLayout.Get());
 	D3D.m_deviceContext->OMSetRenderTargets(1, D3D.m_backBufferView.GetAddressOf(), D3D.m_depthStencilView.Get());
 
 }

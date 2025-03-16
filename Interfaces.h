@@ -10,6 +10,9 @@
 // 
 #define MaxUnitCount 1024
 #define MaxBallCount MaxUnitCount * 7
+#define MaxBulletCount 65536
+#define WorldWidth 256
+#define WorldHeight 256
 
 namespace Interface {
 	static void OutputMatrix(DirectX::XMMATRIX matrix,std::string suffix, std::string prefix) {
@@ -144,6 +147,28 @@ namespace Interface {
 	};
 
 
+	struct CharInstanceType {
+	public:
+		void Set(DirectX::XMMATRIX* world, int texIndex, DirectX::XMVECTOR* color) {
+			DirectX::XMStoreFloat4x4(&World, *world);
+			TexIndex = (float)texIndex;
+			DirectX::XMStoreFloat4(&Color, *color);
+		}
+		DirectX::XMFLOAT4X4 World;
+		// 文字インデックス
+		float TexIndex;
+		//文字の色
+		DirectX::XMFLOAT4 Color;
+		DirectX::XMFLOAT2 BlackBoxShape;
+
+	};
+	struct CharDrawCallType {
+	public:
+		DirectX::XMFLOAT2 UV;//各頂点のU,各頂点のV
+		DirectX::XMFLOAT4 Pos;
+	};
+
+
 
 	struct ConstantType
 	{
@@ -155,13 +180,9 @@ namespace Interface {
 
 
 
-	typedef int EntId;
 #define ComponentCount 32
 #define TeamCount 2
-	typedef std::bitset<ComponentCount> RawArchetype;
 	typedef int HostilityTeam;
-	typedef int ArchetypeIndex;
-	typedef int SameArchIndex;
 	typedef int RectAppId;
 	typedef int UnitIndex;
 	struct RelationOfCoord {
@@ -220,21 +241,6 @@ namespace Interface {
 		return output;
 	}
 #define CompCount 32
-	struct EntityPointer {
-		EntityPointer() {
-			Archetype = -1;
-			Index = -1;
-		}
-		EntityPointer(Interface::ArchetypeIndex archetype, Interface::SameArchIndex index) {
-			Archetype = archetype;
-			Index = index;
-		}
-		Interface::ArchetypeIndex Archetype;
-		Interface::SameArchIndex Index;
-		bool operator==(Interface::EntityPointer& other) {
-			return (Archetype == other.Archetype) && (Index = other.Index);
-		}
-	};
 	struct Damage {
 	public:
 		float physical;
@@ -276,7 +282,7 @@ namespace Interface {
 		return true;
 	}
 	static std::map<std::string, int> AppearanceNameHash;
-	static Interface::EntId PlayingBall;
+	static entt::entity PlayingBall;
 	static std::bitset<TeamCount*TeamCount> HostilityTable;//8team*8teamのテーブルでtrueの場所は敵対する
 	static std::mt19937 RandEngine;
 	inline DirectX::XMVECTOR GetVectorFromJson(Json::Value input) {
@@ -289,10 +295,10 @@ namespace Interface {
 		return output;
 	}
 	inline std::map<std::string, Interface::UnitIndex> UnitNameHash;
-	inline std::map<std::string, Interface::EntityPointer> EntNameHash;
+	inline std::map<std::string, entt::entity> EntNameHash;
 	struct EntityInitData {
 		// 常に使う
-		EntityPointer Prototype;
+		entt::entity Prototype;
 		bool IsCore;
 		// EffectとBallに使う
 		float HealthMultiply;
@@ -300,16 +306,21 @@ namespace Interface {
 		float SpeedMultiply;
 		Interface::HostilityTeam Team;
 		// Ballに使う
-		Interface::EntId CoreId;
+		entt::entity CoreId;
+		bool IsLeader;
+		entt::entity LeaderId;
 		RelationOfCoord Pos;//Coreの場合はCoreの位置、CoreではないならCoreに対しての位置
 		DirectX::XMVECTOR BaseColor0;
 		DirectX::XMVECTOR BaseColor1;
-		int initialMaskIndex;
 		float SplintTilePerTick[6];
 		float RadianPerTick;
 		float MoveTilePerTick;
 		float Ratio;
 		float Weight;
+		// Blockに使う
+		bool OnTop;
+		bool Breakable;
+		entt::entity DamageObserveEntity;
 		EntityInitData() {
 
 		}
@@ -326,8 +337,80 @@ namespace Interface {
 	};
 	struct Order {
 		WhatDoing Doing;
-		EntId Target;
+		entt::entity Target;
 		DirectX::XMVECTOR MoveFor;
 
+	}; 
+	struct UnitInfo {
+		entt::entity CorePrototype;
+		entt::entity Prototypes[7];
+		Interface::RelationOfCoord RelativePosFromCore[7];
+		DirectX::XMVECTOR BaseColor0[7];
+		DirectX::XMVECTOR BaseColor1[7];
+		float Ratio;
+		UnitInfo() {
+
+		}
+		UnitInfo(Json::Value jsonOfThisUnit, entt::registry* pMainRegistry) {
+			CorePrototype = Interface::EntNameHash[jsonOfThisUnit.get("coreName", "").asString()];
+			Ratio = jsonOfThisUnit.get("ratio", "").asFloat();
+			for (int i = 0; i < 7; i++) {
+				Prototypes[i] = Interface::EntNameHash[jsonOfThisUnit.get("balls", "")[i].get("ballName", "").asString()];
+				Interface::RelationOfCoord toPush;
+				//コアに対しての初期位置
+				toPush.Parallel = DirectX::XMVECTOR{
+					std::cosf(jsonOfThisUnit.get("balls","")[i].get("pos","").asInt() * PI / 3) / 3,
+					std::sinf(jsonOfThisUnit.get("balls","")[i].get("pos","").asInt() * PI / 3) / 3,
+					0,1
+				};
+				if (i == 0) {
+					toPush.Parallel = { 0,0,0,1 };
+				}
+				toPush.Ratio = 1;
+				toPush.Rotate = 0;
+				RelativePosFromCore[i] = toPush;
+				BaseColor0[i] = Interface::GetVectorFromJson(jsonOfThisUnit.get("balls", "")[i].get("baseColor0", ""));
+				BaseColor1[i] = Interface::GetVectorFromJson(jsonOfThisUnit.get("balls", "")[i].get("baseColor1", ""));
+			}
+		}
+	};
+	struct VisibleStringInfo {
+		VisibleStringInfo() {
+			Content = "ＭＳ 明朝";
+			Color = RGB(0, 0, 0);
+			Pos = { 0,0,0,1 };
+			DeleteTick = 60;
+		}
+		std::string Content;
+		COLORREF Color;
+		DirectX::XMVECTOR Pos;
+		int DeleteTick;
+	};
+	inline float Uniform01RandFloat() {
+		std::uniform_real_distribution<float> get(0.0f, 1.0f);
+		return get(RandEngine);
+	}
+	inline float UniformRandFloat(float min,float max) {
+		std::uniform_real_distribution<float> get(min, max);
+		return get(RandEngine);
+	}
+	struct WayPoint {
+		DirectX::XMVECTOR Pos;
+		DirectX::XMVECTOR Heading;
+	};
+	enum MovementOrder {
+		HoldPosition,
+		Chase,
+		Charge
+	};
+	enum AttackOrder {
+		CeaseFire,
+		Nearest,
+		Strongest,
+		ByDesignation,
+	};
+	enum Formation {
+		Line,// 横隊
+		Circle,// 円陣
 	};
 };

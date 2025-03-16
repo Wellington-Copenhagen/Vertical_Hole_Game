@@ -1,0 +1,169 @@
+{
+  "$schema": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json",
+  "spdxVersion": "SPDX-2.2",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "documentNamespace": "https://spdx.org/spdxdocs/directxtex-x64-windows-2024-10-28-9a4a99a9-a756-49b5-b40e-3f269c883c4c",
+  "name": "directxtex:x64-windows@2024-10-28 5568952dc593dffed49191deec08361f58c4f6bdbdcdb2fdbbea75a61e36b2da",
+  "creationInfo": {
+    "creators": [
+      "Tool: vcpkg-2024-11-12-eb492805e92a2c14a230f5c3deb3e89f6771c321"
+    ],
+    "created": "2024-12-15T18:54:26Z"
+  },
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "GENERATES",
+      "relatedSpdxElement": "SPDXRef-binary"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-0"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-1"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-2"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-3"
+    },
+    {
+      "spdxElementId": "SPDXRef-binary",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-0",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-1",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-2",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-3",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    }
+  ],
+  "packages": [
+    {
+      "name": "directxtex",
+      "SPDXID": "SPDXRef-port",
+      "versionInfo": "2024-10-28",
+      "downloadLocation": "git+https://github.com/Microsoft/vcpkg#ports/directxtex",
+      "homepage": "https://github.com/Microsoft/DirectXTex",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "description": "DirectXTex texture processing library",
+      "comment": "This is the port (recipe) consumed by vcpkg."
+    },
+    {
+      "name": "directxtex:x64-windows",
+      "SPDXID": "SPDXRef-binary",
+      "versionInfo": "5568952dc593dffed49191deec08361f58c4f6bdbdcdb2fdbbea75a61e36b2da",
+      "downloadLocation": "NONE",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "This is a binary package built by vcpkg."
+    },
+    {
+      "SPDXID": "SPDXRef-resource-1",
+      "name": "Microsoft/DirectXTex",
+      "downloadLocation": "git+https://github.com/Microsoft/DirectXTex@${DIRECTXTEX_TAG}",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4ac9307ab6e36aa727afa5bd5bb945fb431c89fa01c9c8283eebf512707acfb15a0d7cd84f72349d4271b0eef2e13bca38a38226c1afafd8f1e36b38c1c4b07f"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-resource-2",
+      "name": "texassemble-${DIRECTXTEX_TAG}.exe",
+      "packageFileName": "texassemble-${DIRECTXTEX_TAG}.exe",
+      "downloadLocation": "https://github.com/Microsoft/DirectXTex/releases/download/${DIRECTXTEX_TAG}/texassemble.exe",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "bb3c45d35305a56b80035bd7c076cd0000461cb37a5cd9495ac8f8a1647967fb6ecb02245336356674829f179ef05330d5aa9e768637e93b9db587d7eb684dfe"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "fileName": "./C:/Users/1011g/source/repos/vcpkg/vcpkg/ports/directxtex/FixStdByteAndCMake.patch",
+      "SPDXID": "SPDXRef-file-0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5cea97a7f630af1feed93722f5d5ddde03e108de24425e19c379d007ec29455c"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "./C:/Users/1011g/source/repos/vcpkg/vcpkg/ports/directxtex/portfile.cmake",
+      "SPDXID": "SPDXRef-file-1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "730994611b6d50c4b565b89433238cd7d0659cdbc6affd63a74768d6fee42f12"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "./C:/Users/1011g/source/repos/vcpkg/vcpkg/ports/directxtex/usage",
+      "SPDXID": "SPDXRef-file-2",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e44c856b0cc03fc1e753c90410149f50059e52ef1cf249f64f582d1baa002dc6"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "./C:/Users/1011g/source/repos/vcpkg/vcpkg/ports/directxtex/vcpkg.json",
+      "SPDXID": "SPDXRef-file-3",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2130d01a164c60c32bad6efe18db1808439076c7b68bfa653111584ba3c6d8da"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    }
+  ]
+}

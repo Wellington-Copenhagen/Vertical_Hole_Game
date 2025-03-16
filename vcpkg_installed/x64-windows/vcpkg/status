@@ -1,0 +1,49 @@
+Package: vcpkg-cmake-config
+Version: 2024-05-23
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 70fa5f21c66f19aebf216e17882aae619362590f62ddeb1f4fd646dc1157c763
+Status: install ok installed
+
+Package: vcpkg-cmake
+Version: 2024-04-23
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 92c2832604e9ed366a48060695c494e3ccbe5175296efb30fdf3e91dbfadf1f6
+Status: install ok installed
+
+Package: directxmath
+Version: 2024-12-02
+Depends: vcpkg-cmake, vcpkg-cmake-config
+Architecture: x64-windows
+Multi-Arch: same
+Abi: e4643b578eea846bf60e416751f066e9e1df1cd5acc7db5eed14d00917acf23f
+Description: DirectXMath SIMD C++ math library
+Status: install ok installed
+
+Package: directxtex
+Version: 2024-10-28
+Depends: directxmath, vcpkg-cmake, vcpkg-cmake-config
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 5568952dc593dffed49191deec08361f58c4f6bdbdcdb2fdbbea75a61e36b2da
+Description: DirectXTex texture processing library
+Default-Features: dx11
+Status: install ok installed
+
+Package: directxtex
+Feature: dx11
+Architecture: x64-windows
+Multi-Arch: same
+Description: Build with DirectX11 support
+Status: install ok installed
+
+Package: jsoncpp
+Version: 1.9.6
+Depends: vcpkg-cmake, vcpkg-cmake-config
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 4161b09d1b0b84c74b48911889e994f3c34c5db864f01b2497c176fc1c6cd89a
+Description: JsonCpp is a C++ library that allows manipulating JSON values, including serialization and deserialization to and from strings. It can also preserve existing comment in unserialization/serialization steps, making it a convenient format to store user input files.
+Status: install ok installed
+

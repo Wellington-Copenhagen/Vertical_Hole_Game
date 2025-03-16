@@ -18,6 +18,9 @@
             "parallel":[
                 0,0,0,1
             ]
+        },
+        "BlockData":{
+
         }
     },
     "wallBrick":{
@@ -40,6 +43,9 @@
         },
         "WallHurtbox":{
             
+        },
+        "BlockData":{
+
         }
     }
 }

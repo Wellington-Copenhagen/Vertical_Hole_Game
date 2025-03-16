@@ -1,78 +1,44 @@
 {
-    "width":64,
-    "height":64,
     "areaList":[
         {
-            "top":64,
-            "bottom":0,
-            "right":64,
-            "left":0,
-            "isWall":false,
-            "name":"floorStoneFloor"
-        },
-        {
-            "top":1,
-            "bottom":0,
-            "right":64,
-            "left":0,
-            "isWall":true,
-            "name":"wallBrick"
-        },
-        {
-            "top":64,
-            "bottom":63,
-            "right":64,
-            "left":0,
-            "isWall":true,
-            "name":"wallBrick"
-        },
-        {
-            "top":64,
-            "bottom":0,
-            "right":1,
-            "left":0,
-            "isWall":true,
-            "name":"wallBrick"
-        },
-        {
-            "top":64,
-            "bottom":0,
-            "right":64,
-            "left":63,
-            "isWall":true,
-            "name":"wallBrick"
-        },
-        {
-            "top":10,
-            "bottom":8,
-            "right":15,
+            "top":20,
+            "bottom":5,
+            "right":60,
             "left":5,
-            "isWall":true,
-            "name":"wallBrick"
+            "floorEntity":"floorStoneFloor",
+            "wallEntity":"wallBrick"
         },
         {
-            "top":15,
-            "bottom":8,
-            "right":8,
+            "top":50,
+            "bottom":30,
+            "right":60,
             "left":5,
-            "isWall":true,
-            "name":"wallBrick"
+            "floorEntity":"floorStoneFloor",
+            "wallEntity":"wallBrick"
+        },
+        {
+            "top":80,
+            "bottom":60,
+            "right":60,
+            "left":5,
+            "floorEntity":"floorStoneFloor",
+            "wallEntity":"wallBrick"
         },
         {
             "top":30,
-            "bottom":8,
-            "right":38,
-            "left":35,
-            "isWall":true,
-            "name":"wallBrick"
+            "bottom":20,
+            "right":35,
+            "left":30,
+            "floorEntity":"floorStoneFloor",
+            "wallEntity":"wallBrick"
         },
         {
-            "top":45,
-            "bottom":40,
-            "right":48,
+            "top":60,
+            "bottom":50,
+            "right":35,
             "left":30,
-            "isWall":true,
-            "name":"wallBrick"
+            "floorEntity":"floorStoneFloor",
+            "wallEntity":"wallBrick"
         }
     ]
 }

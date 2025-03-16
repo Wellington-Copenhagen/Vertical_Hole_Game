@@ -1,173 +1,258 @@
 #pragma once
 #include "../../Interfaces.h"
 #include "Appearance.h"
-#include "Entity.h"
 #include "Input.h"
 #include "HitBox.h"
+#include "Entity.h"
+#include "StringDraw.h"
+extern GraphicalStringDraw<65536, 2048, 32> globalStringDraw;
+extern int Tick;
 //関連するシステムは同じものに収める方が良いと考えられる
 class GameSystem;
 class System {
 public:
 	Hurtboxes* pHurtboxes;
-	Appearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, 256 * 256 * 2>* pBlockAppearance;
+	Entities* pEntities;
+	Appearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, WorldWidth* WorldHeight>* pFloorAppearance;
+	Appearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, WorldWidth* WorldHeight>* pWallAppearance;
 	//影、本体、模様
 	Appearances<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount>* pBallAppearance;
-	Appearances<Interface::BulletDrawCallType, Interface::BulletInstanceType, 1, 256 * 256>* pBulletAppearance;
-	AllEntities* pAllEntities;
-	Interface::RawArchetype RequireComponents;
-	std::vector<Interface::ArchetypeIndex> TargetArchetypes;
+	Appearances<Interface::BulletDrawCallType, Interface::BulletInstanceType, 1, MaxBulletCount>* pBulletAppearance;
 	System(GameSystem* pGameSystem);
-	virtual void Update(SameArchetype* Components) = 0;
-	void UpdateAll() {
-		int archetypeCount = TargetArchetypes.size();
-		for (int i = 0; i < archetypeCount; i++) {
-			Update(&pAllEntities->EntityArraies[TargetArchetypes[i]]);
-		}
-	}
-	void SetTargetList(AllEntities* pAllEntities) {
-		int size = pAllEntities->Archetypes.size();
-		for (int i = 0; i < size; i++) {
-			if (RequireComponents.count() == (pAllEntities->Archetypes[i] & RequireComponents).count()) {
-				TargetArchetypes.push_back(i);
-			}
-		}
-	}
-	void SetArchetype(CompNames compName) {
-		RequireComponents.set(compName);
-	}
+	virtual void Update() = 0;
 };
 namespace Systems {
 	//追加削除
-	class UpdateValidEntityCount : public System {
-	public:
-		UpdateValidEntityCount(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->GenerateFlag.Components.size();
-			for (int i = 0; i < Isize; i++) {
-				if (input->GenerateFlag.Components[i].GeneratedOnThisTick) {
-					input->RealEntityCount++;
-				}
-				if (input->KillFlag.Components[i].KillOnThisTick) {
-					input->RealEntityCount--;
-				}
-				//この時点で追加関連の処理はすべて終わっている必要がある
-			}
-			input->ValidEntityCount = input->RealEntityCount;
-		}
-	};
 	class KillGenerate : public System {
 	public:
-		KillGenerate(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::KillFlag);
-			SetArchetype(CompNames::GenerateFlag);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				if (input->GenerateFlag.Components[i].GeneratedOnThisTick) {
-					input->GenerateFlag.Components[i].GeneratedOnThisTick = false;
+		KillGenerate(GameSystem* pGameSystem) : System(pGameSystem){}
+		void Update() override {
+			for (auto [entity, generateFlag, killFlag] : pEntities->Registry.view<
+				Component::GenerateFlag, 
+				Component::KillFlag>().each()) {
+				generateFlag.GeneratedOnThisTick = false;
+				if (killFlag.KillOnThisTick) {
+					pEntities->Registry.destroy(entity);
 				}
-				if (input->KillFlag.Components[i].KillOnThisTick) {
-					input->Delete(pAllEntities, i);
-					i--;
-				}
-				//この時点で追加関連の処理はすべて終わっている必要がある
 			}
 		}
 	};
 	class ControlUnitCount : public System {
 	public:
-		ControlUnitCount(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::UnitData);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				if (input->KillFlag.Components[i].KillOnThisTick) {
-					pAllEntities->UnitCount[input->UnitData.Components[i].Team]--;
+		ControlUnitCount(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			for (auto [entity, generateFlag, killFlag, unitData] : pEntities->Registry.view<
+				Component::GenerateFlag, 
+				Component::KillFlag, 
+				Component::UnitData>().each()) {
+				if (generateFlag.GeneratedOnThisTick) {
+					pEntities->UnitCountEachTeam[unitData.Team]++;
 				}
-				if (input->GenerateFlag.Components[i].GeneratedOnThisTick) {
-					pAllEntities->UnitCount[input->UnitData.Components[i].Team]++;
+				if (killFlag.KillOnThisTick) {
+					pEntities->UnitCountEachTeam[unitData.Team]--;
 				}
 			}
-			input->ValidEntityCount = input->IdArray.size();
+		}
+	};
+	class BindCoreUnit : public System {
+	public:
+		BindCoreUnit(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			for (auto [entity, ballData, generateFlag] : pEntities->Registry.view<
+				Component::BallData,
+				Component::GenerateFlag>().each()) {
+				if (generateFlag.GeneratedOnThisTick) {
+					pEntities->Registry.get<Component::UnitData>(ballData.CoreId).BallIds[
+						pEntities->Registry.get<Component::UnitData>(ballData.CoreId).BallCount] = entity;
+					pEntities->Registry.get<Component::UnitData>(ballData.CoreId).BallCount++;
+				}
+			}
+		}
+	};
+	class CorpsAction : public System {
+	public:
+		void FormLine(Component::CorpsData& corpsData, DirectX::XMVECTOR pos, float heading, float formationWidth, float formationThickness) {
+			int memberCount = corpsData.AllMemberUnit.size();
+			float areaPerUnit = memberCount / (formationWidth * formationThickness);
+			// 厚み方向に何人いるか
+			int thicknessCount = std::ceil(formationThickness * std::sqrtf(areaPerUnit));
+			int widthCount = std::ceil(memberCount / thicknessCount);
+			// headingの方向を上にして左上→左下→右上の順で配置していく
+			DirectX::XMVECTOR thickDirectionInterval = DirectX::XMVECTOR{
+				std::cosf(heading - PI)*formationThickness / thicknessCount,
+				std::sinf(heading - PI) * formationThickness / thicknessCount,
+				0,0
+			};
+			DirectX::XMVECTOR widthDirectionInterval = DirectX::XMVECTOR{
+				std::cosf(heading - PI / 2.0f) * formationWidth / widthCount,
+				std::sinf(heading - PI / 2.0f) * formationWidth / widthCount,
+				0,0
+			};
+			corpsData.CurrentMovementOrder = Interface::MovementOrder::HoldPosition;
+			for (int i = 0; i < memberCount; i++) {
+				DirectX::XMVECTOR nextPosition = DirectX::XMVectorAdd(pos, DirectX::XMVectorAdd(
+					DirectX::XMVectorScale(thickDirectionInterval, i % thicknessCount - (thicknessCount - 1) / 2),
+					DirectX::XMVectorScale(widthDirectionInterval, i / thicknessCount - (widthCount - 1) / 2)
+				));
+				Component::UnitData& unitData = pEntities->Registry.get<Component::UnitData>(corpsData.AllMemberUnit[i]);
+				unitData.FinalTarget.Pos = nextPosition;
+			}
+		}
+		void FormCenter(Component::CorpsData& corpsData, DirectX::XMVECTOR pos, float heading, float FormationWidth, float FormationThickness);
+		void ChaseLeader(Component::CorpsData& corpsData) {
+			corpsData.CurrentMovementOrder = Interface::MovementOrder::Chase;
+			corpsData.DistanceThresholdMin = 1;
+			corpsData.DistanceThresholdMax = 10;
+			for (entt::entity member : corpsData.AllMemberUnit) {
+				Component::UnitData& unitData = pEntities->Registry.get<Component::UnitData>(member);
+				unitData.TargetEntity = corpsData.LeaderUnit;
+			}
+		}
+		void Charge(Component::CorpsData& corpsData) {
+			corpsData.CurrentMovementOrder = Interface::MovementOrder::Charge;
+			corpsData.DistanceThresholdMin = 1;
+			corpsData.DistanceThresholdMax = 10;
+			for (entt::entity member : corpsData.AllMemberUnit) {
+				Component::UnitData& unitData = pEntities->Registry.get<Component::UnitData>(member);
+				unitData.TargetEntity = corpsData.LeaderUnit;
+			}
+		}
+		void CeaseFire(Component::CorpsData& corpsData) {
+			corpsData.CurrentAttackOrder = Interface::AttackOrder::CeaseFire;
+		}
+		void FireAtNearest(Component::CorpsData& corpsData) {
+			corpsData.CurrentAttackOrder = Interface::AttackOrder::Nearest;
+		}
+		void FireAtStrongest(Component::CorpsData& corpsData) {
+			corpsData.CurrentAttackOrder = Interface::AttackOrder::CeaseFire;
+		}
+		CorpsAction(GameSystem* pGameSystem):System(pGameSystem) {}
+		void Update() override {
+			for (auto [entity, corpsData, worldPosition] : pEntities->Registry.view<
+			Component::CorpsData, Component::WorldPosition>().each()) {
+				Charge(corpsData);
+			}
 		}
 	};
 	//意思決定
 	class UnitAction : public System {
 	public:
-		UnitAction(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::Motion);
-			SetArchetype(CompNames::WorldPosition);
-			SetArchetype(CompNames::AI);
-			SetArchetype(CompNames::UnitData);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				if (input->IdArray[i] == Interface::PlayingBall) {
-					//プレイヤーの行動
-					input->Motion.Components[i].WorldDelta.Parallel = { 0.0f, 0.0f, 0.0f ,0.0f };
-					input->Motion.Components[i].WorldDelta.Ratio = 1;
-					input->Motion.Components[i].WorldDelta.Rotate = 0;
-					float moveTilePerTick = input->UnitData.Components[i].MoveTilePerTick * input->UnitData.Components[i].SpeedBuff;
+		UnitAction(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			for (auto [entity, unitData, motion, worldPosition] : pEntities->Registry.view<
+				Component::UnitData,
+				Component::Motion,
+				Component::WorldPosition>().each()) {
+				//プレイヤーの行動
+				if (entity == Interface::PlayingBall) {
+					motion.WorldDelta.Parallel = { 0.0f, 0.0f, 0.0f ,0.0f };
+					motion.WorldDelta.Ratio = 1;
+					motion.WorldDelta.Rotate = 0;
+					float moveTilePerTick = unitData.MoveTilePerTick * unitData.SpeedBuff;
 					if (Input::KeyPushed.test(0x57)) {//w
-						input->Motion.Components[i].WorldDelta.Parallel = { 0.0f, moveTilePerTick, 0.0f ,0.0f };
+						motion.WorldDelta.Parallel = { 0.0f, moveTilePerTick, 0.0f ,0.0f };
 					}
 					if (Input::KeyPushed.test(0x53)) {//s
-						input->Motion.Components[i].WorldDelta.Parallel = { 0.0f, -1 * moveTilePerTick, 0.0f ,0.0f };
+						motion.WorldDelta.Parallel = { 0.0f, -1 * moveTilePerTick, 0.0f ,0.0f };
 					}
 					if (Input::KeyPushed.test(0x41)) {//a
-						input->Motion.Components[i].WorldDelta.Parallel = { -1 * moveTilePerTick, 0.0f, 0.0f ,0.0f };
+						motion.WorldDelta.Parallel = { -1 * moveTilePerTick, 0.0f, 0.0f ,0.0f };
 					}
 					if (Input::KeyPushed.test(0x44)) {//d
-						input->Motion.Components[i].WorldDelta.Parallel = { moveTilePerTick, 0.0f, 0.0f ,0.0f };
+						motion.WorldDelta.Parallel = { moveTilePerTick, 0.0f, 0.0f ,0.0f };
 					}
 					if (Input::KeyPushed.test(0x51)) {//q
-						input->Motion.Components[i].WorldDelta.Rotate = 0.03f;
+						motion.WorldDelta.Rotate = 0.03f;
 					}
 					if (Input::KeyPushed.test(0x45)) {//e
-						input->Motion.Components[i].WorldDelta.Rotate = -0.03f;
+						motion.WorldDelta.Rotate = -0.03f;
 					}
 				}
+				//AIの行動
 				else {
-					//AIの行動
-					bool ShouldChangeOrder = false;
-					Interface::Order* pCurrentOrder = &input->AI.Components[i].Orders[0];
-					if (pCurrentOrder->Doing == Interface::WhatDoing::Moving) {
-						float length = DirectX::XMVector2Length(DirectX::XMVectorSubtract(
-							input->WorldPosition.Components[i].WorldPos.Parallel,
-							pCurrentOrder->MoveFor)).m128_f32[0];
-						if (length < 0.1) {
-							//移動終了
-							ShouldChangeOrder = true;
+					Interface::MovementOrder movementOrder = pEntities->Registry.get<Component::CorpsData>(unitData.Leader).CurrentMovementOrder;
+					Interface::AttackOrder attackOrder = pEntities->Registry.get<Component::CorpsData>(unitData.Leader).CurrentAttackOrder;
+					float distanceThresholdMin = pEntities->Registry.get<Component::CorpsData>(unitData.Leader).DistanceThresholdMin;
+					float distanceThresholdMax = pEntities->Registry.get<Component::CorpsData>(unitData.Leader).DistanceThresholdMax;
+					if (Tick % 30 == 0) {
+						int x = (int)worldPosition.WorldPos.Parallel.m128_f32[0];
+						int y = (int)worldPosition.WorldPos.Parallel.m128_f32[1];
+						if (movementOrder == Interface::MovementOrder::Chase) {
+							pHurtboxes->GetNearestUnit(x, y, unitData.Team, unitData.AttackRange);
 						}
-						else {
-
-							if (length > 10) {
-								//方向転換しての移動
+					}
+					if (movementOrder == Interface::MovementOrder::HoldPosition
+						 || movementOrder == Interface::MovementOrder::Chase) {
+						if (movementOrder == Interface::MovementOrder::Chase) {
+							Component::WorldPosition* targetWorldPos = pEntities->Registry.try_get<Component::WorldPosition>(unitData.TargetEntity);
+							if (targetWorldPos == nullptr) {
 
 							}
 							else {
-								//方向転換しないでの移動
-
+								unitData.FinalTarget.Pos = targetWorldPos->WorldPos.Parallel;
 							}
 						}
-					}
-					else if (pCurrentOrder->Doing == Interface::WhatDoing::Chasing) {
-						Interface::EntityPointer targetPointer = pAllEntities->INtoIndex[pCurrentOrder->Target];
-						float length = DirectX::XMVector2Length(DirectX::XMVectorSubtract(
-							input->WorldPosition.Components[i].WorldPos.Parallel,
-							pAllEntities->EntityArraies[targetPointer.Archetype].WorldPosition.Components[targetPointer.Index].WorldPos.Parallel)).m128_f32[0];
+						float length = DirectX::XMVector2Length(DirectX::XMVectorSubtract(unitData.AreaBorderTarget.Pos, worldPosition.WorldPos.Parallel)).m128_f32[0];
+						if (length < 0.5) {
+							// 2つ目の目標地点に到達した
+							int current = pEntities->GetAreaIndex(worldPosition.WorldPos.Parallel);
+							int target = max(0, pEntities->GetAreaIndex(unitData.FinalTarget.Pos));
 
-					}
-					if (ShouldChangeOrder) {
+							while (true) {
+								//1エリアずつ進めていって通路が通らなくなった時か、目標エリアまで通路が通っているとわかった時に探索を止める
+								if (unitData.NextPosReloadTick < Tick && current == target) {
+									// 現在地点と目標地点を結んだ直線の周辺、
+									// かつ目標から指定された距離前後を開けており、
+									// 現在位置から直進できる経路がある場所を次の移動目標とする
+									if (distanceThresholdMax != 0) {
+										DirectX::XMVECTOR gap = DirectX::XMVectorSubtract(worldPosition.WorldPos.Parallel, unitData.FinalTarget.Pos);
+										gap = DirectX::XMVectorScale(gap, min(1.2, Interface::UniformRandFloat(distanceThresholdMin,distanceThresholdMax) / DirectX::XMVector2Length(gap).m128_f32[0]));
+										gap = DirectX::XMVector2Transform(gap, DirectX::XMMatrixRotationZ(Interface::UniformRandFloat(PI / -4.0f, PI / 4.0f)));
+										unitData.AreaBorderTarget.Pos = DirectX::XMVectorAdd(unitData.FinalTarget.Pos, gap);
+										if (!pHurtboxes->IsWayClear(&unitData.AreaBorderTarget.Pos, &worldPosition.WorldPos.Parallel)) {
+											unitData.AreaBorderTarget.Pos = worldPosition.WorldPos.Parallel;
+										}
+									}
+									else {
+										unitData.AreaBorderTarget = unitData.FinalTarget;
+									}
+									unitData.HeadingFree = true;
+									unitData.NextPosReloadTick = Tick + 120;
+									break;
+								}
+								Interface::WayPoint targetNotSureWayClear;
+								targetNotSureWayClear = pEntities->mRouting.GetWayPoint(current, target, worldPosition.WorldPos.Parallel);
+								if (pHurtboxes->IsWayClear(&targetNotSureWayClear.Pos, &worldPosition.WorldPos.Parallel)) {
+									// そのエリア境界のウェイポイントまで一直線で行ける場合
+									unitData.AreaBorderTarget = targetNotSureWayClear;
+									current = pEntities->mRouting.AllArea[current].WhereToGo[target];
+								}
+								else {
+									unitData.HeadingFree = false;
+									break;
+								}
+							}
+						}
+						DirectX::XMVECTOR color = { 0,1,0,1 };
 
+
+						globalStringDraw.Append("areaBorder", &color, &unitData.AreaBorderTarget.Pos, 1, 10, StrDrawPos::AsCenter);
+					}
+					// 目標地点への移動を行う
+
+					{
+						DirectX::XMVECTOR target = DirectX::XMVectorAdd(DirectX::XMVectorScale(
+							unitData.AreaBorderTarget.Pos, 0.5), DirectX::XMVectorScale(
+								worldPosition.WorldPos.Parallel, 0.5));
+						if (!unitData.HeadingFree) {
+							// 進入方向に制約がある場合
+							// ない場合は一直線に向かう
+							float distance = DirectX::XMVector2Length(DirectX::XMVectorSubtract(unitData.AreaBorderTarget.Pos, worldPosition.WorldPos.Parallel)).m128_f32[0];
+							target = DirectX::XMVectorAdd(target, DirectX::XMVectorScale(unitData.AreaBorderTarget.Heading, distance * -0.2));
+						}
+						float length = DirectX::XMVector2Length(DirectX::XMVectorSubtract(target, worldPosition.WorldPos.Parallel)).m128_f32[0];
+						target = DirectX::XMVectorScale(target, min(1,unitData.MoveTilePerTick / length));
+						motion.WorldDelta.Parallel = target;
 					}
 				}
 			}
@@ -176,42 +261,45 @@ namespace Systems {
 	//運動に関する
 	class UpdateWorld : public System {
 	public:
-		UpdateWorld(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::Motion);
-			SetArchetype(CompNames::WorldPosition);
-			SetArchetype(CompNames::MoveFlag);
-			SetArchetype(CompNames::HitFlag);
-			SetArchetype(CompNames::PositionReference);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
+		UpdateWorld(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			for(auto [entity,motion,worldPosition,moveFlag,hitFlag,positionReference] : pEntities->Registry.view<
+				Component::Motion,
+				Component::WorldPosition,
+				Component::MoveFlag,
+				Component::HitFlag,
+				Component::PositionReference>().each()) {
 				DirectX::XMVECTOR zeros{ 0.0f,0.0f,0.0f,0.0f };
-				if (input->PositionReference.Components[i].IsCore) {
-					if (input->WorldPosition.Components[i].NeedUpdate) {
-						input->MoveFlag.Components[i].Moved = true;
-						input->WorldPosition.Components[i].WorldPos = input->WorldPosition.Components[i].NextTickWorldPos;
-						input->WorldPosition.Components[i].WorldMatrix = input->WorldPosition.Components[i].WorldPos.GetMatrix();
+				if (positionReference.IsCore) {
+					if (worldPosition.NeedUpdate) {
+						moveFlag.Moved = true;
+						worldPosition.WorldPos = worldPosition.WorldPos + motion.WorldDelta;
+						worldPosition.WorldMatrix = worldPosition.WorldPos.GetMatrix();
 					}
 					else {
-						input->MoveFlag.Components[i].Moved = false;
-						input->WorldPosition.Components[i].NextTickWorldPos = input->WorldPosition.Components[i].WorldPos;
+						moveFlag.Moved = false;
+						worldPosition.NextTickWorldPos = worldPosition.WorldPos;
 					}
 				}
 			}
-			for (int i = 0; i < Isize; i++) {
-				if (!input->PositionReference.Components[i].IsCore) {
-					Interface::EntityPointer corePointer = pAllEntities->INtoIndex[input->PositionReference.Components[i].ReferenceTo];
-					if (pAllEntities->EntityArraies[corePointer.Archetype].MoveFlag.Components[corePointer.Index].Moved ||
-						input->GenerateFlag.Components[i].GeneratedOnThisTick) {
-						input->WorldPosition.Components[i].WorldPos = input->WorldPosition.Components[i].NextTickWorldPos;
-						input->MoveFlag.Components[i].Moved = true;
-						input->WorldPosition.Components[i].WorldMatrix = input->WorldPosition.Components[i].WorldPos.GetMatrix();
+			for (auto [entity, motion, worldPosition, moveFlag, hitFlag, positionReference,generateFlag] : pEntities->Registry.view <
+				Component::Motion,
+				Component::WorldPosition,
+				Component::MoveFlag,
+				Component::HitFlag,
+				Component::PositionReference,
+				Component::GenerateFlag > ().each()) {
+				if (!positionReference.IsCore) {
+					if (pEntities->Registry.get<Component::MoveFlag>(positionReference.ReferenceTo).Moved ||
+						generateFlag.GeneratedOnThisTick) {
+						worldPosition.WorldPos = worldPosition.LocalReferenceToCore *
+							pEntities->Registry.get<Component::WorldPosition>(positionReference.ReferenceTo).NextTickWorldPos;
+						moveFlag.Moved = true;
+						worldPosition.WorldMatrix = worldPosition.WorldPos.GetMatrix();
 					}
 					else {
-						input->MoveFlag.Components[i].Moved = false;
-						input->WorldPosition.Components[i].NextTickWorldPos = input->WorldPosition.Components[i].WorldPos;
+						moveFlag.Moved = false;
+						worldPosition.NextTickWorldPos = worldPosition.WorldPos;
 					}
 				}
 			}
@@ -219,89 +307,83 @@ namespace Systems {
 	};
 	class CalcurateGeneratedWorld : public System {
 	public:
-		CalcurateGeneratedWorld(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::WorldPosition);
-			SetArchetype(CompNames::PositionReference);
-			SetArchetype(CompNames::GenerateFlag);
-			SetArchetype(CompNames::Motion);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				if (input->PositionReference.Components[i].IsCore &&
-					input->GenerateFlag.Components[i].GeneratedOnThisTick) {
-					input->WorldPosition.Components[i].WorldPos = input->Motion.Components[i].WorldDelta +
-						input->WorldPosition.Components[i].WorldPos;
-					input->WorldPosition.Components[i].NextTickWorldPos = input->WorldPosition.Components[i].WorldPos;
-					input->WorldPosition.Components[i].WorldMatrix = input->WorldPosition.Components[i].WorldPos.GetMatrix();
+		CalcurateGeneratedWorld(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			for(auto [entity,worldPosition,positionReference,generateFlag,motion] : pEntities->Registry.view<
+				Component::WorldPosition,
+				Component::PositionReference,
+				Component::GenerateFlag,
+				Component::Motion>().each()) {
+				if (positionReference.IsCore &&
+					generateFlag.GeneratedOnThisTick) {
+					worldPosition.WorldPos = motion.WorldDelta +
+						worldPosition.WorldPos;
+					worldPosition.NextTickWorldPos = worldPosition.WorldPos;
+					worldPosition.WorldMatrix = worldPosition.WorldPos.GetMatrix();
 				}
 			}
-			for (int i = 0; i < Isize; i++) {
-				if (!input->PositionReference.Components[i].IsCore &&
-					input->GenerateFlag.Components[i].GeneratedOnThisTick) {
-					Interface::EntityPointer corePointer = pAllEntities->INtoIndex[input->PositionReference.Components[i].ReferenceTo];
-					input->WorldPosition.Components[i].WorldPos = input->WorldPosition.Components[i].LocalReferenceToCore *
-						pAllEntities->EntityArraies[corePointer.Archetype].WorldPosition.Components[corePointer.Index].WorldPos;
-					input->WorldPosition.Components[i].NextTickWorldPos = input->WorldPosition.Components[i].WorldPos;
-					input->WorldPosition.Components[i].WorldMatrix = input->WorldPosition.Components[i].WorldPos.GetMatrix();
+			for (auto [entity, worldPosition, positionReference, generateFlag, motion] : pEntities->Registry.view<
+				Component::WorldPosition,
+				Component::PositionReference, 
+				Component::GenerateFlag, 
+				Component::Motion>().each()) {
+				if (!positionReference.IsCore &&
+					generateFlag.GeneratedOnThisTick) {
+					worldPosition.WorldPos = worldPosition.LocalReferenceToCore *
+						pEntities->Registry.get < Component::WorldPosition>(positionReference.ReferenceTo).WorldPos;
+					worldPosition.NextTickWorldPos = worldPosition.WorldPos;
+					worldPosition.WorldMatrix = worldPosition.WorldPos.GetMatrix();
 				}
 			}
 		}
 	};
 	class CoreApplyLinearAcceralation : public System {
 	public:
-		CoreApplyLinearAcceralation(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::Motion);
-			SetArchetype(CompNames::LinearAcceralation);
-			SetArchetype(CompNames::PositionReference);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				if (input->PositionReference.Components[i].IsCore) {
-					input->Motion.Components[i].WorldDelta = input->Motion.Components[i].WorldDelta +
-						input->LinearAcceralation.Components[i].World;
+		CoreApplyLinearAcceralation(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			for (auto [entity, motion, linearAcceralation, positionReference] : pEntities->Registry.view < Component::Motion, Component::LinearAcceralation, Component::PositionReference > ().each()) {
+				if (positionReference.IsCore) {
+					motion.WorldDelta = motion.WorldDelta +
+						linearAcceralation.World;
 				}
 			}
 		}
 	};
 	class CalculateNextTickWorld : public System {
 	public:
-		CalculateNextTickWorld(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::WorldPosition);
-			SetArchetype(CompNames::PositionReference);
-			SetArchetype(CompNames::Motion);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
+		CalculateNextTickWorld(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			
+			for (auto [entity, worldPosition, positionReference, motion] : pEntities->Registry.view <
+				Component::WorldPosition,
+				Component::PositionReference,
+				Component::Motion > ().each()) {
 				DirectX::XMVECTOR zeros{ 0.0f,0.0f,0.0f,0.0f };
-				if (input->PositionReference.Components[i].IsCore) {
-					if (!DirectX::XMVector4Equal(zeros, input->Motion.Components[i].WorldDelta.Parallel) ||
-						input->Motion.Components[i].WorldDelta.Ratio != 1 ||
-						input->Motion.Components[i].WorldDelta.Rotate != 0) {
-						input->WorldPosition.Components[i].NextTickWorldPos = input->Motion.Components[i].WorldDelta +
-							input->WorldPosition.Components[i].WorldPos;
-						input->WorldPosition.Components[i].NeedUpdate = true;// とりあえずtrueにしてあとでfalseにしていく
+				if (positionReference.IsCore) {
+					if (!DirectX::XMVector4Equal(zeros, motion.WorldDelta.Parallel) ||
+						motion.WorldDelta.Ratio != 1 ||
+						motion.WorldDelta.Rotate != 0) {
+						worldPosition.NextTickWorldPos = motion.WorldDelta +
+							worldPosition.WorldPos;
+						worldPosition.NeedUpdate = true;// とりあえずtrueにしてあとでfalseにしていく
 					}
 					else {
-						input->WorldPosition.Components[i].NeedUpdate = false;
+						worldPosition.NeedUpdate = false;
 					}
 				}
 			}
-			for (int i = 0; i < Isize; i++) {
-				if (!input->PositionReference.Components[i].IsCore) {
-					Interface::EntityPointer corePointer = pAllEntities->INtoIndex[input->PositionReference.Components[i].ReferenceTo];
-					if (pAllEntities->EntityArraies[corePointer.Archetype].WorldPosition.Components[corePointer.Index].NeedUpdate) {
-						input->WorldPosition.Components[i].NextTickWorldPos = input->WorldPosition.Components[i].LocalReferenceToCore *
-							pAllEntities->EntityArraies[corePointer.Archetype].WorldPosition.Components[corePointer.Index].NextTickWorldPos;
-						input->WorldPosition.Components[i].NeedUpdate = true;
+			for (auto [entity, worldPosition, positionReference, motion] : pEntities->Registry.view < 
+				Component::WorldPosition, 
+				Component::PositionReference,
+				Component::Motion >().each()) {
+				if (!positionReference.IsCore) {
+					if (pEntities->Registry.get<Component::WorldPosition>(positionReference.ReferenceTo).NeedUpdate) {
+						worldPosition.NextTickWorldPos = worldPosition.LocalReferenceToCore *
+							pEntities->Registry.get<Component::WorldPosition>(positionReference.ReferenceTo).NextTickWorldPos;
+						worldPosition.NeedUpdate = true;
 					}
 					else {
-						input->WorldPosition.Components[i].NeedUpdate = false;
+						worldPosition.NeedUpdate = false;
 					}
 				}
 			}
@@ -310,70 +392,65 @@ namespace Systems {
 	//衝突に関する
 	class WallHurtbox : public System {
 	public:
-		WallHurtbox(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::WallHurtbox);
-			SetArchetype(CompNames::WorldPosition);
-			SetArchetype(CompNames::GenerateFlag);
-			SetArchetype(CompNames::KillFlag);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				if (input->GenerateFlag.Components[i].GeneratedOnThisTick) {
-					pHurtboxes->SetWall((int)roundf(input->WorldPosition.Components[i].WorldPos.Parallel.m128_f32[0]),
-						(int)roundf(input->WorldPosition.Components[i].WorldPos.Parallel.m128_f32[1]), input->IdArray[i]);
+		WallHurtbox(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+
+			for (auto [entity, wallHurtbox, worldPosition, generateFlag, killFlag] : pEntities->Registry.view <
+				Component::WallHurtbox,
+				Component::WorldPosition,
+				Component::GenerateFlag,
+				Component::KillFlag >().each()) {
+				if (generateFlag.GeneratedOnThisTick) {
+					pHurtboxes->SetWall((int)roundf(worldPosition.WorldPos.Parallel.m128_f32[0]),
+						(int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1]), entity);
 				}
-				if (input->KillFlag.Components[i].KillOnThisTick) {
-					pHurtboxes->DeleteWall((int)roundf(input->WorldPosition.Components[i].WorldPos.Parallel.m128_f32[0]),
-						(int)roundf(input->WorldPosition.Components[i].WorldPos.Parallel.m128_f32[1]));
+				if (killFlag.KillOnThisTick) {
+					pHurtboxes->DeleteWall((int)roundf(worldPosition.WorldPos.Parallel.m128_f32[0]),
+						(int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1]));
 				}
 			}
 		}
 	};
 	class BallHurtbox : public System {
 	public:
-		BallHurtbox(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::AI);
-			SetArchetype(CompNames::WorldPosition);
-			SetArchetype(CompNames::UnitData);
-			SetArchetype(CompNames::UnitOccupationbox);
-			SetArchetype(CompNames::GenerateFlag);
-			SetArchetype(CompNames::MoveFlag);
-			SetArchetype(CompNames::KillFlag);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				input->UnitOccupationbox.Components[i].AlredayChecked = false;
-				if (input->GenerateFlag.Components[i].GeneratedOnThisTick) {
-					float radius = input->WorldPosition.Components[i].WorldPos.Ratio * 0.5;
-					int bottom = (int)roundf(input->WorldPosition.Components[i].WorldPos.Parallel.m128_f32[1] - radius);
-					int top = (int)roundf(input->WorldPosition.Components[i].WorldPos.Parallel.m128_f32[1] + radius);
-					int left = (int)roundf(input->WorldPosition.Components[i].WorldPos.Parallel.m128_f32[0] - radius);
-					int right = (int)roundf(input->WorldPosition.Components[i].WorldPos.Parallel.m128_f32[0] + radius);
-					input->UnitOccupationbox.Components[i].OccupingRectBottom = bottom;
-					input->UnitOccupationbox.Components[i].OccupingRectTop = top;
-					input->UnitOccupationbox.Components[i].OccupingRectLeft = left;
-					input->UnitOccupationbox.Components[i].OccupingRectRight = right;
+		BallHurtbox(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+
+			for (auto [entity, worldPosition, unitData, unitOccupationbox, generateFlag, moveFlag, killFlag] : pEntities->Registry.view<
+				Component::WorldPosition,
+				Component::UnitData,
+				Component::UnitOccupationbox,
+				Component::GenerateFlag,
+				Component::MoveFlag,
+				Component::KillFlag	>().each()) {
+				unitOccupationbox.AlredayChecked = false;
+				if (generateFlag.GeneratedOnThisTick) {
+					float radius = worldPosition.WorldPos.Ratio * 0.5;
+					int bottom = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1] - radius);
+					int top = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1] + radius);
+					int left = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[0] - radius);
+					int right = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[0] + radius);
+					unitOccupationbox.OccupingRectBottom = bottom;
+					unitOccupationbox.OccupingRectTop = top;
+					unitOccupationbox.OccupingRectLeft = left;
+					unitOccupationbox.OccupingRectRight = right;
 					for (int x = left; x <= right; x++) {
 						for (int y = bottom; y <= top; y++) {
-							pHurtboxes->SetUnit(x, y, input->IdArray[i]);
+							pHurtboxes->SetUnit(x, y, entity,unitData.Team);
 						}
 					}
 				}
-				if (input->WorldPosition.Components[i].NeedUpdate)
+				if (worldPosition.NeedUpdate)
 				{
-					int OccupyingBottom = input->UnitOccupationbox.Components[i].OccupingRectBottom;
-					int OccupyingTop = input->UnitOccupationbox.Components[i].OccupingRectTop;
-					int OccupyingLeft = input->UnitOccupationbox.Components[i].OccupingRectLeft;
-					int OccupyingRight = input->UnitOccupationbox.Components[i].OccupingRectRight;
-					float radius = input->WorldPosition.Components[i].WorldPos.Ratio * 0.5;
-					int CurrentBottom = (int)roundf(input->WorldPosition.Components[i].WorldPos.Parallel.m128_f32[1] - radius);
-					int CurrentTop = (int)roundf(input->WorldPosition.Components[i].WorldPos.Parallel.m128_f32[1] + radius);
-					int CurrentLeft = (int)roundf(input->WorldPosition.Components[i].WorldPos.Parallel.m128_f32[0] - radius);
-					int CurrentRight = (int)roundf(input->WorldPosition.Components[i].WorldPos.Parallel.m128_f32[0] + radius);
+					int OccupyingBottom = unitOccupationbox.OccupingRectBottom;
+					int OccupyingTop = unitOccupationbox.OccupingRectTop;
+					int OccupyingLeft = unitOccupationbox.OccupingRectLeft;
+					int OccupyingRight = unitOccupationbox.OccupingRectRight;
+					float radius = worldPosition.WorldPos.Ratio * 0.5;
+					int CurrentBottom = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1] - radius);
+					int CurrentTop = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1] + radius);
+					int CurrentLeft = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[0] - radius);
+					int CurrentRight = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[0] + radius);
 					//占有エリアが変わったなら
 					if (OccupyingBottom != CurrentBottom ||
 						OccupyingTop != CurrentTop ||
@@ -381,28 +458,28 @@ namespace Systems {
 						OccupyingRight != CurrentRight) {
 						for (int x = OccupyingLeft; x <= OccupyingRight; x++) {
 							for (int y = OccupyingBottom; y <= OccupyingTop; y++) {
-								pHurtboxes->DeleteUnit(x, y, input->IdArray[i]);
+								pHurtboxes->DeleteUnit(x, y, entity,unitData.Team);
 							}
 						}
 						for (int x = CurrentLeft; x <= CurrentRight; x++) {
 							for (int y = CurrentBottom; y <= CurrentTop; y++) {
-								pHurtboxes->SetUnit(x, y, input->IdArray[i]);
+								pHurtboxes->SetUnit(x, y, entity,unitData.Team);
 							}
 						}
 					}
-					input->UnitOccupationbox.Components[i].OccupingRectBottom = CurrentBottom;
-					input->UnitOccupationbox.Components[i].OccupingRectTop = CurrentTop;
-					input->UnitOccupationbox.Components[i].OccupingRectLeft = CurrentLeft;
-					input->UnitOccupationbox.Components[i].OccupingRectRight = CurrentRight;
+					unitOccupationbox.OccupingRectBottom = CurrentBottom;
+					unitOccupationbox.OccupingRectTop = CurrentTop;
+					unitOccupationbox.OccupingRectLeft = CurrentLeft;
+					unitOccupationbox.OccupingRectRight = CurrentRight;
 				}
-				if (input->KillFlag.Components[i].KillOnThisTick) {
-					int bottom = input->UnitOccupationbox.Components[i].OccupingRectBottom;
-					int top = input->UnitOccupationbox.Components[i].OccupingRectBottom;
-					int left = input->UnitOccupationbox.Components[i].OccupingRectBottom;
-					int right = input->UnitOccupationbox.Components[i].OccupingRectBottom;
+				if (killFlag.KillOnThisTick) {
+					int bottom = unitOccupationbox.OccupingRectBottom;
+					int top = unitOccupationbox.OccupingRectBottom;
+					int left = unitOccupationbox.OccupingRectBottom;
+					int right = unitOccupationbox.OccupingRectBottom;
 					for (int x = left; x < right; x++) {
 						for (int y = bottom; y < top; y++) {
-							pHurtboxes->DeleteUnit(x, y, input->IdArray[i]);
+							pHurtboxes->DeleteUnit(x, y, entity,unitData.Team);
 						}
 					}
 				}
@@ -414,25 +491,23 @@ namespace Systems {
 	//貫通するのか、移動を阻害されるのかのフラグによって衝突後にどういった運動につながるかを決める。
 	class CheckBulletCollision : public System {
 	public:
-		CheckBulletCollision(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::Motion);
-			SetArchetype(CompNames::WorldPosition);
-			SetArchetype(CompNames::CircleHitbox);
-			SetArchetype(CompNames::GiveDamage);
-			SetArchetype(CompNames::BulletData);
-			SetArchetype(CompNames::HitFlag);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				input->HitFlag.Components[i].IsHit = false;
-				input->HitFlag.Components[i].IsHit = pHurtboxes->CheckCircleCollid(
-					input->WorldPosition.Components[i].NextTickWorldPos.Parallel,
-					input->CircleHitbox.Components[i].Radius,
+		CheckBulletCollision(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			
+			for(auto [entity,motion,worldPosition,circleHitbox,giveDamage,bulletData,hitFlag] : pEntities->Registry.view<
+				Component::Motion,
+				Component::WorldPosition,
+				Component::CircleHitbox,
+				Component::GiveDamage,
+				Component::BulletData,
+				Component::HitFlag>().each()) {
+				hitFlag.IsHit = false;
+				hitFlag.IsHit = pHurtboxes->CheckCircleCollid(
+					worldPosition.NextTickWorldPos.Parallel,
+					circleHitbox.Radius,
 					//判定は1回、壁に衝突するかはballData参照、キャラクターとの衝突もballData参照、味方とは衝突しない
-					&input->GiveDamage.Components[i].Damage, true, input->BulletData.Components[i].Team);
-				if (input->HitFlag.Components[i].IsHit && input->BulletData.Components[i].InterfareToWall) {
+					&giveDamage.Damage, true, bulletData.Team);
+				if (hitFlag.IsHit && bulletData.InterfareToWall) {
 					
 				}
 			}
@@ -440,30 +515,24 @@ namespace Systems {
 	};
 	class CheckUnitCollision : public System {
 	public:
-		CheckUnitCollision(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::Motion);
-			SetArchetype(CompNames::WorldPosition);
-			SetArchetype(CompNames::UnitOccupationbox);
-			SetArchetype(CompNames::UnitData);
-			SetArchetype(CompNames::HitFlag);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				input->UnitOccupationbox.Components[i].AlredayChecked = true;
-				input->HitFlag.Components[i].IsHit = false;
+		CheckUnitCollision(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			
+			for(auto [entity,motion,worldPosition,unitOccupationbox,unitData,hitFlag] : pEntities->Registry.view<
+				Component::Motion,
+				Component::WorldPosition,
+				Component::UnitOccupationbox,
+				Component::UnitData,
+				Component::HitFlag>().each()) {
+				bool h = pEntities->Registry.get<Component::HitFlag>(entity).IsHit;
+				unitOccupationbox.AlredayChecked = true;
+				hitFlag.IsHit = false;
 				//そもそも動こうとしている場合
-				if (input->WorldPosition.Components[i].NeedUpdate) {
+				if (worldPosition.NeedUpdate) {
 					//衝突している場合
-					if (pHurtboxes->CheckUnitCollid(input->IdArray[i])) {
-						if (i == 0) {
-							OutputDebugStringA("Collided\n");
-						}
-						input->WorldPosition.Components[i].NeedUpdate = false;
-						input->HitFlag.Components[i].IsHit = true;
+					if (pHurtboxes->CheckUnitCollid(entity)) {
+						hitFlag.IsHit = true;
 					}
-					if (i == 0)OutputDebugStringA("Collision Check End\n");
 				}
 			}
 		}
@@ -471,173 +540,216 @@ namespace Systems {
 	//見た目に関する
 	class BlockAppearance : public System {
 	public:
-		BlockAppearance(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::WorldPosition);
-			SetArchetype(CompNames::BlockAppearance);
-			SetArchetype(CompNames::GenerateFlag);
-			SetArchetype(CompNames::MoveFlag);
-			SetArchetype(CompNames::AppearanceChanged);
-			SetArchetype(CompNames::KillFlag);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				//見た目の登録
-				if (input->GenerateFlag.Components[i].GeneratedOnThisTick) {
-					Interface::BlockInstanceType* pInstance = nullptr;
-					input->BlockAppearance.Components[i].BufferDataIndex =
-						pBlockAppearance->Add(input->IdArray[i], &pInstance);
-					pInstance->Set
-					(&input->WorldPosition.Components[i].WorldMatrix,
-						&input->BlockAppearance.Components[i].TexCoord12, &input->BlockAppearance.Components[i].TexCoord3M);
+		BlockAppearance(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			
+			for(auto [entity,worldPosition,blockAppearance,blockData,generateFlag,moveFlag,appearanceChanged,killFlag] : pEntities->Registry.view<
+				Component::WorldPosition,
+				Component::BlockAppearance,
+				Component::BlockData,
+				Component::GenerateFlag,
+				Component::MoveFlag,
+				Component::AppearanceChanged,
+				Component::KillFlag>().each()) {
+				if (blockData.OnTop) {
+					// 影の更新
+					int x = (int)worldPosition.WorldPos.Parallel.m128_f32[0];
+					int y = (int)worldPosition.WorldPos.Parallel.m128_f32[1];
+					if (pEntities->ShouldUpdateShadow[y * WorldWidth + x]) {
+						blockAppearance.TexCoord3M.m128_f32[2] = pEntities->GetWallShadow(x, y);
+					}
+					//見た目の登録
+					if (generateFlag.GeneratedOnThisTick) {
+						Interface::BlockInstanceType* pInstance = nullptr;
+						blockAppearance.BufferDataIndex =
+							pWallAppearance->Add(entity, &pInstance);
+						pInstance->Set
+						(&worldPosition.WorldMatrix,
+							&blockAppearance.TexCoord12, &blockAppearance.TexCoord3M);
+					}
+					//見た目の更新
+					if (moveFlag.Moved || appearanceChanged.Changed) {
+						appearanceChanged.Changed = false;
+						Interface::BlockInstanceType* pInstance = nullptr;
+						pWallAppearance->Update(blockAppearance.BufferDataIndex, &pInstance);
+						pInstance->Set(&worldPosition.WorldMatrix,
+							&blockAppearance.TexCoord12, &blockAppearance.TexCoord3M);
+					}
+					//見た目の削除
+					if (killFlag.KillOnThisTick) {
+						pEntities->DeleteWall(x, y);
+						//移動させたSameArchIndexを受け取る
+						entt::entity replaced = pWallAppearance->Delete(
+							blockAppearance.BufferDataIndex);
+						//移動させたRectAppIdを変更する
+						Component::BlockAppearance* pReplace = pEntities->Registry.try_get<Component::BlockAppearance>(replaced);
+						if (pReplace != nullptr) {
+							pReplace->BufferDataIndex = blockAppearance.BufferDataIndex;
+						}
+					}
 				}
-				//見た目の更新
-				if (input->MoveFlag.Components[i].Moved || input->AppearanceChanged.Components[i].Changed) {
-					input->AppearanceChanged.Components[i].Changed = false;
-					Interface::BlockInstanceType* pInstance = nullptr;
-					pBlockAppearance->Update(input->BlockAppearance.Components[i].BufferDataIndex, &pInstance);
-					pInstance->Set(&input->WorldPosition.Components[i].WorldMatrix,
-						&input->BlockAppearance.Components[i].TexCoord12, &input->BlockAppearance.Components[i].TexCoord3M);
-				}
-				//見た目の削除
-				if (input->KillFlag.Components[i].KillOnThisTick) {
-					//移動させたSameArchIndexを受け取る
-					Interface::SameArchIndex replaced = pBlockAppearance->Delete(
-						input->BlockAppearance.Components[i].BufferDataIndex);
-					//移動させたRectAppIdを変更する
-					if (replaced != -1) {
-						input->BlockAppearance.Components[replaced].BufferDataIndex =
-							input->BlockAppearance.Components[i].BufferDataIndex;
+				else {
+					// 影の更新
+					int x = (int)worldPosition.WorldPos.Parallel.m128_f32[0];
+					int y = (int)worldPosition.WorldPos.Parallel.m128_f32[1];
+					if (pEntities->ShouldUpdateShadow[y * WorldWidth + x]) {
+						blockAppearance.TexCoord3M.m128_f32[2] = pEntities->GetFloorShadow(x, y);
+					}
+					//見た目の登録
+					if (generateFlag.GeneratedOnThisTick) {
+						Interface::BlockInstanceType* pInstance = nullptr;
+						blockAppearance.BufferDataIndex =
+							pFloorAppearance->Add(entity, &pInstance);
+						pInstance->Set
+						(&worldPosition.WorldMatrix,
+							&blockAppearance.TexCoord12, &blockAppearance.TexCoord3M);
+					}
+					//見た目の更新
+					if (moveFlag.Moved || appearanceChanged.Changed) {
+						appearanceChanged.Changed = false;
+						Interface::BlockInstanceType* pInstance = nullptr;
+						pFloorAppearance->Update(blockAppearance.BufferDataIndex, &pInstance);
+						pInstance->Set(&worldPosition.WorldMatrix,
+							&blockAppearance.TexCoord12, &blockAppearance.TexCoord3M);
+					}
+					//見た目の削除
+					if (killFlag.KillOnThisTick) {
+						//移動させたSameArchIndexを受け取る
+						entt::entity replaced = pFloorAppearance->Delete(
+							blockAppearance.BufferDataIndex);
+						//移動させたRectAppIdを変更する
+						Component::BlockAppearance* pReplace = pEntities->Registry.try_get<Component::BlockAppearance>(replaced);
+						if (pReplace != nullptr) {
+							pReplace->BufferDataIndex = blockAppearance.BufferDataIndex;
+						}
 					}
 				}
 			}
+			pEntities->ShouldUpdateShadow.reset();
 		}
 	};
 	//見た目に関する
 	class BallAppearance : public System {
 	public:
-		BallAppearance(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::WorldPosition);
-			SetArchetype(CompNames::BallAppearance);
-			SetArchetype(CompNames::GenerateFlag);
-			SetArchetype(CompNames::MoveFlag);
-			SetArchetype(CompNames::AppearanceChanged);
-			SetArchetype(CompNames::KillFlag);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
+		BallAppearance(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			
+			for(auto [entity,worldPosition,ballAppearance,generateFlag,moveFlag,appearanceChanged,killFlag] : pEntities->Registry.view<
+				Component::WorldPosition,
+				Component::BallAppearance,
+				Component::GenerateFlag,
+				Component::MoveFlag,
+				Component::AppearanceChanged,
+				Component::KillFlag>().each()) {
 				//見た目の登録
-				if (input->GenerateFlag.Components[i].GeneratedOnThisTick) {
+				if (generateFlag.GeneratedOnThisTick) {
 					Interface::BallInstanceType* pInstance = nullptr;
 
 					//影
-					input->BallAppearance.Components[i].BufferDataIndex =
-						pBallAppearance[0].Add(input->IdArray[i], &pInstance);
+					ballAppearance.BufferDataIndex =
+						pBallAppearance[0].Add(entity, &pInstance);
 					DirectX::XMMATRIX shadowWorld{
-						{input->WorldPosition.Components[i].WorldPos.Ratio, 0.0f, 0.0f, 0.0f},
-						{0.0f, input->WorldPosition.Components[i].WorldPos.Ratio, 0.0f, 0.0f},
+						{worldPosition.WorldPos.Ratio, 0.0f, 0.0f, 0.0f},
+						{0.0f, worldPosition.WorldPos.Ratio, 0.0f, 0.0f},
 						{0.0f, 0.0f, 0.0f, 0.0f},
-						DirectX::XMVectorAdd({0.0f, input->WorldPosition.Components[i].WorldPos.Ratio * -0.1f, 0.0f, 0.0f},input->WorldPosition.Components[i].WorldPos.Parallel)
+						DirectX::XMVectorAdd({0.0f, worldPosition.WorldPos.Ratio * -0.1f, 0.0f, 0.0f},worldPosition.WorldPos.Parallel)
 					};
 					pInstance->Set(&shadowWorld,
-						&input->BallAppearance.Components[i].TexCoord[0],
-						&input->BallAppearance.Components[i].Color0[0],
-						&input->BallAppearance.Components[i].Color1[0],
-						&input->BallAppearance.Components[i].Color2[0]);
+						&ballAppearance.TexCoord[0],
+						&ballAppearance.Color0[0],
+						&ballAppearance.Color1[0],
+						&ballAppearance.Color2[0]);
 
 
 					//本体
-					pBallAppearance[1].Add(input->IdArray[i], &pInstance);
+					pBallAppearance[1].Add(entity, &pInstance);
 					DirectX::XMMATRIX baseWorld{
-						{input->WorldPosition.Components[i].WorldPos.Ratio, 0.0f, 0.0f, 0.0f },
-						{0.0f, input->WorldPosition.Components[i].WorldPos.Ratio, 0.0f, 0.0f},
+						{worldPosition.WorldPos.Ratio, 0.0f, 0.0f, 0.0f },
+						{0.0f, worldPosition.WorldPos.Ratio, 0.0f, 0.0f},
 						{0.0f, 0.0f, 0.0f, 0.0f},
-						input->WorldPosition.Components[i].WorldPos.Parallel
+						worldPosition.WorldPos.Parallel
 					};
 					pInstance->Set(&baseWorld,
-						&input->BallAppearance.Components[i].TexCoord[1],
-						&input->BallAppearance.Components[i].Color0[1],
-						&input->BallAppearance.Components[i].Color1[1],
-						&input->BallAppearance.Components[i].Color2[1]);
+						&ballAppearance.TexCoord[1],
+						&ballAppearance.Color0[1],
+						&ballAppearance.Color1[1],
+						&ballAppearance.Color2[1]);
 
 					//模様
 					//上にあるものが奥に見えるのの再現
-					pBallAppearance[2].Add(input->IdArray[i], &pInstance);
+					pBallAppearance[2].Add(entity, &pInstance);
 					DirectX::XMMATRIX patternWorld{
 						0.0f, 0.0f, 0.0f, 0.0f,
 							0.0f, 0.0f, 0.0f, 0.0f,
 							0.0f, 0.0f, 0.0f, 0.0f,
-							0.0f, input->WorldPosition.Components[i].WorldPos.Ratio*0.2f, 0.0f, 0.0f
+							0.0f, worldPosition.WorldPos.Ratio*0.2f, 0.0f, 0.0f
 					};
-					patternWorld = patternWorld + input->WorldPosition.Components[i].WorldMatrix;
+					patternWorld = patternWorld + worldPosition.WorldMatrix;
 					pInstance->Set(&patternWorld,
-						&input->BallAppearance.Components[i].TexCoord[2],
-						&input->BallAppearance.Components[i].Color0[2],
-						&input->BallAppearance.Components[i].Color1[2],
-						&input->BallAppearance.Components[i].Color2[2]);
+						&ballAppearance.TexCoord[2],
+						&ballAppearance.Color0[2],
+						&ballAppearance.Color1[2],
+						&ballAppearance.Color2[2]);
 
 
 				}
 				//見た目の更新
-				if (input->MoveFlag.Components[i].Moved || input->AppearanceChanged.Components[i].Changed) {
-					input->AppearanceChanged.Components[i].Changed = false;
+				if (moveFlag.Moved || appearanceChanged.Changed) {
+					appearanceChanged.Changed = false;
 					Interface::BallInstanceType* pInstance = nullptr;
 
 
 					//影
-					pBallAppearance[0].Update(input->BallAppearance.Components[i].BufferDataIndex, &pInstance);
+					pBallAppearance[0].Update(ballAppearance.BufferDataIndex, &pInstance);
 					DirectX::XMMATRIX shadowWorld{
-						{input->WorldPosition.Components[i].WorldPos.Ratio, 0.0f, 0.0f, 0.0f},
-						{0.0f, input->WorldPosition.Components[i].WorldPos.Ratio, 0.0f, 0.0f},
+						{worldPosition.WorldPos.Ratio, 0.0f, 0.0f, 0.0f},
+						{0.0f, worldPosition.WorldPos.Ratio, 0.0f, 0.0f},
 						{0.0f, 0.0f, 0.0f, 0.0f},
-						DirectX::XMVectorAdd({0.0f, input->WorldPosition.Components[i].WorldPos.Ratio * -0.1f, 0.0f, 0.0f},input->WorldPosition.Components[i].WorldPos.Parallel)
+						DirectX::XMVectorAdd({0.0f, worldPosition.WorldPos.Ratio * -0.1f, 0.0f, 0.0f},worldPosition.WorldPos.Parallel)
 					};
 					pInstance->Set(&shadowWorld,
-						&input->BallAppearance.Components[i].TexCoord[0],
-						&input->BallAppearance.Components[i].Color0[0],
-						&input->BallAppearance.Components[i].Color1[0],
-						&input->BallAppearance.Components[i].Color2[0]);
+						&ballAppearance.TexCoord[0],
+						&ballAppearance.Color0[0],
+						&ballAppearance.Color1[0],
+						&ballAppearance.Color2[0]);
 
 
-					pBallAppearance[1].Update(input->BallAppearance.Components[i].BufferDataIndex, &pInstance);
+					pBallAppearance[1].Update(ballAppearance.BufferDataIndex, &pInstance);
 					DirectX::XMMATRIX baseWorld{
-						{input->WorldPosition.Components[i].WorldPos.Ratio, 0.0f, 0.0f, 0.0f },
-						{0.0f, input->WorldPosition.Components[i].WorldPos.Ratio, 0.0f, 0.0f},
+						{worldPosition.WorldPos.Ratio, 0.0f, 0.0f, 0.0f },
+						{0.0f, worldPosition.WorldPos.Ratio, 0.0f, 0.0f},
 						{0.0f, 0.0f, 0.0f, 0.0f},
-						input->WorldPosition.Components[i].WorldPos.Parallel
+						worldPosition.WorldPos.Parallel
 					};
 					pInstance->Set(&baseWorld,
-						&input->BallAppearance.Components[i].TexCoord[1],
-						&input->BallAppearance.Components[i].Color0[1],
-						&input->BallAppearance.Components[i].Color1[1],
-						&input->BallAppearance.Components[i].Color2[1]);
+						&ballAppearance.TexCoord[1],
+						&ballAppearance.Color0[1],
+						&ballAppearance.Color1[1],
+						&ballAppearance.Color2[1]);
 
-					pBallAppearance[2].Update(input->BallAppearance.Components[i].BufferDataIndex, &pInstance);
+					pBallAppearance[2].Update(ballAppearance.BufferDataIndex, &pInstance);
 					DirectX::XMMATRIX patternWorld{
 						0.0f, 0.0f, 0.0f, 0.0f,
 						0.0f, 0.0f, 0.0f, 0.0f,
 						0.0f, 0.0f, 0.0f, 0.0f,0.0f, 
-						input->WorldPosition.Components[i].WorldPos.Ratio * 0.2f, 0.0f, 0.0f
+						worldPosition.WorldPos.Ratio * 0.2f, 0.0f, 0.0f
 					};
-					patternWorld = patternWorld + input->WorldPosition.Components[i].WorldMatrix;
+					patternWorld = patternWorld + worldPosition.WorldMatrix;
 					pInstance->Set(&patternWorld,
-						&input->BallAppearance.Components[i].TexCoord[2],
-						&input->BallAppearance.Components[i].Color0[2],
-						&input->BallAppearance.Components[i].Color1[2],
-						&input->BallAppearance.Components[i].Color2[2]);
+						&ballAppearance.TexCoord[2],
+						&ballAppearance.Color0[2],
+						&ballAppearance.Color1[2],
+						&ballAppearance.Color2[2]);
 				}
 				//見た目の削除
-				if (input->KillFlag.Components[i].KillOnThisTick) {
+				if (killFlag.KillOnThisTick) {
 					//移動させたSameArchIndexを受け取る
-					Interface::SameArchIndex replaced = pBallAppearance->Delete(
-						input->BallAppearance.Components[i].BufferDataIndex);
+					entt::entity replaced = pBallAppearance->Delete(
+						ballAppearance.BufferDataIndex);
 					//移動させたRectAppIdを変更する
-					if (replaced != -1) {
-						input->BallAppearance.Components[replaced].BufferDataIndex =
-							input->BallAppearance.Components[i].BufferDataIndex;
+					Component::BallAppearance* pReplace = pEntities->Registry.try_get<Component::BallAppearance>(replaced);
+					if (pReplace != nullptr) {
+						pReplace->BufferDataIndex = ballAppearance.BufferDataIndex;
 					}
 				}
 			}
@@ -646,46 +758,45 @@ namespace Systems {
 	//見た目に関する
 	class BulletAppearance : public System {
 	public:
-		BulletAppearance(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::WorldPosition);
-			SetArchetype(CompNames::BulletAppearance);
-			SetArchetype(CompNames::GenerateFlag);
-			SetArchetype(CompNames::MoveFlag);
-			SetArchetype(CompNames::KillFlag);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
+		BulletAppearance(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			
+			for(auto [entity,worldPosition,bulletAppearance,generateFlag,moveFlag,appearanceChanged,killFlag] : pEntities->Registry.view<
+				Component::WorldPosition,
+				Component::BulletAppearance,
+				Component::GenerateFlag,
+				Component::MoveFlag,
+				Component::AppearanceChanged,
+				Component::KillFlag>().each()) {
 				//見た目の登録
-				if (input->GenerateFlag.Components[i].GeneratedOnThisTick) {
+				if (generateFlag.GeneratedOnThisTick) {
 					Interface::BulletInstanceType* pInstance = nullptr;
-					input->BulletAppearance.Components[i].BufferDataIndex =
-						pBulletAppearance->Add(input->IdArray[i], &pInstance);
-					pInstance->Set(&input->WorldPosition.Components[i].WorldMatrix,
-						&input->BulletAppearance.Components[i].TexCoord,
-						&input->BulletAppearance.Components[i].Color0,
-						&input->BulletAppearance.Components[i].Color0);
+					bulletAppearance.BufferDataIndex =
+						pBulletAppearance->Add(entity, &pInstance);
+					pInstance->Set(&worldPosition.WorldMatrix,
+						&bulletAppearance.TexCoord,
+						&bulletAppearance.Color0,
+						&bulletAppearance.Color0);
 				}
 				//見た目の更新
-				if (input->MoveFlag.Components[i].Moved || input->AppearanceChanged.Components[i].Changed) {
-					input->AppearanceChanged.Components[i].Changed = false;
+				if (moveFlag.Moved || appearanceChanged.Changed) {
+					appearanceChanged.Changed = false;
 					Interface::BulletInstanceType* pInstance = nullptr;
-					pBulletAppearance->Update(input->BallAppearance.Components[i].BufferDataIndex, &pInstance);
-					pInstance->Set(&input->WorldPosition.Components[i].WorldMatrix,
-						&input->BulletAppearance.Components[i].TexCoord,
-						&input->BulletAppearance.Components[i].Color0,
-						&input->BulletAppearance.Components[i].Color0);
+					pBulletAppearance->Update(bulletAppearance.BufferDataIndex, &pInstance);
+					pInstance->Set(&worldPosition.WorldMatrix,
+						&bulletAppearance.TexCoord,
+						&bulletAppearance.Color0,
+						&bulletAppearance.Color0);
 				}
 				//見た目の削除
-				if (input->KillFlag.Components[i].KillOnThisTick) {
+				if (killFlag.KillOnThisTick) {
 					//移動させたSameArchIndexを受け取る
-					Interface::SameArchIndex replaced = pBulletAppearance->Delete(
-						input->BulletAppearance.Components[i].BufferDataIndex);
+					entt::entity replaced = pBulletAppearance->Delete(
+						bulletAppearance.BufferDataIndex);
 					//移動させたRectAppIdを変更する
-					if (replaced != -1) {
-						input->BulletAppearance.Components[replaced].BufferDataIndex =
-							input->BulletAppearance.Components[i].BufferDataIndex;
+					Component::BulletAppearance* pReplace = pEntities->Registry.try_get<Component::BulletAppearance>(replaced);
+					if (pReplace != nullptr) {
+						pReplace->BufferDataIndex = bulletAppearance.BufferDataIndex;
 					}
 				}
 			}
@@ -694,175 +805,155 @@ namespace Systems {
 	//オブジェクトの生成に関する
 	class GenerateHitEffect : public System {
 	public:
-		GenerateHitEffect(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::WorldPosition);
-			SetArchetype(CompNames::HitEffect);
-			SetArchetype(CompNames::HitFlag);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
+		GenerateHitEffect(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			
+			for(auto [entity,worldPosition,hitEffece,hitFlag] : pEntities->Registry.view<
+				Component::WorldPosition,
+				Component::HitEffect,
+				Component::HitFlag>().each()) {
 			}
 		}
 	};
 	class GenerateTrajectory : public System {
 	public:
-		GenerateTrajectory(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::WorldPosition);
-			SetArchetype(CompNames::Trajectory);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-
+		GenerateTrajectory(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			for (auto [entity,worldPosition,trajectory] : pEntities->Registry.view<
+				Component::WorldPosition,
+				Component::Trajectory>().each()) {
+			}
 		}
 	};
 	// ミッション進行に関する
 	class InvationObserve : public System {
 	public:
-		InvationObserve(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::Spawn);
-			SetArchetype(CompNames::InvationObservance);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
+		InvationObserve(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			for (auto [entity,spawn,invationObservance] : pEntities->Registry.view<
+				Component::Spawn,
+				Component::InvationObservance>().each()) {
+			}
 		}
 	};
 	class UnitCountObserve : public System {
 	public:
-
-		UnitCountObserve(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::Spawn);
-			SetArchetype(CompNames::UnitCountObservance);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
+		UnitCountObserve(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			
+			for(auto [entity,spawn,unitCountObservance] : pEntities->Registry.view<
+				Component::Spawn,
+				Component::UnitCountObservance>().each()) {
 				// まだフラグが立ってない(まだスポーンが行われてない)かつボーダーを超えた場合
-				if (!input->Spawn.Components[i].SpawnFlag && 
-					pAllEntities->UnitCount[input->UnitCountObservance.Components[i].Team] <= input->UnitCountObservance.Components[i].Border) {
-					input->Spawn.Components[i].SpawnFlag = true;
+				if (!spawn.SpawnFlag && 
+					pEntities->UnitCountEachTeam[unitCountObservance.Team] <= unitCountObservance.Border) {
+					spawn.SpawnFlag = true;
 				}
 			}
 		}
 	};
 	class Spawn : public System {
 	public:
-		Spawn(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::Spawn);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				if (input->Spawn.Components[i].SpawnFlag) {
-					input->Spawn.Components[i].TimeGapSince--;
-					Interface::UnitIndex toSpawn = input->Spawn.Components[i].ToSpawn;
-					auto Xdist = std::uniform_real_distribution((float)input->Spawn.Components[i].SpawnAreaLeft,
-						(float)input->Spawn.Components[i].SpawnAreaRight);
-					auto Ydist = std::uniform_real_distribution((float)input->Spawn.Components[i].SpawnAreaBottom,
-						(float)input->Spawn.Components[i].SpawnAreaTop);
-					//占有エリアのサイズ
-					//半径1.5の円となるので1.5倍
-					float radius = pAllEntities->UnitInfos[toSpawn].Ratio * 0.5;
+		Spawn(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			
+			for (auto [entity,spawn] : pEntities->Registry.view < Component::Spawn > ().each()) {
+				if (spawn.SpawnFlag) {
+					spawn.TimeGapSince--;
+
 					//遅れ分を消化済み
-					if (input->Spawn.Components[i].TimeGapSince <= 0) {
-						for (int j = 0; j < input->Spawn.Components[i].HowManyInEachTick; j++) {
-							float Xpos = Xdist(Interface::RandEngine);
-							float Ypos = Ydist(Interface::RandEngine);
-							if (pHurtboxes->IsAbleToSpawn(radius,radius,radius,radius, Xpos, Ypos) &&
-								input->Spawn.Components[i].CountLeft >= 1) {
-								pHurtboxes->SetOccupation(radius,radius,radius,radius, Xpos, Ypos);
+					if (spawn.TimeGapSince <= 0) {
+						// 部隊長のスポーン
+						{
+							Interface::UnitIndex leader = spawn.Leader;
+							//占有エリアのサイズ
+							//半径1.5の円となるので1.5倍
+							float radius = pEntities->UnitInfos[leader].Ratio * 0.5;
+							float Xpos = Interface::UniformRandFloat(spawn.SpawnAreaLeft, spawn.SpawnAreaRight);
+							float Ypos = Interface::UniformRandFloat(spawn.SpawnAreaBottom, spawn.SpawnAreaTop);
+							if (pHurtboxes->IsAbleToSpawn(radius, radius, radius, radius, Xpos, Ypos)) {
 								Interface::RelationOfCoord pos = Interface::RelationOfCoord();
 								pos.Parallel = {
 									(float)Xpos,(float)Ypos,0,1
 								};
-								pAllEntities->AddUnitWithMagnification(toSpawn,
-									&input->Spawn.Components[i].CoreData, &pos);
-								input->Spawn.Components[i].CountLeft--;
+								spawn.CoreData.IsLeader = true;
+								spawn.CoreData.LeaderId = pEntities->EmplaceUnitWithInitData(leader, &spawn.CoreData, &pos);
 							}
 						}
-					}
-					auto probDist = std::uniform_real_distribution(0.0f, 1.0f);
-					if (probDist(Interface::RandEngine) <
-						input->Spawn.Components[i].HowManyInEachTick -
-						floor(input->Spawn.Components[i].HowManyInEachTick)) {
-						int Xpos = Xdist(Interface::RandEngine);
-						int Ypos = Ydist(Interface::RandEngine);
-
-						if (pHurtboxes->IsAbleToSpawn(radius,radius,radius,radius, Xpos, Ypos) &&
-							input->Spawn.Components[i].CountLeft >= 1) {
-							pHurtboxes->SetOccupation(radius, radius, radius, radius, Xpos, Ypos);
-							Interface::RelationOfCoord pos = Interface::RelationOfCoord();
-							pos.Parallel = {
-								(float)Xpos,(float)Ypos,0,1
-							};
-							pAllEntities->AddUnitWithMagnification(toSpawn,
-								&input->Spawn.Components[i].CoreData, &pos);
-							input->Spawn.Components[i].CountLeft--;
+						// 部下のスポーン
+						{
+							spawn.CoreData.IsLeader = false;
+							Interface::UnitIndex member = spawn.Member;
+							//占有エリアのサイズ
+							//半径1.5の円となるので1.5倍
+							float radius = pEntities->UnitInfos[member].Ratio * 0.5;
+							while (0 < spawn.CountLeft) {
+								float Xpos = Interface::UniformRandFloat(spawn.SpawnAreaLeft, spawn.SpawnAreaRight);
+								float Ypos = Interface::UniformRandFloat(spawn.SpawnAreaBottom, spawn.SpawnAreaTop);
+								if (pHurtboxes->IsAbleToSpawn(radius, radius, radius, radius, Xpos, Ypos)) {
+									Interface::RelationOfCoord pos = Interface::RelationOfCoord();
+									pos.Parallel = {
+										(float)Xpos,(float)Ypos,0,1
+									};
+									pEntities->EmplaceUnitWithInitData(member, &spawn.CoreData, &pos);
+									spawn.CountLeft--;
+								}
+							}
 						}
 					}
 				}
 			}
 		}
 	};
+	/*
 	class TestA : public System {
 	public:
-		TestA(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::Test1);
-			SetArchetype(CompNames::TestResult);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				input->TestResult.Components[i].UpdatedByTestA = true;
+		TestA(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			
+			for(auto [entity,test1,testResult] : pEntities->Registry.view<
+				Component::Test1,
+				Component::TestResult>().each()) {
+				testResult.UpdatedByTestA = true;
 			}
 		}
 	};
 	class TestB : public System {
 	public:
-		TestB(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::Test2);
-			SetArchetype(CompNames::TestResult);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				input->TestResult.Components[i].UpdatedByTestB = true;
+		TestB(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			
+			for(auto [entity,test2,testResult] : pEntities->Registry.view<
+				Component::Test2,
+				Component::TestResult>().each()) {
+				testResult.UpdatedByTestB = true;
 			}
 		}
 	};
 	class TestC : public System {
 	public:
-		TestC(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::Test1);
-			SetArchetype(CompNames::Test2);
-			SetArchetype(CompNames::TestResult);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				input->TestResult.Components[i].UpdatedByTestC = true;
+		TestC(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			
+			for(auto [entity,test1,test2,testResult] : pEntities->Registry.view<
+				Component::Test1,
+				Component::Test2,
+				Component::TestResult>().each()) {
+				testResult.UpdatedByTestC = true;
 			}
 		}
 	};
 	class TestD : public System {
 	public:
-		TestD(GameSystem* pGameSystem) : System(pGameSystem) {
-			SetArchetype(CompNames::TestResult);
-			SetTargetList(pAllEntities);
-		}
-		void Update(SameArchetype* input) override {
-			int Isize = input->ValidEntityCount;
-			for (int i = 0; i < Isize; i++) {
-				input->TestResult.Components[i].UpdatedByTestD = true;
+		TestD(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			
+			for (auto [entity,testResult] : pEntities->Registry.view < Component::TestResult > ().each()) {
+				testResult.UpdatedByTestD = true;
 			}
 		}
 	};
+	*/
 }
 // 現ティックの状態を描画した後、次ティックの位置を予想して衝突にかかわる情報の受け渡しと移動だけを行う
 // データの処理は次ティック
@@ -875,11 +966,6 @@ public:
 	}
 	AllSystem(GameSystem* pGameSystem) {
 		SystemArray = std::vector<System*>();
-		//テスト
-		SystemArray.push_back(new Systems::TestA(pGameSystem));
-		SystemArray.push_back(new Systems::TestB(pGameSystem));
-		SystemArray.push_back(new Systems::TestC(pGameSystem));
-		SystemArray.push_back(new Systems::TestD(pGameSystem));
 		//位置の更新
 
 		SystemArray.push_back(new Systems::UpdateWorld(pGameSystem));
@@ -889,6 +975,7 @@ public:
 		SystemArray.push_back(new Systems::UnitCountObserve(pGameSystem));
 		SystemArray.push_back(new Systems::Spawn(pGameSystem));
 		//運動、意思決定
+		SystemArray.push_back(new Systems::CorpsAction(pGameSystem));
 		SystemArray.push_back(new Systems::UnitAction(pGameSystem));
 		SystemArray.push_back(new Systems::CoreApplyLinearAcceralation(pGameSystem));
 
@@ -898,11 +985,10 @@ public:
 
 		// これ以前の処理でこのティックの削除と追加の決定はすべて行われる必要がある
 
-		SystemArray.push_back(new Systems::UpdateValidEntityCount(pGameSystem));
-
 		// ここより下に削除と追加にかかわる処理はする必要がある
 
 		SystemArray.push_back(new Systems::ControlUnitCount(pGameSystem));
+		SystemArray.push_back(new Systems::BindCoreUnit(pGameSystem));
 
 		SystemArray.push_back(new Systems::CalcurateGeneratedWorld(pGameSystem));
 		//描画
@@ -929,7 +1015,7 @@ public:
 		int size = SystemArray.size();
 		OutputDebugStringA("Tick Start\n");
 		for (int i = 0; i < size; i++) {
-			SystemArray[i]->UpdateAll();
+			SystemArray[i]->Update();
 		}
 		OutputDebugStringA("Tick End\n");
 	}

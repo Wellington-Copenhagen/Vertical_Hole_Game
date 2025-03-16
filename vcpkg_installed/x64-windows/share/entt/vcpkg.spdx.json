@@ -1,0 +1,132 @@
+{
+  "$schema": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json",
+  "spdxVersion": "SPDX-2.2",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "documentNamespace": "https://spdx.org/spdxdocs/entt-x64-windows-3.14.0-8313785b-8d6d-4b08-aff8-fe50b3faa5af",
+  "name": "entt:x64-windows@3.14.0 df574efe9451590fef73f78ee9a63ee2bb8a133d8dd02bbd28c70095d7c4a7a1",
+  "creationInfo": {
+    "creators": [
+      "Tool: vcpkg-2024-11-12-eb492805e92a2c14a230f5c3deb3e89f6771c321"
+    ],
+    "created": "2025-03-02T14:35:30Z"
+  },
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "GENERATES",
+      "relatedSpdxElement": "SPDXRef-binary"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-0"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-1"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-2"
+    },
+    {
+      "spdxElementId": "SPDXRef-binary",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-0",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-1",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-2",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    }
+  ],
+  "packages": [
+    {
+      "name": "entt",
+      "SPDXID": "SPDXRef-port",
+      "versionInfo": "3.14.0",
+      "downloadLocation": "git+https://github.com/microsoft/vcpkg@2c9a2cb27bd1e5688b91c4ca0b4aedcc6f92e88f",
+      "homepage": "https://github.com/skypjack/entt",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "description": "Gaming meets modern C++ - a fast and reliable entity-component system and much more",
+      "comment": "This is the port (recipe) consumed by vcpkg."
+    },
+    {
+      "name": "entt:x64-windows",
+      "SPDXID": "SPDXRef-binary",
+      "versionInfo": "df574efe9451590fef73f78ee9a63ee2bb8a133d8dd02bbd28c70095d7c4a7a1",
+      "downloadLocation": "NONE",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "This is a binary package built by vcpkg."
+    },
+    {
+      "SPDXID": "SPDXRef-resource-1",
+      "name": "skypjack/entt",
+      "downloadLocation": "git+https://github.com/skypjack/entt@v3.14.0",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "153cd353aa211a93c8f2f8650d55a0fd2ea9abb836386ef827285b6ab96ad680e92cac65c4b23db50c7882078d599200ac6a9eb3326a2a33160e62fc624202c7"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "fileName": "./C:/Users/1011g/AppData/Local/vcpkg/registries/git-trees/2c9a2cb27bd1e5688b91c4ca0b4aedcc6f92e88f/portfile.cmake",
+      "SPDXID": "SPDXRef-file-0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5301ec5983488193ffea60ac90c9e1fdca2b3aa75a97c1fcc5ac1451a3c6f338"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "./C:/Users/1011g/AppData/Local/vcpkg/registries/git-trees/2c9a2cb27bd1e5688b91c4ca0b4aedcc6f92e88f/usage",
+      "SPDXID": "SPDXRef-file-1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "90804b17c368af6cc4fef383d227739aed2cc5aaa9b7724a183b4a5e1d03bba9"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "./C:/Users/1011g/AppData/Local/vcpkg/registries/git-trees/2c9a2cb27bd1e5688b91c4ca0b4aedcc6f92e88f/vcpkg.json",
+      "SPDXID": "SPDXRef-file-2",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1a87506bed891ca2a6e3f2b797f343499ba7ce3adcbd8bf8dac0ed0d0ee36008"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    }
+  ]
+}

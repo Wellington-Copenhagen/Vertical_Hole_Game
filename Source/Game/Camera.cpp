@@ -45,7 +45,7 @@ void Camera::MoveCamera(DirectX::XMVECTOR MoveTo) {
 }
 Camera::Camera(float WindowHeight, float WindowWidth) {
 	Camera::Aspect = WindowWidth / WindowHeight;
-	Camera::CenterCoord = { 0,0,0,0 };
-	Camera::ZoomRate = 10;
+	Camera::CenterCoord = { 32,32,0,0 };
+	Camera::ZoomRate = 64;
 	Camera::Theta = PI / 2;
 }

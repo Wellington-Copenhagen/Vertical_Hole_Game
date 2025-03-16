@@ -7,49 +7,68 @@
 #include "Input.h"
 #include "HitBox.h"
 #include "System.h"
+#include "Component.h"
 #include "Entity.h"
 #include "Source/DirectX/Buffers.h"
 #include "Source/DirectX/Texture.h"
 #include "Source/DirectX/DrawPipe.h"
+#include "Routing.h"
+#include "StringDraw.h"
 
 //=========================================
 // GameSystemクラス
 // ・このゲームの土台となるもの
 //=========================================
+extern SameFormatTextureArray<256> BlockTextureArray;
+extern SameFormatTextureArray<256> BallTextureArray;
+extern SameFormatTextureArray<256> BulletTextureArray;
 class GameSystem
 {
 public :
-	AllEntities mAllEntities;
 	AllSystem mAllSystem;
+	Entities mEntities;
 	//マップ最大サイズに床と壁全部配置した場合の大きさ
-	Appearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, 256 * 256 * 2> mBlockAppearances;
+	Appearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, WorldWidth * WorldHeight> mFloorAppearances;
+	Appearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, WorldWidth* WorldHeight> mWallAppearances;
 	//影、本体、模様
 	Appearances<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount> mBallAppearances[3];
-	Appearances<Interface::BulletDrawCallType, Interface::BulletInstanceType, 1, 256 * 256> mBulletAppearances;
+	Appearances<Interface::BulletDrawCallType, Interface::BulletInstanceType, 1, MaxBulletCount> mBulletAppearances;
 	Hurtboxes mHurtboxes;
 	ConstantBuffer mCBuffer;
-	VertexBuffer<Interface::BlockDrawCallType, 4,0> mBlockDrawCallBuffer;
-	VertexBuffer<Interface::BlockInstanceType, 256 * 256 * 2,1> mBlockInstanceBuffer;
+
+
+	VertexBuffer<Interface::BlockDrawCallType, 4,0> mFloorDrawCallBuffer;
+	VertexBuffer<Interface::BlockDrawCallType, 4, 0> mWallDrawCallBuffer;
+	VertexBuffer<Interface::BlockInstanceType, WorldWidth* WorldHeight,1> mFloorInstanceBuffer;
+	VertexBuffer<Interface::BlockInstanceType, WorldWidth* WorldHeight, 1> mWallInstanceBuffer;
+
+
 	//影、本体、模様、影
 	VertexBuffer<Interface::BallDrawCallType, 4,0> mBallDrawCallBuffer[3];
 	//影、本体、模様
 	VertexBuffer<Interface::BallInstanceType, MaxBallCount,1> mBallInstanceBuffer[3];
+
+
+
 	VertexBuffer<Interface::BulletDrawCallType, 4,0> mBulletDrawCallBuffer;
-	VertexBuffer<Interface::BulletInstanceType, 256 * 256,1> mBulletInstanceBuffer;
-	GraphicProcessSetter mGraphicProcessSetter;
+	VertexBuffer<Interface::BulletInstanceType, MaxBulletCount,1> mBulletInstanceBuffer;
+
+
+
 	int DrawCallUsed;
 	Camera mCamera;
-	int Tick;
+	std::chrono::system_clock::time_point RefreshedTimeStamp;
 
+	HDC hdc;
+	// 32*32*64
+	GraphicalStringDraw<65536,2048,32> StringDrawTest;
 
-	SameFormatTextureArray mSameFormatTextureArray;
 	// このゲームの初期設定を行う
 	void Initialize(HWND hWnd);
 
 	// このゲーム世界の時間を進める(処理を実行する)
 	void Execute(HWND hWnd);
 
-	void LoadMap(std::string mapFileName);
 
 	void ApplyInput();
 
@@ -97,5 +116,4 @@ public:
 
 // GameSystemの唯一のインスタンスを簡単に取得するためのマクロ
 #define GAMESYS GameSystem::GetInstance()
-
 

@@ -15,21 +15,19 @@
 template <class DCType, class IType, int InstancePerEntity, int InstanceMaxCount>
 class Appearances{
 public:
-	std::vector<Interface::EntityPointer>* pINtoIndex;
 	//実際のインスタンスデータ
 	IType* Instances;
 	//登録したエンティティ
-	Interface::EntId* InstanceIds;
+	entt::entity* InstanceEntities;
 	//ドローコールの情報
 	DCType DrawCall[4];
 	//各分類ごとの登録数
 	Interface::RectAppId InstanceCount;
-	Appearances(std::vector<Interface::EntityPointer>* pintoindex, int separation, float bottomXscale=1, float topXscale=1, float Yscale=1, float Yoffset=0) {
-		pINtoIndex = pintoindex;
+	Appearances(int separation, float bottomXscale=1, float topXscale=1, float Yscale=1, float Yoffset=0) {
 		Instances = new IType[InstanceMaxCount * InstancePerEntity];
-		InstanceIds = new Interface::EntId[InstanceMaxCount];
+		InstanceEntities = new entt::entity[InstanceMaxCount];
 		ZeroMemory(Instances, sizeof(Instances));
-		ZeroMemory(InstanceIds, sizeof(InstanceIds));
+		ZeroMemory(InstanceEntities, sizeof(InstanceEntities));
 		ZeroMemory(DrawCall, sizeof(DrawCall));
 		InstanceCount = 0;
 		float width = 0.5f;
@@ -44,15 +42,15 @@ public:
 	}
 	Appearances() {
 		Instances = nullptr;
-		InstanceIds = nullptr;
+		InstanceEntities = nullptr;
 	}
 	//頭のインスタンスのポインタを返すということで
-	inline Interface::RectAppId Add(Interface::EntId Id, IType** pInstanceData) {
+	inline Interface::RectAppId Add(entt::entity entity, IType** pInstanceData) {
 		if (InstanceCount >= InstanceMaxCount - 1) {
 			return -1;
 		}
 		*pInstanceData = &Instances[InstanceCount*InstancePerEntity];
-		InstanceIds[InstanceCount] = Id;
+		InstanceEntities[InstanceCount] = entity;
 		InstanceCount++;
 		return InstanceCount - 1;
 	}
@@ -62,22 +60,16 @@ public:
 		}
 	}
 	//
-	inline Interface::SameArchIndex Delete(Interface::RectAppId toDelete) {
-		if (toDelete != -1) {
-			//頂点データの移動
-			for (int i = 0; i < InstancePerEntity;i++) {
-				Instances[toDelete * InstancePerEntity + i] = Instances[InstanceCount * InstancePerEntity + i];
-			}
-			//EntIdの移動
-			InstanceIds[toDelete] = InstanceIds[InstanceCount];
-			//カウントを減らす
-			InstanceCount--;
-			//移動させたもののSameArchIndexを出力
-			return pINtoIndex->at(InstanceIds[toDelete]).Index;
+	inline entt::entity Delete(Interface::RectAppId toDelete) {
+		//頂点データの移動
+		for (int i = 0; i < InstancePerEntity; i++) {
+			Instances[toDelete * InstancePerEntity + i] = Instances[InstanceCount * InstancePerEntity + i];
 		}
-		else {
-			int a = pINtoIndex->size();
-			return -1;
-		}
+		//EntIdの移動
+		InstanceEntities[toDelete] = InstanceEntities[InstanceCount];
+		//カウントを減らす
+		InstanceCount--;
+		//移動させたもののSameArchIndexを出力
+		return InstanceEntities[toDelete];
 	}
 };
