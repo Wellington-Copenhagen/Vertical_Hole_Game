@@ -3,13 +3,9 @@
 extern int Tick;
 
 void Hurtboxes::DeleteUnit(int x, int y, entt::entity entity,Interface::HostilityTeam team){
-	int pos = (y / UnitSearchDivision) * (WorldWidth / UnitSearchDivision) + (x / UnitSearchDivision);
-	UnitMapForSearch[pos * TeamCount + team] = entt::entity(0xFFFFFFFF);
-
-
-	pos = y * WorldWidth + x;
+	int pos = y * WorldWidth + x;
 	if (OccupyingUnitCount[pos] < 0) {
-		OccupyingUnitCount[pos] == 0;
+		OccupyingUnitCount[pos] = 0;
 		return;
 	}
 	for (int i = 0; i < UnitCountPerCell; i++) {
@@ -23,39 +19,12 @@ void Hurtboxes::DeleteUnit(int x, int y, entt::entity entity,Interface::Hostilit
 		OccupiedMap[pos] = false;
 	}
 }
-entt::entity Hurtboxes::GetNearestUnit(int unitX, int unitY,Interface::HostilityTeam unitTeam, float maximumLength) {
-	unitX = unitX / 4;
-	unitY = unitY / 4;
-	std::vector<int> objectiveTeam = std::vector<int>();
-	for (int team = 0; team < 8; team++) {
-		if (Interface::HostilityTable[unitTeam]) {
-			objectiveTeam.push_back(team);
-		}
-	}
-	int size = IndexLengthFromCenter.size();
-	for (int i = 0; i < size; i++) {
-		if (std::get<2>(IndexLengthFromCenter[i]) > maximumLength) {
-			break;
-		}
-		for (int team : objectiveTeam) {
-			int relX = std::get<0>(IndexLengthFromCenter[i]);
-			int relY = std::get<1>(IndexLengthFromCenter[i]);
-			for (int j = 0; j < 4; j++) {
-				int x = max(0, min((WorldWidth / UnitSearchDivision), unitX + relX * ((j / 2) * 2 - 1)));
-				int y = max(0, min((WorldHeight / UnitSearchDivision), unitY + relY * ((j % 2) * 2 - 1)));
-				if (UnitMapForSearch[(y * WorldWidth / UnitSearchDivision + x) * TeamCount + team] != entt::entity(0xFFFFFFFF)) {
-					return UnitMapForSearch[(y * WorldWidth / UnitSearchDivision + x) * TeamCount + team];
-				}
-			}
-		}
-	}
-	return entt::entity(0xFFFFFFFF);
-}
 bool Hurtboxes::CheckUnitCollid(entt::entity coreEntity) {
 	pMainRegistry->get<Component::HitFlag>(coreEntity).IsHit =
 		CheckCircleCollid(pMainRegistry->get<Component::WorldPosition>(coreEntity).NextTickWorldPos.Parallel,
 			pMainRegistry->get<Component::WorldPosition>(coreEntity).WorldPos.Ratio * 3,
 			nullptr, false, pMainRegistry->get<Component::UnitData>(coreEntity).Team);
+	/*
 	for (int i = 0; i < 7; i++) {
 		entt::entity ball = pMainRegistry->get<Component::UnitData>(coreEntity).BallIds[i];
 		//‚±‚ÌƒRƒA‚É‘®‚·‚éƒ{[ƒ‹‚É‘Î‚µ‚Ä‹ò‚ç‚¢ˆ—
@@ -66,6 +35,7 @@ bool Hurtboxes::CheckUnitCollid(entt::entity coreEntity) {
 				&pMainRegistry->get<Component::GiveDamage>(ball).Damage,
 				false, pMainRegistry->get<Component::UnitData>(coreEntity).Team);
 	}
+	*/
 	//ˆÚ“®‘jŠQ‚Ì”»’è
 	return CheckCircleInterfare(coreEntity);
 }
@@ -118,7 +88,7 @@ bool Hurtboxes::CheckCircleCollid(DirectX::XMVECTOR center, float radius, Interf
 				for (int j = 0; j < 7; j++) {
 					entt::entity ball = pMainRegistry->get<Component::UnitData>(core).BallIds[j];
 					//“G–¡•û‚Ì”»’è
-					bool hostiling = Interface::HostilityTable[team * 8 + pMainRegistry->get<Component::UnitData>(core).Team];
+					bool hostiling = Interface::HostilityTable[team * TeamCount + pMainRegistry->get<Component::UnitData>(core).Team];
 					//“G‘Î‚µ‚Ä‚¢‚é‚È‚ç
 					if (hostiling) {
 						//‹——£‚ÌŽZo
@@ -166,7 +136,7 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 					thisToOther = { 0.5f + radius - (x - center.m128_f32[0]),0,0,0 };
 				}
 				pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel,
-					DirectX::XMVectorScale(thisToOther, -1));
+					DirectX::XMVectorScale(thisToOther, -1.2));
 				collided = true;
 				break;
 			}
@@ -182,7 +152,7 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 					thisToOther = { 0,0.5f + radius - (y - center.m128_f32[1]),0,0 };
 				}
 				pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel,
-					DirectX::XMVectorScale(thisToOther, -1));
+					DirectX::XMVectorScale(thisToOther, -1.2));
 				collided = true;
 				break;
 			}
@@ -202,7 +172,7 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 								thisToOther = { 0,0.5f + radius - (y - center.m128_f32[1]),0,0 };
 							}
 							pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel,
-								DirectX::XMVectorScale(thisToOther, -1));
+								DirectX::XMVectorScale(thisToOther, -1.2));
 						}
 						{
 							DirectX::XMVECTOR thisToOther;
@@ -213,7 +183,7 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 								thisToOther = { 0.5f + radius - (x - center.m128_f32[0]),0,0,0 };
 							}
 							pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel,
-								DirectX::XMVectorScale(thisToOther, -1));
+								DirectX::XMVectorScale(thisToOther, -1.2));
 						}
 						collided = true;
 						break;
@@ -262,9 +232,9 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 						DirectX::XMVECTOR thisToOther = DirectX::XMVectorSubtract(pMainRegistry->get<Component::WorldPosition>(core).NextTickWorldPos.Parallel,
 							pMainRegistry->get<Component::WorldPosition>(thisUnitEntity).NextTickWorldPos.Parallel);
 						pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel,
-							DirectX::XMVectorScale(thisToOther, -1 * overlapRate));
+							DirectX::XMVectorScale(thisToOther, -0.1 * overlapRate));
 						pMainRegistry->get<Component::Motion>(core).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(core).WorldDelta.Parallel,
-							DirectX::XMVectorScale(thisToOther,overlapRate));
+							DirectX::XMVectorScale(thisToOther, 0.1 * overlapRate));
 						collided = true;
 					}
 				}
@@ -431,6 +401,9 @@ DirectX::XMVECTOR Hurtboxes::NextWayPoint(DirectX::XMVECTOR current, DirectX::XM
 	return {0,0,0,1};
 }
 bool Hurtboxes::IsWayClear(DirectX::XMVECTOR* end1, DirectX::XMVECTOR* end2) {
+	if (end1->m128_f32[0] == end2->m128_f32[0] && end1->m128_f32[1] == end2->m128_f32[1]) {
+		return true;
+	}
 	float slope = (end2->m128_f32[1] - end1->m128_f32[1]) / (end2->m128_f32[0] - end1->m128_f32[0]);
 	float intercept = end2->m128_f32[1] - slope * end2->m128_f32[0];
 	if (abs(slope) < 1) {
@@ -445,7 +418,7 @@ bool Hurtboxes::IsWayClear(DirectX::XMVECTOR* end1, DirectX::XMVECTOR* end2) {
 	}
 	else {
 		slope = 1/slope;
-		float intercept = end2->m128_f32[0] - slope * end2->m128_f32[1];
+		intercept = end2->m128_f32[0] - slope * end2->m128_f32[1];
 		int top = (int)roundf(max(end1->m128_f32[1], end2->m128_f32[1]));
 		int bottom = (int)roundf(min(end1->m128_f32[1], end2->m128_f32[1]));
 		for (int y = bottom; y <= top; y++) {

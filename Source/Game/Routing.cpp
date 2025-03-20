@@ -19,7 +19,7 @@ void Routing::AddArea(ConvexArea area) {
 }
 Interface::WayPoint Routing::GetWayPoint(int current, int target, DirectX::XMVECTOR currentPos) {
 	int nextArea = AllArea[current].WhereToGo[target];
-	return Connections[min(current, nextArea) * MaxAreaCount + max(current, nextArea)].GetWayPoint(current,target,currentPos);
+	return Connections[min(current, nextArea) * MaxAreaCount + max(current, nextArea)].GetWayPoint(current,nextArea,currentPos);
 }
 void Routing::FormRouting() {
 	for (int i = 0; i < AllArea.size(); i++) {

@@ -47,7 +47,7 @@ struct AreaConnection {
 		if (lower.Bottom == higher.Top || lower.Top == higher.Bottom) {
 			// 上下に並んでる状態
 			Bottom = max(lower.Left, higher.Left) + 1;
-			Top = min(lower.Right, higher.Right) - 1;
+			Top = min(lower.Right, higher.Right) - 2;
 			IsHorizontal = true;
 			if (lower.Bottom == higher.Top) {
 				Pos = lower.Bottom - 0.5;
@@ -61,7 +61,7 @@ struct AreaConnection {
 		if (lower.Left == higher.Right || lower.Right == higher.Left) {
 			// 左右に並んでる状態
 			Bottom = max(lower.Bottom, higher.Bottom) + 1;
-			Top = min(lower.Top, higher.Top) - 1;
+			Top = min(lower.Top, higher.Top) - 2;
 			IsHorizontal = false;
 			if (lower.Left == higher.Right) {
 				Pos = lower.Left - 0.5;
@@ -126,6 +126,12 @@ struct AreaConnection {
 class Routing {
 public:
 	std::vector<ConvexArea> AllArea;
+	// その場所が何番の部屋に属するか
+	std::vector<int> AreaIndexMap;
+	// 最も近い歩ける場所
+	// 歩ける場所ならその場所の座標
+	// 歩けない場所なら直線距離が最小の歩ける位置の座標
+	std::vector<std::tuple<int, int>> NearestWalkableArea;
 	// コネクション
 	// min(a,b) * MaxAreaCount + max(a,b)をキーにする
 	std::unordered_map<int,AreaConnection> Connections;
@@ -138,4 +144,20 @@ public:
 	// howFar==1で次のウェイポイント
 	Interface::WayPoint GetWayPoint(int current, int target, DirectX::XMVECTOR currentPos);
 	void FormRouting();
+	int GetAreaIndex(DirectX::XMVECTOR pos) {
+		int x = (int)roundf(pos.m128_f32[0]);
+		int y = (int)roundf(pos.m128_f32[1]);
+		if (x < 0 || y < 0 || x >= WorldWidth || y >= WorldHeight) {
+			return -1;
+		}
+		return AreaIndexMap[y * WorldWidth + x];
+	}
+	DirectX::XMVECTOR NearestWalkablePosition(DirectX::XMVECTOR pos) {
+		return {
+			(float)std::get<0>(NearestWalkableArea[(int)std::roundf(pos.m128_f32[1]) * WorldWidth + (int)std::roundf(pos.m128_f32[0])]),
+			(float)std::get<1>(NearestWalkableArea[(int)std::roundf(pos.m128_f32[1]) * WorldWidth + (int)std::roundf(pos.m128_f32[0])]),
+			pos.m128_f32[2],
+			pos.m128_f32[3]
+		};
+	}
 };

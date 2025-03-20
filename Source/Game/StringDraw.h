@@ -119,6 +119,10 @@ public:
 		DrawCallBuffer.UpdateAndSet(DrawCalls, 0, 4);
 		D3D.m_deviceContext->DrawInstanced(4, InstanceCount, 0, 0);
 	}
+	void SimpleAppend(std::string content, float red,float green,float blue, DirectX::XMVECTOR pos, float height, int tickToDelete, StrDrawPos drawPos) {
+		DirectX::XMVECTOR color = { red,green,blue,1 };
+		Append(content, &color, &pos, height, tickToDelete, drawPos);
+	}
 	void Append(std::string content, DirectX::XMVECTOR* pColor, DirectX::XMVECTOR* pPos,float height,int tickToDelete,StrDrawPos drawPos) {
 		float totalWidth = 0;
 		for (int i = 0; i < content.size();i++) {

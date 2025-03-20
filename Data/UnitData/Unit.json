@@ -1,10 +1,86 @@
 {
-    "unitTest":{
+    "unitLeader":{
+        "ratio":1,
+        "coreName":"coreLeader",
+        "balls":[
+            {
+                "ballName":"ballRegenerate",
+                "pos":0,
+                "baseColor0":[
+                    0.8,0,0,0.8
+                ],
+                "baseColor1":[
+                    1,0,0,1
+                ]
+            },
+            {
+                "ballName":"ballRegenerate",
+                "pos":1,
+                "baseColor0":[
+                    0.8,0,0,0.8
+                ],
+                "baseColor1":[
+                    1,0,0,1
+                ]
+            },
+            {
+                "ballName":"ballRegenerate",
+                "pos":2,
+                "baseColor0":[
+                    0.8,0,0,0.8
+                ],
+                "baseColor1":[
+                    1,0,0,1
+                ]
+            },
+            {
+                "ballName":"ballRegenerate",
+                "pos":3,
+                "baseColor0":[
+                    0.8,0,0,0.8
+                ],
+                "baseColor1":[
+                    1,0,0,1
+                ]
+            },
+            {
+                "ballName":"ballRegenerate",
+                "pos":4,
+                "baseColor0":[
+                    0.8,0,0,0.8
+                ],
+                "baseColor1":[
+                    1,0,0,1
+                ]
+            },
+            {
+                "ballName":"ballRegenerate",
+                "pos":5,
+                "baseColor0":[
+                    0.8,0,0,0.8
+                ],
+                "baseColor1":[
+                    1,0,0,1
+                ]
+            },
+            {
+                "ballName":"ballRegenerate",
+                "pos":6,
+                "baseColor0":[
+                    0.8,0,0,0.8
+                ],
+                "baseColor1":[
+                    1,0,0,1
+                ]
+            }
+        ]
+    },
+    "unitMember":{
         "ratio":1,
         "coreName":"coreGeneral",
         "balls":[
             {
-                "ballName":"ballRegenerate",
+                "ballName":"ballGuard",
                 "pos":0,
                 "baseColor0":[
                     0,0.8,0,0.8
@@ -14,7 +90,7 @@
                 ]
             },
             {
-                "ballName":"ballRegenerate",
+                "ballName":"ballGuard",
                 "pos":1,
                 "baseColor0":[
                     0,0.8,0,0.8
@@ -27,7 +103,7 @@
                 "ballName":"ballGuard",
                 "pos":2,
                 "baseColor0":[
-                    0,0,0.8,0.8
+                    0,0.8,0,0.8
                 ],
                 "baseColor1":[
                     1,0,0,1
@@ -37,7 +113,7 @@
                 "ballName":"ballGuard",
                 "pos":3,
                 "baseColor0":[
-                    0,0,0.8,0.8
+                    0,0.8,0,0.8
                 ],
                 "baseColor1":[
                     1,0,0,1
@@ -47,7 +123,7 @@
                 "ballName":"ballGuard",
                 "pos":4,
                 "baseColor0":[
-                    0,0,0.8,0.8
+                    0,0.8,0,0.8
                 ],
                 "baseColor1":[
                     1,0,0,1
@@ -57,7 +133,7 @@
                 "ballName":"ballGuard",
                 "pos":5,
                 "baseColor0":[
-                    0,0,0.8,0.8
+                    0,0.8,0,0.8
                 ],
                 "baseColor1":[
                     1,0,0,1
@@ -67,7 +143,7 @@
                 "ballName":"ballGuard",
                 "pos":6,
                 "baseColor0":[
-                    0,0,0.8,0.8
+                    0,0.8,0,0.8
                 ],
                 "baseColor1":[
                     1,0,0,1

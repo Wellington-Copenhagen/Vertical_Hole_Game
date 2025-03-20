@@ -307,15 +307,14 @@ namespace Component {
 		Interface::MovementOrder CurrentMovementOrder;
 		Interface::AttackOrder CurrentAttackOrder;
 		Interface::Formation CurrentFormation;
-		float DistanceThresholdMin;
-		float DistanceThresholdMax;
 		DirectX::XMVECTOR Position;
 		float FormationWidth;
 		float FormationThickness;
 		float Heading;
 
 		void Init(Interface::EntityInitData* pInitData) {
-
+			Team = pInitData->Team;
+			LeaderUnit = pInitData->thisEntities;
 		}
 		CorpsData(Json::Value fromLoad) {
 
@@ -343,7 +342,13 @@ namespace Component {
 
 		// ‘I‘ð‚µ‚Ä‚¢‚és“®E‚±‚ê‚ç‚ð‰^“®‚É”½‰f‚³‚¹‚é
 		entt::entity TargetEntity;
+		float DistanceThresholdMin;
+		float DistanceThresholdMax;
+		int PreviousTickArea;
+		// «
 		Interface::WayPoint FinalTarget;
+		DirectX::XMVECTOR PreviousTargetPos;
+		bool TargetUpdated;
 		// «
 		bool HeadingFree;
 		Interface::WayPoint AreaBorderTarget;
@@ -354,17 +359,28 @@ namespace Component {
 
 
 		void Init(Interface::EntityInitData* pInitData) {
-			Leader = pInitData->LeaderId;
+			if (pInitData->IsLeader) {
+				Leader = pInitData->thisEntities;
+			}
+			else {
+				Leader = pInitData->LeaderId;
+			}
 			Team = pInitData->Team;
 			Weight = pInitData->Weight;
 			RadianPerTick = pInitData->RadianPerTick;
 			MoveTilePerTick = pInitData->MoveTilePerTick;
+			MoveTilePerTick = 0.06;
 			SpeedBuff = pInitData->SpeedMultiply;
 			BallCount = 0;
-			FinalTarget.Pos = { 41 + Interface::Uniform01RandFloat() * 8,10 + Interface::Uniform01RandFloat() * 8,0,1 };
+			DistanceThresholdMax = 0;
+			DistanceThresholdMin = 0;
+			FinalTarget.Pos = pInitData->Pos.Parallel;
+			AreaBorderTarget.Pos = pInitData->Pos.Parallel;
+			PreviousTickArea = -1;
+			PreviousTargetPos = {0,0,0,1};
 		}
 		UnitData(Json::Value fromLoad) {
-			AttackRange = 10;
+			AttackRange = 20;
 		}
 	};
 	struct BallData {

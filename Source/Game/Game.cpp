@@ -128,6 +128,8 @@ void GameSystem::Initialize(HWND hWnd)
 	std::string missionName = "Data/MissionData/Mission_Test.json";
 
 	mEntities.LoadMission(missionName);
+	mEntities.LoadPlayerCorps("Data/SaveData/PlayerCorps.json");
+	entt::entity pu = Interface::PlayingUnit;
 	mAllSystem = AllSystem(this);
 
 	std::random_device RandSeedGen;

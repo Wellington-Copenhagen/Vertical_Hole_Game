@@ -1,4 +1,10 @@
 {
+    "playerCorpsSpawnArea":{
+        "top":20,
+        "bottom":5,
+        "right":30,
+        "left":5
+    },
     "areaList":[
         {
             "top":20,

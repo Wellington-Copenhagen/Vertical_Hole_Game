@@ -17,6 +17,27 @@
             
         }
     },
+    "coreLeader":{
+        "WorldPosition":{
+            "width":1,
+            "parallel":[
+                0,0,0,1
+            ]
+        },
+        "Motion":{
+
+        },
+        "AI":0,
+        "UnitData":{
+
+        },
+        "CorpsData":{
+
+        },
+        "UnitOccupationbox":{
+            
+        }
+    },
     "ballRegenerate":{
         "BallAppearance":{
             "shadow":{

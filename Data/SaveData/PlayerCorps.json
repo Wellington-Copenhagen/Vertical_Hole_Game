@@ -1,0 +1,9 @@
+{
+    "corps":[
+        {
+            "leaderUnit":"unitLeader",
+            "memberUnit":"unitMember",
+            "count":9
+        }
+    ]
+}

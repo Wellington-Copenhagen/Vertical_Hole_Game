@@ -6,6 +6,7 @@
 #include "Entity.h"
 #include "StringDraw.h"
 extern GraphicalStringDraw<65536, 2048, 32> globalStringDraw;
+extern entt::entity Interface::PlayingUnit;
 extern int Tick;
 //関連するシステムは同じものに収める方が良いと考えられる
 class GameSystem;
@@ -54,9 +55,9 @@ namespace Systems {
 			}
 		}
 	};
-	class BindCoreUnit : public System {
+	class BindCoreBall : public System {
 	public:
-		BindCoreUnit(GameSystem* pGameSystem) : System(pGameSystem) {}
+		BindCoreBall(GameSystem* pGameSystem) : System(pGameSystem) {}
 		void Update() override {
 			for (auto [entity, ballData, generateFlag] : pEntities->Registry.view<
 				Component::BallData,
@@ -69,14 +70,28 @@ namespace Systems {
 			}
 		}
 	};
+	class BindLeaderMember : public System {
+	public:
+		BindLeaderMember(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			for (auto [entity, unitData, generateFlag] : pEntities->Registry.view<
+				Component::UnitData,
+				Component::GenerateFlag>().each()) {
+				if (generateFlag.GeneratedOnThisTick && entity != unitData.Leader) {
+					pEntities->Registry.get<Component::CorpsData>(unitData.Leader).AllMemberUnit.push_back(entity);
+				}
+			}
+		}
+	};
 	class CorpsAction : public System {
 	public:
 		void FormLine(Component::CorpsData& corpsData, DirectX::XMVECTOR pos, float heading, float formationWidth, float formationThickness) {
-			int memberCount = corpsData.AllMemberUnit.size();
+			int memberCount = corpsData.AllMemberUnit.size() + 1;// リーダー分1増やす
 			float areaPerUnit = memberCount / (formationWidth * formationThickness);
 			// 厚み方向に何人いるか
 			int thicknessCount = std::ceil(formationThickness * std::sqrtf(areaPerUnit));
-			int widthCount = std::ceil(memberCount / thicknessCount);
+			int widthCount = std::ceil((float)memberCount / (float)thicknessCount);
+			int leaderPos = min(memberCount - 1, (widthCount / 2) * thicknessCount + (thicknessCount / 2));
 			// headingの方向を上にして左上→左下→右上の順で配置していく
 			DirectX::XMVECTOR thickDirectionInterval = DirectX::XMVECTOR{
 				std::cosf(heading - PI)*formationThickness / thicknessCount,
@@ -89,20 +104,45 @@ namespace Systems {
 				0,0
 			};
 			corpsData.CurrentMovementOrder = Interface::MovementOrder::HoldPosition;
+			bool afterLeader = false;
 			for (int i = 0; i < memberCount; i++) {
-				DirectX::XMVECTOR nextPosition = DirectX::XMVectorAdd(pos, DirectX::XMVectorAdd(
-					DirectX::XMVectorScale(thickDirectionInterval, i % thicknessCount - (thicknessCount - 1) / 2),
-					DirectX::XMVectorScale(widthDirectionInterval, i / thicknessCount - (widthCount - 1) / 2)
-				));
-				Component::UnitData& unitData = pEntities->Registry.get<Component::UnitData>(corpsData.AllMemberUnit[i]);
-				unitData.FinalTarget.Pos = nextPosition;
+				if (i == leaderPos) {
+					DirectX::XMVECTOR nextPosition = DirectX::XMVectorAdd(pos, DirectX::XMVectorAdd(
+						DirectX::XMVectorScale(thickDirectionInterval, i % thicknessCount - (thicknessCount - 1) / 2),
+						DirectX::XMVectorScale(widthDirectionInterval, i / thicknessCount - (widthCount - 1) / 2)
+					));
+					Component::UnitData& unitData = pEntities->Registry.get<Component::UnitData>(corpsData.LeaderUnit);
+					unitData.FinalTarget.Pos = nextPosition;
+					afterLeader=true;
+				}
+				else {
+					DirectX::XMVECTOR nextPosition;
+					if (afterLeader) {
+						nextPosition = DirectX::XMVectorAdd(pos, DirectX::XMVectorAdd(
+							DirectX::XMVectorScale(thickDirectionInterval, i % thicknessCount - (thicknessCount - 1) / 2),
+							DirectX::XMVectorScale(widthDirectionInterval, i / thicknessCount - (widthCount - 1) / 2)
+						));
+						Component::UnitData& unitData = pEntities->Registry.get<Component::UnitData>(corpsData.AllMemberUnit[i - 1]);
+						unitData.FinalTarget.Pos = nextPosition;
+						unitData.DistanceThresholdMin = 0;
+						unitData.DistanceThresholdMax = 0;
+					}
+					else {
+						nextPosition = DirectX::XMVectorAdd(pos, DirectX::XMVectorAdd(
+							DirectX::XMVectorScale(thickDirectionInterval, i % thicknessCount - (thicknessCount - 1) / 2),
+							DirectX::XMVectorScale(widthDirectionInterval, i / thicknessCount - (widthCount - 1) / 2)
+						));
+						Component::UnitData& unitData = pEntities->Registry.get<Component::UnitData>(corpsData.AllMemberUnit[i]);
+						unitData.FinalTarget.Pos = nextPosition;
+						unitData.DistanceThresholdMin = 0;
+						unitData.DistanceThresholdMax = 0;
+					}
+				}
 			}
 		}
 		void FormCenter(Component::CorpsData& corpsData, DirectX::XMVECTOR pos, float heading, float FormationWidth, float FormationThickness);
-		void ChaseLeader(Component::CorpsData& corpsData) {
+		void ChaseLeader(Component::CorpsData& corpsData,DirectX::XMVECTOR leaderTarget) {
 			corpsData.CurrentMovementOrder = Interface::MovementOrder::Chase;
-			corpsData.DistanceThresholdMin = 1;
-			corpsData.DistanceThresholdMax = 10;
 			for (entt::entity member : corpsData.AllMemberUnit) {
 				Component::UnitData& unitData = pEntities->Registry.get<Component::UnitData>(member);
 				unitData.TargetEntity = corpsData.LeaderUnit;
@@ -110,12 +150,6 @@ namespace Systems {
 		}
 		void Charge(Component::CorpsData& corpsData) {
 			corpsData.CurrentMovementOrder = Interface::MovementOrder::Charge;
-			corpsData.DistanceThresholdMin = 1;
-			corpsData.DistanceThresholdMax = 10;
-			for (entt::entity member : corpsData.AllMemberUnit) {
-				Component::UnitData& unitData = pEntities->Registry.get<Component::UnitData>(member);
-				unitData.TargetEntity = corpsData.LeaderUnit;
-			}
 		}
 		void CeaseFire(Component::CorpsData& corpsData) {
 			corpsData.CurrentAttackOrder = Interface::AttackOrder::CeaseFire;
@@ -128,9 +162,36 @@ namespace Systems {
 		}
 		CorpsAction(GameSystem* pGameSystem):System(pGameSystem) {}
 		void Update() override {
+			int i = 0;
 			for (auto [entity, corpsData, worldPosition] : pEntities->Registry.view<
 			Component::CorpsData, Component::WorldPosition>().each()) {
-				Charge(corpsData);
+				if (i == 0) {
+					switch (Tick%1200)
+					{
+					case(0):
+						FormLine(corpsData, { 50,40,0,1 }, PI / 2, 10, 4);
+						break;
+					case(300):
+						FormLine(corpsData, { 50,70,0,1 }, PI / 2, 10, 4);
+						break;
+					case(600):
+						FormLine(corpsData, { 50,40,0,1 }, PI / 2, 10, 4);
+						break;
+					case(900):
+						FormLine(corpsData, { 50,12,0,1 }, PI / 2, 10, 4);
+						break;
+					default:
+						break;
+					}
+					Charge(corpsData);
+				}
+				if (i == 1) {
+					FormLine(corpsData, {10,40,0,1},0,10,4);
+				}
+				if (i == 2) {
+					ChaseLeader(corpsData, { 0,0,0,1 });
+				}
+				i++;
 			}
 		}
 	};
@@ -143,23 +204,24 @@ namespace Systems {
 				Component::UnitData,
 				Component::Motion,
 				Component::WorldPosition>().each()) {
+				globalStringDraw.SimpleAppend(std::to_string((int)entity), 0, 0, 0, worldPosition.WorldPos.Parallel, 1, 1, StrDrawPos::AsCenter);
 				//プレイヤーの行動
-				if (entity == Interface::PlayingBall) {
-					motion.WorldDelta.Parallel = { 0.0f, 0.0f, 0.0f ,0.0f };
+				if (entity == Interface::PlayingUnit) {
 					motion.WorldDelta.Ratio = 1;
 					motion.WorldDelta.Rotate = 0;
 					float moveTilePerTick = unitData.MoveTilePerTick * unitData.SpeedBuff;
+					DirectX::XMVECTOR vector = { 0,0,0,0 };
 					if (Input::KeyPushed.test(0x57)) {//w
-						motion.WorldDelta.Parallel = { 0.0f, moveTilePerTick, 0.0f ,0.0f };
+						vector = DirectX::XMVectorAdd(vector, { 0.0f, 1.0f, 0.0f ,0.0f });
 					}
 					if (Input::KeyPushed.test(0x53)) {//s
-						motion.WorldDelta.Parallel = { 0.0f, -1 * moveTilePerTick, 0.0f ,0.0f };
+						vector = DirectX::XMVectorAdd(vector, { 0.0f, -1.0f, 0.0f ,0.0f });
 					}
 					if (Input::KeyPushed.test(0x41)) {//a
-						motion.WorldDelta.Parallel = { -1 * moveTilePerTick, 0.0f, 0.0f ,0.0f };
+						vector = DirectX::XMVectorAdd(vector, { -1.0f, 0.0f, 0.0f ,0.0f });
 					}
 					if (Input::KeyPushed.test(0x44)) {//d
-						motion.WorldDelta.Parallel = { moveTilePerTick, 0.0f, 0.0f ,0.0f };
+						vector = DirectX::XMVectorAdd(vector, { 1.0f, 0.0f, 0.0f ,0.0f });
 					}
 					if (Input::KeyPushed.test(0x51)) {//q
 						motion.WorldDelta.Rotate = 0.03f;
@@ -167,92 +229,165 @@ namespace Systems {
 					if (Input::KeyPushed.test(0x45)) {//e
 						motion.WorldDelta.Rotate = -0.03f;
 					}
+					float length = DirectX::XMVector2Length(vector).m128_f32[0];
+					vector = DirectX::XMVectorScale(vector, min(1, unitData.MoveTilePerTick / length));
+					motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8);
+					motion.WorldDelta.Parallel = DirectX::XMVectorAdd(motion.WorldDelta.Parallel, vector);
 				}
 				//AIの行動
 				else {
-					Interface::MovementOrder movementOrder = pEntities->Registry.get<Component::CorpsData>(unitData.Leader).CurrentMovementOrder;
-					Interface::AttackOrder attackOrder = pEntities->Registry.get<Component::CorpsData>(unitData.Leader).CurrentAttackOrder;
-					float distanceThresholdMin = pEntities->Registry.get<Component::CorpsData>(unitData.Leader).DistanceThresholdMin;
-					float distanceThresholdMax = pEntities->Registry.get<Component::CorpsData>(unitData.Leader).DistanceThresholdMax;
-					if (Tick % 30 == 0) {
-						int x = (int)worldPosition.WorldPos.Parallel.m128_f32[0];
-						int y = (int)worldPosition.WorldPos.Parallel.m128_f32[1];
-						if (movementOrder == Interface::MovementOrder::Chase) {
-							pHurtboxes->GetNearestUnit(x, y, unitData.Team, unitData.AttackRange);
+					Component::CorpsData& corpsData = pEntities->Registry.get<Component::CorpsData>(unitData.Leader);
+					if (corpsData.CurrentMovementOrder == Interface::MovementOrder::HoldPosition
+						 || corpsData.CurrentMovementOrder == Interface::MovementOrder::Chase
+						|| corpsData.CurrentMovementOrder == Interface::MovementOrder::Charge) {
+						// Chargeモードで最も近い敵を探して更新する
+						if (corpsData.CurrentMovementOrder == Interface::MovementOrder::Charge && Tick%10==0) {
+							auto nearest = pEntities->GetNearestHostilingUnit(worldPosition.WorldPos.Parallel, unitData.Team);
+							// 索敵範囲
+							if (nearest.second < unitData.AttackRange * 2) {
+								// 攻撃対象がいる場合
+								unitData.TargetEntity = nearest.first;
+								unitData.DistanceThresholdMax = unitData.AttackRange * 0.9;
+								unitData.DistanceThresholdMin = unitData.AttackRange * 0.7;
+							}
+							else {
+								// 攻撃対象がいない場合
+								// リーダーに追従する
+								unitData.TargetEntity = unitData.Leader;
+								unitData.DistanceThresholdMax = 10;
+								unitData.DistanceThresholdMin = 1;
+
+							}
 						}
-					}
-					if (movementOrder == Interface::MovementOrder::HoldPosition
-						 || movementOrder == Interface::MovementOrder::Chase) {
-						if (movementOrder == Interface::MovementOrder::Chase) {
+						if ((corpsData.CurrentMovementOrder == Interface::MovementOrder::Charge || corpsData.CurrentMovementOrder == Interface::MovementOrder::Chase) && Tick % 5 == 0) {
 							Component::WorldPosition* targetWorldPos = pEntities->Registry.try_get<Component::WorldPosition>(unitData.TargetEntity);
 							if (targetWorldPos == nullptr) {
-
+								// 標的が消失してる場合
+								// いったんその場待機にして次の検索で新しい標的を探す
+								unitData.FinalTarget.Pos = worldPosition.WorldPos.Parallel;
+								unitData.DistanceThresholdMax = 0;
+								unitData.DistanceThresholdMin = 0;
 							}
 							else {
 								unitData.FinalTarget.Pos = targetWorldPos->WorldPos.Parallel;
 							}
 						}
 						float length = DirectX::XMVector2Length(DirectX::XMVectorSubtract(unitData.AreaBorderTarget.Pos, worldPosition.WorldPos.Parallel)).m128_f32[0];
-						if (length < 0.5) {
-							// 2つ目の目標地点に到達した
-							int current = pEntities->GetAreaIndex(worldPosition.WorldPos.Parallel);
-							int target = max(0, pEntities->GetAreaIndex(unitData.FinalTarget.Pos));
-
+						int current = pEntities->mRouting.GetAreaIndex(worldPosition.WorldPos.Parallel);
+						int previousArea = unitData.PreviousTickArea;
+						if (DirectX::XMVector2Length(DirectX::XMVectorSubtract(unitData.PreviousTargetPos, unitData.FinalTarget.Pos)).m128_f32[0] > 3) {
+							unitData.TargetUpdated = true;
+							unitData.PreviousTargetPos = unitData.FinalTarget.Pos;
+						}
+						bool areaBorderShouldUpdate = length < 1 || unitData.PreviousTickArea != current || unitData.TargetUpdated;
+						unitData.PreviousTickArea = current;
+						if (areaBorderShouldUpdate || Tick%30==0) {
+							int target = max(0, pEntities->mRouting.GetAreaIndex(pEntities->mRouting.NearestWalkablePosition(unitData.FinalTarget.Pos)));
+							std::string searchLog = std::to_string(current);
+							int count = 0;
+							// AreaBorderTargetを決める
 							while (true) {
 								//1エリアずつ進めていって通路が通らなくなった時か、目標エリアまで通路が通っているとわかった時に探索を止める
-								if (unitData.NextPosReloadTick < Tick && current == target) {
-									// 現在地点と目標地点を結んだ直線の周辺、
-									// かつ目標から指定された距離前後を開けており、
-									// 現在位置から直進できる経路がある場所を次の移動目標とする
-									if (distanceThresholdMax != 0) {
-										DirectX::XMVECTOR gap = DirectX::XMVectorSubtract(worldPosition.WorldPos.Parallel, unitData.FinalTarget.Pos);
-										gap = DirectX::XMVectorScale(gap, min(1.2, Interface::UniformRandFloat(distanceThresholdMin,distanceThresholdMax) / DirectX::XMVector2Length(gap).m128_f32[0]));
-										gap = DirectX::XMVector2Transform(gap, DirectX::XMMatrixRotationZ(Interface::UniformRandFloat(PI / -4.0f, PI / 4.0f)));
-										unitData.AreaBorderTarget.Pos = DirectX::XMVectorAdd(unitData.FinalTarget.Pos, gap);
-										if (!pHurtboxes->IsWayClear(&unitData.AreaBorderTarget.Pos, &worldPosition.WorldPos.Parallel)) {
-											unitData.AreaBorderTarget.Pos = worldPosition.WorldPos.Parallel;
+								if (current == target) {
+									if (pHurtboxes->IsWayClear(&unitData.FinalTarget.Pos, &worldPosition.WorldPos.Parallel)) {
+										if (unitData.NextPosReloadTick > Tick && previousArea == target && !unitData.TargetUpdated) {
+											// 計算負荷を減らすためにエリア間目標の再選定はクールタイムを設ける
+											break;
 										}
+										// 現在地から最終目標まで直線で行くことができる
+
+
+										// 現在地点と目標地点を結んだ直線の周辺、
+										// かつ目標から指定された距離前後を開けており、
+										// 現在位置から直進できる経路がある場所を次の移動目標とする
+										if (unitData.DistanceThresholdMax > 0.5) {
+											DirectX::XMVECTOR gap = DirectX::XMVectorSubtract(worldPosition.WorldPos.Parallel, unitData.FinalTarget.Pos);
+											gap = DirectX::XMVectorScale(gap, Interface::UniformRandFloat(unitData.DistanceThresholdMin, unitData.DistanceThresholdMax) / DirectX::XMVector2Length(gap).m128_f32[0]);
+											gap = DirectX::XMVector2Transform(gap, DirectX::XMMatrixRotationZ(Interface::UniformRandFloat(PI / -8.0f, PI / 8.0f)));
+											unitData.AreaBorderTarget.Pos = DirectX::XMVectorAdd(unitData.FinalTarget.Pos, gap);
+											if (pEntities->mRouting.GetAreaIndex(unitData.AreaBorderTarget.Pos)==-1) {
+												unitData.AreaBorderTarget.Pos = pEntities->mRouting.NearestWalkablePosition(unitData.AreaBorderTarget.Pos);
+											}
+											if (!pHurtboxes->IsWayClear(&unitData.AreaBorderTarget.Pos, &worldPosition.WorldPos.Parallel)) {
+												gap = DirectX::XMVectorSubtract(worldPosition.WorldPos.Parallel, unitData.FinalTarget.Pos);
+												gap = DirectX::XMVectorScale(gap, min(1, Interface::UniformRandFloat(unitData.DistanceThresholdMin, unitData.DistanceThresholdMax) / DirectX::XMVector2Length(gap).m128_f32[0]));
+												unitData.AreaBorderTarget.Pos = DirectX::XMVectorAdd(unitData.FinalTarget.Pos, gap);
+												globalStringDraw.SimpleAppend("NotClear", 0, 1, 1, worldPosition.WorldPos.Parallel, 0.5, 1, StrDrawPos::AsCenter);
+											}
+										}
+										else {
+											unitData.AreaBorderTarget = unitData.FinalTarget;
+										}
+										unitData.HeadingFree = true;
+										unitData.NextPosReloadTick = Tick + 120;
+										break;
 									}
 									else {
-										unitData.AreaBorderTarget = unitData.FinalTarget;
+										// 経路の途中だが直線でいけないことが判明した
+										// いける限り直線で行くことにする
+										unitData.HeadingFree = false;
+										if (count == 0) {
+											// 最初の経路がふさがっている場合は強引にでも移動する
+											// スタック予防
+											// 同じエリア内なので誤差の問題で実際は通れるとも考えられる
+											unitData.AreaBorderTarget = unitData.FinalTarget;
+										}
+										break;
 									}
-									unitData.HeadingFree = true;
-									unitData.NextPosReloadTick = Tick + 120;
-									break;
 								}
 								Interface::WayPoint targetNotSureWayClear;
 								targetNotSureWayClear = pEntities->mRouting.GetWayPoint(current, target, worldPosition.WorldPos.Parallel);
 								if (pHurtboxes->IsWayClear(&targetNotSureWayClear.Pos, &worldPosition.WorldPos.Parallel)) {
+
 									// そのエリア境界のウェイポイントまで一直線で行ける場合
 									unitData.AreaBorderTarget = targetNotSureWayClear;
 									current = pEntities->mRouting.AllArea[current].WhereToGo[target];
+									searchLog = searchLog + "->" + std::to_string(current);
 								}
 								else {
+									// 経路の途中だが直線でいけないことが判明した
+									// いける限り直線で行くことにする
 									unitData.HeadingFree = false;
+									if (count == 0) {
+										// 最初の経路がふさがっている場合は強引にでも移動する
+										// スタック予防
+										// 同じエリア内なので誤差の問題で実際は通れるとも考えられる
+										unitData.AreaBorderTarget = targetNotSureWayClear;
+									}
 									break;
 								}
+								count++;
 							}
+							unitData.TargetUpdated = false;
 						}
-						DirectX::XMVECTOR color = { 0,1,0,1 };
-
-
-						globalStringDraw.Append("areaBorder", &color, &unitData.AreaBorderTarget.Pos, 1, 10, StrDrawPos::AsCenter);
 					}
+					DirectX::XMVECTOR color = { 1,0,0,1 };
+					globalStringDraw.Append("Border", &color, &unitData.AreaBorderTarget.Pos, 0.5, 1, StrDrawPos::AsCenter);
+					color = { 0,0,1,1 };
+					globalStringDraw.Append("Final", &color, &unitData.FinalTarget.Pos, 0.5, 1, StrDrawPos::AsCenter);
 					// 目標地点への移動を行う
-
 					{
-						DirectX::XMVECTOR target = DirectX::XMVectorAdd(DirectX::XMVectorScale(
+						// 現在地と一時目標の中間地点に進入方向の逆側への補正をかけた地点へ向かう
+						DirectX::XMVECTOR vector = DirectX::XMVectorAdd(DirectX::XMVectorScale(
 							unitData.AreaBorderTarget.Pos, 0.5), DirectX::XMVectorScale(
-								worldPosition.WorldPos.Parallel, 0.5));
+								worldPosition.WorldPos.Parallel, -0.5));
 						if (!unitData.HeadingFree) {
 							// 進入方向に制約がある場合
 							// ない場合は一直線に向かう
-							float distance = DirectX::XMVector2Length(DirectX::XMVectorSubtract(unitData.AreaBorderTarget.Pos, worldPosition.WorldPos.Parallel)).m128_f32[0];
-							target = DirectX::XMVectorAdd(target, DirectX::XMVectorScale(unitData.AreaBorderTarget.Heading, distance * -0.2));
+							float distance = DirectX::XMVector2Length(vector).m128_f32[0] * 2;
+							vector = DirectX::XMVectorAdd(vector, DirectX::XMVectorScale(unitData.AreaBorderTarget.Heading, distance * -0.2));
 						}
-						float length = DirectX::XMVector2Length(DirectX::XMVectorSubtract(target, worldPosition.WorldPos.Parallel)).m128_f32[0];
-						target = DirectX::XMVectorScale(target, min(1,unitData.MoveTilePerTick / length));
-						motion.WorldDelta.Parallel = target;
+						float length = DirectX::XMVector2Length(vector).m128_f32[0];
+						DirectX::XMVECTOR v = vector;
+						vector = DirectX::XMVectorScale(vector, min(1, unitData.MoveTilePerTick / length));
+						vector.m128_f32[2] = 0;
+						vector.m128_f32[3] = 0;
+						motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8);
+						motion.WorldDelta.Parallel = DirectX::XMVectorAdd(motion.WorldDelta.Parallel, vector);
+						color = { 0,1,0,1 };
+						v = DirectX::XMVectorAdd(v, worldPosition.WorldPos.Parallel);
+						v.m128_f32[2] = 0;
+						globalStringDraw.Append("Temp", &color, &v, 0.5, 1, StrDrawPos::AsCenter);
 					}
 				}
 			}
@@ -275,6 +410,7 @@ namespace Systems {
 						moveFlag.Moved = true;
 						worldPosition.WorldPos = worldPosition.WorldPos + motion.WorldDelta;
 						worldPosition.WorldMatrix = worldPosition.WorldPos.GetMatrix();
+
 					}
 					else {
 						moveFlag.Moved = false;
@@ -862,43 +998,31 @@ namespace Systems {
 					spawn.TimeGapSince--;
 
 					//遅れ分を消化済み
-					if (spawn.TimeGapSince <= 0) {
+					if (spawn.TimeGapSince <= 0 && 0 < spawn.CountLeft) {
 						// 部隊長のスポーン
-						{
-							Interface::UnitIndex leader = spawn.Leader;
-							//占有エリアのサイズ
-							//半径1.5の円となるので1.5倍
-							float radius = pEntities->UnitInfos[leader].Ratio * 0.5;
-							float Xpos = Interface::UniformRandFloat(spawn.SpawnAreaLeft, spawn.SpawnAreaRight);
-							float Ypos = Interface::UniformRandFloat(spawn.SpawnAreaBottom, spawn.SpawnAreaTop);
-							if (pHurtboxes->IsAbleToSpawn(radius, radius, radius, radius, Xpos, Ypos)) {
-								Interface::RelationOfCoord pos = Interface::RelationOfCoord();
-								pos.Parallel = {
-									(float)Xpos,(float)Ypos,0,1
-								};
-								spawn.CoreData.IsLeader = true;
-								spawn.CoreData.LeaderId = pEntities->EmplaceUnitWithInitData(leader, &spawn.CoreData, &pos);
-							}
-						}
+						Interface::UnitIndex leader = spawn.Leader;
+						float Xpos = Interface::UniformRandInt(spawn.SpawnAreaLeft, spawn.SpawnAreaRight);
+						float Ypos = Interface::UniformRandInt(spawn.SpawnAreaBottom, spawn.SpawnAreaTop);
+						Interface::RelationOfCoord pos = Interface::RelationOfCoord();
+						pos.Parallel = {
+							(float)Xpos,(float)Ypos,0,1
+						};
+						pos.Parallel = pEntities->mRouting.NearestWalkablePosition(pos.Parallel);
+						spawn.CoreData.IsLeader = true;
+						spawn.CoreData.LeaderId = pEntities->EmplaceUnitWithInitData(leader, &spawn.CoreData, &pos);
 						// 部下のスポーン
-						{
-							spawn.CoreData.IsLeader = false;
-							Interface::UnitIndex member = spawn.Member;
-							//占有エリアのサイズ
-							//半径1.5の円となるので1.5倍
-							float radius = pEntities->UnitInfos[member].Ratio * 0.5;
-							while (0 < spawn.CountLeft) {
-								float Xpos = Interface::UniformRandFloat(spawn.SpawnAreaLeft, spawn.SpawnAreaRight);
-								float Ypos = Interface::UniformRandFloat(spawn.SpawnAreaBottom, spawn.SpawnAreaTop);
-								if (pHurtboxes->IsAbleToSpawn(radius, radius, radius, radius, Xpos, Ypos)) {
-									Interface::RelationOfCoord pos = Interface::RelationOfCoord();
-									pos.Parallel = {
-										(float)Xpos,(float)Ypos,0,1
-									};
-									pEntities->EmplaceUnitWithInitData(member, &spawn.CoreData, &pos);
-									spawn.CountLeft--;
-								}
-							}
+						spawn.CoreData.IsLeader = false;
+						Interface::UnitIndex member = spawn.Member;
+						while (0 < spawn.CountLeft) {
+							Xpos = Interface::UniformRandFloat(spawn.SpawnAreaLeft, spawn.SpawnAreaRight - 1);
+							Ypos = Interface::UniformRandFloat(spawn.SpawnAreaBottom, spawn.SpawnAreaTop - 1);
+							Interface::RelationOfCoord pos = Interface::RelationOfCoord();
+							pos.Parallel = {
+								(float)Xpos,(float)Ypos,0,1
+							};
+							pos.Parallel = pEntities->mRouting.NearestWalkablePosition(pos.Parallel);
+							pEntities->EmplaceUnitWithInitData(member, &spawn.CoreData, &pos);
+							spawn.CountLeft--;
 						}
 					}
 				}
@@ -988,7 +1112,8 @@ public:
 		// ここより下に削除と追加にかかわる処理はする必要がある
 
 		SystemArray.push_back(new Systems::ControlUnitCount(pGameSystem));
-		SystemArray.push_back(new Systems::BindCoreUnit(pGameSystem));
+		SystemArray.push_back(new Systems::BindCoreBall(pGameSystem));
+		SystemArray.push_back(new Systems::BindLeaderMember(pGameSystem));
 
 		SystemArray.push_back(new Systems::CalcurateGeneratedWorld(pGameSystem));
 		//描画

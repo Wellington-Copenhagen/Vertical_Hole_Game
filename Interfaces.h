@@ -282,7 +282,7 @@ namespace Interface {
 		return true;
 	}
 	static std::map<std::string, int> AppearanceNameHash;
-	static entt::entity PlayingBall;
+	inline entt::entity PlayingUnit;
 	static std::bitset<TeamCount*TeamCount> HostilityTable;//8team*8teamのテーブルでtrueの場所は敵対する
 	static std::mt19937 RandEngine;
 	inline DirectX::XMVECTOR GetVectorFromJson(Json::Value input) {
@@ -298,6 +298,7 @@ namespace Interface {
 	inline std::map<std::string, entt::entity> EntNameHash;
 	struct EntityInitData {
 		// 常に使う
+		entt::entity thisEntities;
 		entt::entity Prototype;
 		bool IsCore;
 		// EffectとBallに使う
@@ -392,6 +393,10 @@ namespace Interface {
 	}
 	inline float UniformRandFloat(float min,float max) {
 		std::uniform_real_distribution<float> get(min, max);
+		return get(RandEngine);
+	}
+	inline int UniformRandInt(int min, int max) {
+		std::uniform_int_distribution<int> get(min, max);
 		return get(RandEngine);
 	}
 	struct WayPoint {

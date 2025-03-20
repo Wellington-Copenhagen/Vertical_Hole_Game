@@ -1,5 +1,11 @@
 {
     "mapFilePath":"Data/MapData/TestMap.json",
+    "hostility":[
+        {
+            "other":[0],
+            "another":[1]
+        }
+    ],
     "spawnCondition":[
         {
             "UnitCountObservance":{
@@ -8,10 +14,10 @@
                 "team":0
             },
             "Spawn":{
-                "count":10,
+                "count":9,
                 "timeGap":60,
-                "leaderUnit":"unitTest",
-                "unitName":"unitTest",
+                "leaderUnit":"unitLeader",
+                "memberUnit":"unitMember",
                 "initData":{
                     "team":0,
                     "health":1,
@@ -20,9 +26,9 @@
                 },
                 "spawnArea":{
                     "left":5,
-                    "right":10,
+                    "right":15,
                     "bottom":5,
-                    "top":10
+                    "top":15
                 }
             }
         },
@@ -33,9 +39,9 @@
                 "team":1
             },
             "Spawn":{
-                "count":10,
-                "leaderUnit":"unitTest",
-                "memberUnit":"unitTest",
+                "count":9,
+                "leaderUnit":"unitLeader",
+                "memberUnit":"unitMember",
                 "timeGap":60,
                 "initData":{
                     "team":1,
@@ -44,12 +50,12 @@
                     "speed":1
                 },
                 "spawnArea":{
-                    "left":5,
-                    "right":10,
-                    "bottom":5,
-                    "top":10
+                    "left":35,
+                    "right":45,
+                    "bottom":65,
+                    "top":75
                 }
             }
-        },
+        }
     ]
 }

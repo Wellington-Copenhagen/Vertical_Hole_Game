@@ -18,8 +18,8 @@ public:
 	std::bitset<WorldWidth* WorldHeight> IsWallMap;
 	// 影の状態を更新する必要がある場所
 	std::bitset<WorldWidth* WorldHeight> ShouldUpdateShadow;
-	// その場所が何番の部屋に属するか
-	std::vector<int> AreaIndexMap;
+
+	std::tuple<int, int, int, int> PlayerCorpsSpawnArea;
 
 	Entities() {
 		UnitCountEachTeam = std::vector<int>();
@@ -42,11 +42,12 @@ public:
 	entt::entity EmplaceFromPrototypeEntity(Interface::EntityInitData* pInitData);
 	void LoadMap(std::string mapFileName);
 	void LoadEntities(std::vector<std::string> fileNames);
+	void LoadPlayerCorps(std::string fileName);
 	void LoadUnits(std::vector<std::string> fileNames);
 	void LoadMission(std::string missionFileName);
 	entt::entity EmplaceUnitWithInitData(int unitIndex, Interface::EntityInitData* pInitData, Interface::RelationOfCoord* pCorePos);
 	int GetFloorShadow(int x, int y);
 	int GetWallShadow(int x, int y);
 	void DeleteWall(int x, int y);
-	int GetAreaIndex(DirectX::XMVECTOR pos);
+	std::pair<entt::entity,float> GetNearestHostilingUnit(DirectX::XMVECTOR pos, Interface::HostilityTeam team);
 };
