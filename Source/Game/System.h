@@ -1,10 +1,10 @@
 #pragma once
 #include "../../Interfaces.h"
-#include "Appearance.h"
+#include "Source/DirectX/Appearance.h"
 #include "Input.h"
 #include "HitBox.h"
 #include "Entity.h"
-#include "StringDraw.h"
+#include "Source/DirectX/StringDraw.h"
 extern GraphicalStringDraw<65536, 2048, 32> globalStringDraw;
 extern entt::entity Interface::PlayingUnit;
 extern int Tick;
@@ -146,6 +146,8 @@ namespace Systems {
 			for (entt::entity member : corpsData.AllMemberUnit) {
 				Component::UnitData& unitData = pEntities->Registry.get<Component::UnitData>(member);
 				unitData.TargetEntity = corpsData.LeaderUnit;
+				unitData.DistanceThresholdMax = 10;
+				unitData.DistanceThresholdMin = 1;
 			}
 		}
 		void Charge(Component::CorpsData& corpsData) {
@@ -236,6 +238,10 @@ namespace Systems {
 				}
 				//AIの行動
 				else {
+					// 目標地点への距離の基準が遠すぎるか、視線が通っていない場合ナビゲーションを頼って目標地点へ接近する
+					// 近すぎる場合は離れる方向へ移動するベクトルを足しつつランダム移動
+					// 満たされている場合はランダムに移動を行う
+					// 地点の設定を行うのではなく移動方向と時間だけ設定する
 					Component::CorpsData& corpsData = pEntities->Registry.get<Component::CorpsData>(unitData.Leader);
 					if (corpsData.CurrentMovementOrder == Interface::MovementOrder::HoldPosition
 						 || corpsData.CurrentMovementOrder == Interface::MovementOrder::Chase
@@ -272,14 +278,67 @@ namespace Systems {
 								unitData.FinalTarget.Pos = targetWorldPos->WorldPos.Parallel;
 							}
 						}
-						float length = DirectX::XMVector2Length(DirectX::XMVectorSubtract(unitData.AreaBorderTarget.Pos, worldPosition.WorldPos.Parallel)).m128_f32[0];
+						// この時点でFinalTargetは完全に更新済み
+
+						DirectX::XMVECTOR toFinal = DirectX::XMVectorSubtract(unitData.FinalTarget.Pos, worldPosition.WorldPos.Parallel);
+						float lengthToFinal = DirectX::XMVector2Length(toFinal).m128_f32[0];
+						if (Tick % 10 == 0) {
+							if (lengthToFinal < unitData.DistanceThresholdMax &&
+								pHurtboxes->IsWayClear(&worldPosition.WorldPos.Parallel, &unitData.FinalTarget.Pos)) {
+								// 距離、射線が問題ない
+								// ランダム移動へ移行
+								unitData.VectorNavigation = true;
+								if (unitData.NextPosReloadTick < Tick) {
+									DirectX::XMVECTOR navigateHeading = { 0,0,0,0 };
+									if (lengthToFinal < unitData.DistanceThresholdMin) {
+										globalStringDraw.SimpleAppend("Too Near", 0, 1, 0, worldPosition.WorldPos.Parallel, 0.5, 1, StrDrawPos::AsCenter);
+										if (lengthToFinal < 1) {
+											navigateHeading = DirectX::XMVectorAdd(navigateHeading, Interface::NormalRandHeadingVector(0, 2 * PI, 0));
+										}
+										else {
+											// 反対方向に向かわせる
+											navigateHeading = DirectX::XMVectorAdd(navigateHeading,
+												DirectX::XMVectorScale(toFinal, 0.2 * (lengthToFinal - unitData.DistanceThresholdMin) / lengthToFinal));
+										}
+									}
+
+
+									// 方向での誘導になっていてかつクールタイムが消化されている
+									unitData.Heading = DirectX::XMVectorAdd(Interface::NormalRandHeadingVector(0, 2 * PI, 0), motion.WorldDelta.Parallel);
+									unitData.Heading = DirectX::XMVector2Normalize(unitData.Heading);
+									unitData.Heading = DirectX::XMVectorAdd(unitData.Heading, navigateHeading);
+									unitData.Heading = DirectX::XMVector2Normalize(unitData.Heading);
+									globalStringDraw.SimpleAppend("New Vector", 1, 1, 0,
+										DirectX::XMVectorAdd(worldPosition.WorldPos.Parallel, unitData.Heading)
+										, 0.5, 60, StrDrawPos::AsCenter);
+									unitData.Heading = DirectX::XMVectorScale(unitData.Heading, unitData.MoveTilePerTick / 2);
+									unitData.NextPosReloadTick = Tick + Interface::UniformRandInt(100,120);
+									if (DirectX::XMVectorIsNaN(unitData.Heading).m128_f32[0]) {
+										throw("");
+									}
+								}
+							}
+							else {
+								// 距離か射線に問題があるのでもっと経路に従って近づく必要がある
+								unitData.VectorNavigation = false;
+								if (unitData.NextPosReloadTick < Tick) {
+									unitData.NextPosReloadTick = Tick + Interface::UniformRandInt(100, 120);
+								}
+							}
+						}
+						if (unitData.NextPosReloadTick >= Tick) {
+							globalStringDraw.SimpleAppend("Cool Time", 0, 1, 0, worldPosition.WorldPos.Parallel, 0.5, 1, StrDrawPos::AsCenter);
+						}
+
+
+						float lengthToAreaBorder = DirectX::XMVector2Length(DirectX::XMVectorSubtract(unitData.AreaBorderTarget.Pos, worldPosition.WorldPos.Parallel)).m128_f32[0];
 						int current = pEntities->mRouting.GetAreaIndex(worldPosition.WorldPos.Parallel);
 						int previousArea = unitData.PreviousTickArea;
 						if (DirectX::XMVector2Length(DirectX::XMVectorSubtract(unitData.PreviousTargetPos, unitData.FinalTarget.Pos)).m128_f32[0] > 3) {
 							unitData.TargetUpdated = true;
 							unitData.PreviousTargetPos = unitData.FinalTarget.Pos;
 						}
-						bool areaBorderShouldUpdate = length < 1 || unitData.PreviousTickArea != current || unitData.TargetUpdated;
+						bool areaBorderShouldUpdate = !unitData.VectorNavigation && (lengthToAreaBorder < 1 || unitData.PreviousTickArea != current || unitData.TargetUpdated);
 						unitData.PreviousTickArea = current;
 						if (areaBorderShouldUpdate || Tick%30==0) {
 							int target = max(0, pEntities->mRouting.GetAreaIndex(pEntities->mRouting.NearestWalkablePosition(unitData.FinalTarget.Pos)));
@@ -290,16 +349,13 @@ namespace Systems {
 								//1エリアずつ進めていって通路が通らなくなった時か、目標エリアまで通路が通っているとわかった時に探索を止める
 								if (current == target) {
 									if (pHurtboxes->IsWayClear(&unitData.FinalTarget.Pos, &worldPosition.WorldPos.Parallel)) {
-										if (unitData.NextPosReloadTick > Tick && previousArea == target && !unitData.TargetUpdated) {
-											// 計算負荷を減らすためにエリア間目標の再選定はクールタイムを設ける
-											break;
-										}
 										// 現在地から最終目標まで直線で行くことができる
 
 
 										// 現在地点と目標地点を結んだ直線の周辺、
 										// かつ目標から指定された距離前後を開けており、
 										// 現在位置から直進できる経路がある場所を次の移動目標とする
+										/*
 										if (unitData.DistanceThresholdMax > 0.5) {
 											DirectX::XMVECTOR gap = DirectX::XMVectorSubtract(worldPosition.WorldPos.Parallel, unitData.FinalTarget.Pos);
 											gap = DirectX::XMVectorScale(gap, Interface::UniformRandFloat(unitData.DistanceThresholdMin, unitData.DistanceThresholdMax) / DirectX::XMVector2Length(gap).m128_f32[0]);
@@ -318,8 +374,9 @@ namespace Systems {
 										else {
 											unitData.AreaBorderTarget = unitData.FinalTarget;
 										}
+										*/
+										unitData.AreaBorderTarget = unitData.FinalTarget;
 										unitData.HeadingFree = true;
-										unitData.NextPosReloadTick = Tick + 120;
 										break;
 									}
 									else {
@@ -361,33 +418,48 @@ namespace Systems {
 							unitData.TargetUpdated = false;
 						}
 					}
-					DirectX::XMVECTOR color = { 1,0,0,1 };
-					globalStringDraw.Append("Border", &color, &unitData.AreaBorderTarget.Pos, 0.5, 1, StrDrawPos::AsCenter);
-					color = { 0,0,1,1 };
-					globalStringDraw.Append("Final", &color, &unitData.FinalTarget.Pos, 0.5, 1, StrDrawPos::AsCenter);
+					globalStringDraw.SimpleAppend("Border", 1, 0, 0, unitData.AreaBorderTarget.Pos, 0.5, 1, StrDrawPos::AsCenter);
+					globalStringDraw.SimpleAppend("Final", 0, 0, 1, unitData.FinalTarget.Pos, 0.5, 1, StrDrawPos::AsCenter);
 					// 目標地点への移動を行う
+					if (unitData.VectorNavigation) {
+						if (unitData.NextPosReloadTick - 90 > Tick) {
+							motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8);
+							motion.WorldDelta.Parallel = DirectX::XMVectorAdd(motion.WorldDelta.Parallel, unitData.Heading);
+							globalStringDraw.SimpleAppend("Vector Navigation", 1, 0, 0, worldPosition.WorldPos.Parallel, 0.5, 1, StrDrawPos::AsCenter);
+						}
+						else {
+							motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8);
+						}
+					}
+					else
 					{
 						// 現在地と一時目標の中間地点に進入方向の逆側への補正をかけた地点へ向かう
 						DirectX::XMVECTOR vector = DirectX::XMVectorAdd(DirectX::XMVectorScale(
 							unitData.AreaBorderTarget.Pos, 0.5), DirectX::XMVectorScale(
 								worldPosition.WorldPos.Parallel, -0.5));
-						if (!unitData.HeadingFree) {
-							// 進入方向に制約がある場合
-							// ない場合は一直線に向かう
-							float distance = DirectX::XMVector2Length(vector).m128_f32[0] * 2;
-							vector = DirectX::XMVectorAdd(vector, DirectX::XMVectorScale(unitData.AreaBorderTarget.Heading, distance * -0.2));
-						}
-						float length = DirectX::XMVector2Length(vector).m128_f32[0];
-						DirectX::XMVECTOR v = vector;
-						vector = DirectX::XMVectorScale(vector, min(1, unitData.MoveTilePerTick / length));
-						vector.m128_f32[2] = 0;
-						vector.m128_f32[3] = 0;
+						float slipRange = DirectX::XMVector2Length(motion.WorldDelta.Parallel).m128_f32[0] / (1.0 - 0.8);
+						float distance = DirectX::XMVector2Length(vector).m128_f32[0] * 2;
 						motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8);
-						motion.WorldDelta.Parallel = DirectX::XMVectorAdd(motion.WorldDelta.Parallel, vector);
-						color = { 0,1,0,1 };
-						v = DirectX::XMVectorAdd(v, worldPosition.WorldPos.Parallel);
-						v.m128_f32[2] = 0;
-						globalStringDraw.Append("Temp", &color, &v, 0.5, 1, StrDrawPos::AsCenter);
+						// ぴったり止めるためにちょうどいいところでで進むのを止める
+						if (distance > slipRange) {
+							if (!unitData.HeadingFree) {
+								// 進入方向に制約がある場合
+								// ない場合は一直線に向かう
+								vector = DirectX::XMVectorAdd(vector, DirectX::XMVectorScale(unitData.AreaBorderTarget.Heading, distance * -0.2));
+							}
+							float length = DirectX::XMVector2Length(vector).m128_f32[0];
+							DirectX::XMVECTOR v = vector;
+							vector = DirectX::XMVectorScale(vector, min(1, unitData.MoveTilePerTick / length));
+							vector.m128_f32[2] = 0;
+							vector.m128_f32[3] = 0;
+							motion.WorldDelta.Parallel = DirectX::XMVectorAdd(motion.WorldDelta.Parallel, vector);
+							v = DirectX::XMVectorAdd(v, worldPosition.WorldPos.Parallel);
+							v.m128_f32[2] = 0;
+							globalStringDraw.SimpleAppend("Temp", 0, 1, 0, v, 0.5, 1, StrDrawPos::AsCenter);
+						}
+						else {
+							globalStringDraw.SimpleAppend("Coasting", 0, 1, 0, worldPosition.WorldPos.Parallel, 0.5, 1, StrDrawPos::AsCenter);
+						}
 					}
 				}
 			}
@@ -441,6 +513,7 @@ namespace Systems {
 			}
 		}
 	};
+	// 速度にNaNが発生したときにそれが位置に流れ込まないようにする処理が必要
 	class CalcurateGeneratedWorld : public System {
 	public:
 		CalcurateGeneratedWorld(GameSystem* pGameSystem) : System(pGameSystem) {}

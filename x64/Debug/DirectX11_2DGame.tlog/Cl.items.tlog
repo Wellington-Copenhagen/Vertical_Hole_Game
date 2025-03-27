@@ -1,9 +1,10 @@
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\DirectX11_Test.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\DirectX11_Test.obj
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Appearance.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\Appearance.obj
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Buffers.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\Buffers.obj
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Direct3D.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\Direct3D.obj
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\DrawPipe.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\DrawPipe.obj
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\StringDraw.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\StringDraw.obj
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Texture.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\Texture.obj
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Appearance.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\Appearance.obj
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Camera.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\Camera.obj
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\Component.obj
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\Entity.obj
@@ -13,5 +14,5 @@ C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Input.cp
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Interfaces.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\Interfaces.obj
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Routing.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\Routing.obj
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Strategy.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\Strategy.obj
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\StringDraw.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\StringDraw.obj
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\System.obj
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\UserInterface.cpp;C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\x64\Debug\UserInterface.obj

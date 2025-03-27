@@ -50,37 +50,53 @@ void GameSystem::Initialize(HWND hWnd)
 	Interface::UnitNameHash = std::map<std::string, Interface::UnitIndex>();
 	Interface::EntNameHash = std::map<std::string, entt::entity>();
 	mHurtboxes = Hurtboxes(&mEntities.Registry);
+
+	// テクスチャの初期化
+	BlockTextureArray = SameFormatTextureArray<256>(8, true);
+	BallTextureArray = SameFormatTextureArray<256>(8, true);
+	BulletTextureArray = SameFormatTextureArray<256>(8, true);
+	LineTextureArray = SameFormatTextureArray<256>(8, true);
+
+	// 頂点バッファ、頂点データの初期化
 	mFloorAppearances = Appearances
 		<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, WorldWidth* WorldHeight>(4);
 	mWallAppearances = Appearances
 		<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, WorldWidth* WorldHeight>(4);
+	mFloorDrawCallBuffer = VertexBuffer<Interface::BlockDrawCallType, 4, 0>(mFloorAppearances.DrawCall);
+	mFloorInstanceBuffer = VertexBuffer<Interface::BlockInstanceType, WorldWidth* WorldHeight, 1>(mFloorAppearances.Instances);
+	mWallDrawCallBuffer = VertexBuffer<Interface::BlockDrawCallType, 4, 0>(mWallAppearances.DrawCall);
+	mWallInstanceBuffer = VertexBuffer<Interface::BlockInstanceType, WorldWidth* WorldHeight, 1>(mWallAppearances.Instances);
+
 	mBallAppearances[0] = Appearances
 		<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount>(4, 0.4, 0.4, 0.4, -0.01);
 	mBallAppearances[1] = Appearances
 		<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount>(4,0.5, 0.5, 0.5,0);
 	mBallAppearances[2] = Appearances
 		<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount>(4,0.2,0.2,0.2,-0.1);
-
-	mBulletAppearances = Appearances
-		<Interface::BulletDrawCallType, Interface::BulletInstanceType, 1, MaxBulletCount>(4);
-
-	BlockTextureArray = SameFormatTextureArray<256>(8, true);
-	BallTextureArray = SameFormatTextureArray<256>(8, true);
-	BulletTextureArray = SameFormatTextureArray<256>(8, true);
-
-	mFloorDrawCallBuffer = VertexBuffer<Interface::BlockDrawCallType, 4, 0>(mFloorAppearances.DrawCall);
-	mFloorInstanceBuffer = VertexBuffer<Interface::BlockInstanceType, WorldWidth * WorldHeight, 1>(mFloorAppearances.Instances);
-	mWallDrawCallBuffer = VertexBuffer<Interface::BlockDrawCallType, 4, 0>(mWallAppearances.DrawCall);
-	mWallInstanceBuffer = VertexBuffer<Interface::BlockInstanceType, WorldWidth* WorldHeight, 1>(mWallAppearances.Instances);
-
 	for (int i = 0; i < 3; i++) {
 		mBallDrawCallBuffer[i] = VertexBuffer<Interface::BallDrawCallType, 4, 0>(mBallAppearances[i].DrawCall);
 		mBallInstanceBuffer[i] = VertexBuffer<Interface::BallInstanceType, MaxBallCount, 1>(mBallAppearances[i].Instances);
 	}
 
-
+	mBulletAppearances = Appearances
+		<Interface::BulletDrawCallType, Interface::BulletInstanceType, 1, MaxBulletCount>(4);
 	mBulletDrawCallBuffer = VertexBuffer<Interface::BulletDrawCallType, 4, 0>(mBulletAppearances.DrawCall);
 	mBulletInstanceBuffer = VertexBuffer<Interface::BulletInstanceType, MaxBulletCount, 1>(mBulletAppearances.Instances);
+	//mLineAppearances = Appearances
+		//<Interface::LineDrawCallType, Interface::LineInstanceType, 1, MaxLineCount>(4);
+	//mLineDrawCallBuffer = VertexBuffer<Interface::LineDrawCallType, 4, 0>(mLineAppearances.DrawCall);
+	//mLineInstanceBuffer = VertexBuffer<Interface::LineInstanceType, MaxLineCount, 1>(mLineAppearances.Instances);
+
+
+
+
+
+
+
+
+
+
+
 	GraphicProcessSetter(D3D.Width,D3D.Height);
 	mCamera = Camera(D3D.Height, D3D.Width);
 

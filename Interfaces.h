@@ -11,6 +11,7 @@
 #define MaxUnitCount 1024
 #define MaxBallCount MaxUnitCount * 7
 #define MaxBulletCount 65536
+#define MaxLineCount 65536
 #define WorldWidth 256
 #define WorldHeight 256
 
@@ -166,6 +167,54 @@ namespace Interface {
 	public:
 		DirectX::XMFLOAT2 UV;//各頂点のU,各頂点のV
 		DirectX::XMFLOAT4 Pos;
+	};
+
+
+	struct IconInstanceType {
+		DirectX::XMFLOAT4 Vertex1;
+		DirectX::XMFLOAT4 Vertex2;
+		DirectX::XMFLOAT4 Vertex3;
+		DirectX::XMFLOAT4 Vertex4;
+		float texIndex;
+	};
+	struct IconDrawCallType {
+		DirectX::XMFLOAT2 UV;//各頂点のU,各頂点のV
+	};
+
+	struct LineInstanceType {
+		DirectX::XMFLOAT4 Vertex1;
+		DirectX::XMFLOAT4 Vertex2;
+		float width;
+		float texIndex;
+	};
+	struct LineDrawCallType {
+		DirectX::XMFLOAT2 UV;//各頂点のU,各頂点のV
+	};
+
+	struct OCGInstanceType {
+	public:
+		void Set(DirectX::XMVECTOR* vertex1, DirectX::XMVECTOR* vertex2, DirectX::XMVECTOR* vertex3, DirectX::XMVECTOR* vertex4, 
+			DirectX::XMVECTOR* color1, DirectX::XMVECTOR* color2,float colorChange) {
+			DirectX::XMStoreFloat4(&Vertex1, *vertex1);
+			DirectX::XMStoreFloat4(&Vertex2, *vertex2);
+			DirectX::XMStoreFloat4(&Vertex3, *vertex3);
+			DirectX::XMStoreFloat4(&Vertex4, *vertex4);
+			DirectX::XMStoreFloat4(&Color1, *color1);
+			DirectX::XMStoreFloat4(&Color2, *color2);
+			ColorChange = colorChange;
+		}
+		DirectX::XMFLOAT4 Vertex1;
+		DirectX::XMFLOAT4 Vertex2;
+		DirectX::XMFLOAT4 Vertex3;
+		DirectX::XMFLOAT4 Vertex4;
+		DirectX::XMFLOAT4 Color1;
+		DirectX::XMFLOAT4 Color2;
+		float ColorChange;
+
+	};
+	struct OCGDrawCallType {
+	public:
+		float Triangle;
 	};
 
 
@@ -398,6 +447,11 @@ namespace Interface {
 	inline int UniformRandInt(int min, int max) {
 		std::uniform_int_distribution<int> get(min, max);
 		return get(RandEngine);
+	}
+	inline DirectX::XMVECTOR NormalRandHeadingVector(float min,float max,float w = 1) {
+		std::uniform_real_distribution<float> get(min, max);
+		float azimath = get(RandEngine);
+		return { cosf(azimath),sinf(azimath) ,0,w };
 	}
 	struct WayPoint {
 		DirectX::XMVECTOR Pos;

@@ -129,3 +129,4 @@ void TextureArray::SetToGraphicPipeLine() {
 SameFormatTextureArray<256> BlockTextureArray;
 SameFormatTextureArray<256> BallTextureArray;
 SameFormatTextureArray<256> BulletTextureArray;
+SameFormatTextureArray<256> LineTextureArray;

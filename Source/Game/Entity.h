@@ -3,7 +3,7 @@
 #include "Interfaces.h"
 #include "Routing.h"
 #include "Component.h"
-#include "StringDraw.h"
+#include "Source/DirectX/StringDraw.h"
 class Entities {
 public:
 	entt::registry Registry;

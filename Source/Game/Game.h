@@ -3,7 +3,6 @@
 #include "framework.h"
 #include "Source/DirectX/DirectX.h"
 #include "Camera.h"
-#include "Appearance.h"
 #include "Input.h"
 #include "HitBox.h"
 #include "System.h"
@@ -12,8 +11,9 @@
 #include "Source/DirectX/Buffers.h"
 #include "Source/DirectX/Texture.h"
 #include "Source/DirectX/DrawPipe.h"
+#include "Source/DirectX/Appearance.h"
 #include "Routing.h"
-#include "StringDraw.h"
+#include "Source/DirectX/StringDraw.h"
 
 //=========================================
 // GameSystemクラス
@@ -22,36 +22,42 @@
 extern SameFormatTextureArray<256> BlockTextureArray;
 extern SameFormatTextureArray<256> BallTextureArray;
 extern SameFormatTextureArray<256> BulletTextureArray;
+extern SameFormatTextureArray<256> LineTextureArray;
 class GameSystem
 {
 public :
 	AllSystem mAllSystem;
 	Entities mEntities;
-	//マップ最大サイズに床と壁全部配置した場合の大きさ
-	Appearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, WorldWidth * WorldHeight> mFloorAppearances;
-	Appearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, WorldWidth* WorldHeight> mWallAppearances;
-	//影、本体、模様
-	Appearances<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount> mBallAppearances[3];
-	Appearances<Interface::BulletDrawCallType, Interface::BulletInstanceType, 1, MaxBulletCount> mBulletAppearances;
+
+
 	Hurtboxes mHurtboxes;
 	ConstantBuffer mCBuffer;
 
+	// 頂点バッファと頂点のデータを記録するAppearance
 
+	//マップ最大サイズに床と壁全部配置した場合の大きさ
 	VertexBuffer<Interface::BlockDrawCallType, 4,0> mFloorDrawCallBuffer;
 	VertexBuffer<Interface::BlockDrawCallType, 4, 0> mWallDrawCallBuffer;
+	Appearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, WorldWidth* WorldHeight> mFloorAppearances;
 	VertexBuffer<Interface::BlockInstanceType, WorldWidth* WorldHeight,1> mFloorInstanceBuffer;
 	VertexBuffer<Interface::BlockInstanceType, WorldWidth* WorldHeight, 1> mWallInstanceBuffer;
+	Appearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, WorldWidth* WorldHeight> mWallAppearances;
 
 
-	//影、本体、模様、影
-	VertexBuffer<Interface::BallDrawCallType, 4,0> mBallDrawCallBuffer[3];
 	//影、本体、模様
+	VertexBuffer<Interface::BallDrawCallType, 4,0> mBallDrawCallBuffer[3];
 	VertexBuffer<Interface::BallInstanceType, MaxBallCount,1> mBallInstanceBuffer[3];
+	Appearances<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount> mBallAppearances[3];
 
 
 
 	VertexBuffer<Interface::BulletDrawCallType, 4,0> mBulletDrawCallBuffer;
 	VertexBuffer<Interface::BulletInstanceType, MaxBulletCount,1> mBulletInstanceBuffer;
+	Appearances<Interface::BulletDrawCallType, Interface::BulletInstanceType, 1, MaxBulletCount> mBulletAppearances;
+
+	VertexBuffer<Interface::LineDrawCallType, 4, 0> mLineDrawCallBuffer;
+	VertexBuffer<Interface::LineInstanceType, MaxLineCount, 1> mLineInstanceBuffer;
+	Appearances<Interface::LineDrawCallType, Interface::LineInstanceType, 1, MaxLineCount> mLineAppearances;
 
 
 

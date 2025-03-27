@@ -350,8 +350,12 @@ namespace Component {
 		DirectX::XMVECTOR PreviousTargetPos;
 		bool TargetUpdated;
 		// ↓
+		bool VectorNavigation;
+		// 位置誘導に使う
 		bool HeadingFree;
 		Interface::WayPoint AreaBorderTarget;
+		// 
+		DirectX::XMVECTOR Heading;
 		int NextPosReloadTick;
 		// Centerを中心としてLengthの範囲内の場所へ移動する
 		// 定点位置、方向で停止する
@@ -378,6 +382,7 @@ namespace Component {
 			AreaBorderTarget.Pos = pInitData->Pos.Parallel;
 			PreviousTickArea = -1;
 			PreviousTargetPos = {0,0,0,1};
+			Heading = { 0,0,0,0 };
 		}
 		UnitData(Json::Value fromLoad) {
 			AttackRange = 20;

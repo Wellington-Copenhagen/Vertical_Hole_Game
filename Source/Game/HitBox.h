@@ -3,7 +3,7 @@
 #include "framework.h"
 #include "Interfaces.h"
 #include "Component.h"
-#include "StringDraw.h"
+#include "Source/DirectX/StringDraw.h"
 extern GraphicalStringDraw<65536, 2048, 32> globalStringDraw;
 #define UnitCountPerCell 4
 static class Hurtboxes {
