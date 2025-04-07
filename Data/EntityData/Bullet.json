@@ -1,0 +1,30 @@
+{
+    "bulletSpear":{
+        "BulletAppearance":{
+            "texture":{
+                "kind":"file",
+                "filePath":"Data/Textures/texBulletSpear.tif"
+            }
+        },
+        "Motion":{
+            "parallel":[0.2,0,0,0]
+        },
+        "BulletData":{
+            "interfareToWall":true,
+            "interfareToBall":true
+        },
+        "GiveDamage":{
+            "physical":10
+        },
+        "CircleHitbox":{
+            "diameterCoef":0.2,
+            "relativeCenter":[0.4,0,0,1]
+        },
+        "WorldPosition":{
+            "width":1,
+            "parallel":[
+                0,0,0.5,1
+            ]
+        }
+    }
+}

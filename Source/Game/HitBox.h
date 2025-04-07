@@ -4,8 +4,9 @@
 #include "Interfaces.h"
 #include "Component.h"
 #include "Source/DirectX/StringDraw.h"
-extern GraphicalStringDraw<65536, 2048, 32> globalStringDraw;
-#define UnitCountPerCell 4
+extern GraphicalStringDraw globalStringDraw;
+#define UnitCountPerCell 1
+#define CellWidth 1
 static class Hurtboxes {
 public:
 
@@ -21,9 +22,9 @@ public:
 	Hurtboxes(entt::registry* pmainregistry) {
 		pMainRegistry = pmainregistry;
 		WallIsThere.reset();
-		OccupyingUnitCount = std::vector<int>(WorldWidth * WorldHeight);
+		OccupyingUnitCount = std::vector<int>((WorldWidth / CellWidth) * (WorldHeight / CellWidth));
 		OccupyingWalls = std::vector<entt::entity>(WorldWidth * WorldHeight);
-		OccupyingUnits = std::vector<entt::entity>(WorldWidth * WorldHeight * UnitCountPerCell);
+		OccupyingUnits = std::vector<entt::entity>((WorldWidth / CellWidth) * (WorldHeight / CellWidth) * UnitCountPerCell);
 		OccupiedMap.reset();
 
 	}
@@ -39,7 +40,7 @@ public:
 		OccupiedMap[pos] = false;
 	}
 	inline void SetUnit(int x, int y, entt::entity entity,Interface::HostilityTeam team) {
-		int pos = y * WorldWidth + x;
+		int pos = (y / CellWidth) * (WorldWidth / CellWidth) + x / CellWidth;
 		if (OccupyingUnitCount[pos] >= 4) {
 			return;
 		}
@@ -51,8 +52,7 @@ public:
 	void DeleteUnit(int x, int y, entt::entity entity, Interface::HostilityTeam team);
 	// ボール→壁 ボール⇔ボール エフェクト→ボール エフェクト→壁の向きでダメージが与えられる可能性がある
 	bool CheckUnitCollid(entt::entity coreEntity);
-	bool CheckCircleCollid(DirectX::XMVECTOR center, float radius, Interface::Damage* giveDamage,
-		bool checkOnlyOnce, int team);
+	bool CheckCircleCollid(entt::entity subjectEntity);
 	bool CheckCircleInterfare(entt::entity thisUnitEntity);
 	bool IsAbleToSpawn(float left, float right, float top, float bottom, float posX, float posY);
 	void SetOccupation(float left, float right, float top, float bottom, float posX, float posY);

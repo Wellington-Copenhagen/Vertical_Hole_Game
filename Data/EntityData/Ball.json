@@ -15,6 +15,9 @@
         },
         "UnitOccupationbox":{
             
+        },
+        "DamagePool":{
+            "physical":0
         }
     },
     "coreLeader":{
@@ -36,13 +39,18 @@
         },
         "UnitOccupationbox":{
             
+        },
+        "DamagePool":{
+            "physical":0
         }
     },
     "ballRegenerate":{
         "BallAppearance":{
             "shadow":{
-                "samePageIndex":0,
-                "filePath":"Data/Textures/BallShadow.tif",
+                "texture":{
+                    "kind":"file",
+                    "filePath":"Data/Textures/texBallShadowPlain.tif"
+                },
                 "color0":[
                     0,0.2,0.2,0.5
                 ],
@@ -54,8 +62,10 @@
                 ]
             },
             "base":{
-                "samePageIndex":0,
-                "filePath":"Data/Textures/BallBase.tif",
+                "texture":{
+                    "kind":"file",
+                    "filePath":"Data/Textures/texBallBasePlain.tif"
+                },
                 "color0":[
                     0,0.8,0.6,0.4
                 ],
@@ -67,8 +77,10 @@
                 ]
             },
             "pattern":{
-                "samePageIndex":0,
-                "filePath":"Data/Textures/BallPattern.tif",
+                "texture":{
+                    "kind":"file",
+                    "filePath":"Data/Textures/texBallPatternCross.tif"
+                },
                 "color0":[
                     1,1,1,1
                 ],
@@ -89,9 +101,15 @@
         "Motion":{
 
         },
+        "Attack":{
+            "coolTime":20,
+            "bullet":"bulletSpear",
+            "count":3,
+            "headingError":0,
+            "headingFork":0.1
+        },
         "HitFlag":0,
         "BallData":{
-            "HP":100,
             "attack":1,
             "movePower":1,
             "rotatePower":1,
@@ -110,8 +128,10 @@
     "ballGuard":{
         "BallAppearance":{
             "shadow":{
-                "samePageIndex":0,
-                "filePath":"Data/Textures/BallShadow.tif",
+                "texture":{
+                    "kind":"file",
+                    "filePath":"Data/Textures/texBallShadowPlain.tif"
+                },
                 "color0":[
                     0,0,0.3,0.5
                 ],
@@ -123,8 +143,10 @@
                 ]
             },
             "base":{
-                "samePageIndex":0,
-                "filePath":"Data/Textures/BallBase.tif",
+                "texture":{
+                    "kind":"file",
+                    "filePath":"Data/Textures/texBallBasePlain.tif"
+                },
                 "color0":[
                     0,0,0.8,0.4
                 ],
@@ -136,8 +158,10 @@
                 ]
             },
             "pattern":{
-                "samePageIndex":1,
-                "filePath":"Data/Textures/BallPattern.tif",
+                "texture":{
+                    "kind":"file",
+                    "filePath":"Data/Textures/texBallPatternShield.tif"
+                },
                 "color0":[
                     0,0,0,1
                 ],
@@ -160,7 +184,6 @@
         },
         "HitFlag":0,
         "BallData":{
-            "HP":100,
             "attack":100,
             "movePower":1,
             "rotatePower":1,
@@ -179,8 +202,10 @@
     "ballSpiky":{
         "BallAppearance":{
             "shadow":{
-                "samePageIndex":0,
-                "filePath":"Data/Textures/BallShadow.tif",
+                "texture":{
+                    "kind":"file",
+                    "filePath":"Data/Textures/texBallShadowPlain.tif"
+                },
                 "color0":[
                     0.3,0,0,0.5
                 ],
@@ -192,8 +217,10 @@
                 ]
             },
             "base":{
-                "samePageIndex":1,
-                "filePath":"Data/Textures/BallBase.tif",
+                "texture":{
+                    "kind":"file",
+                    "filePath":"Data/Textures/texBallBaseSpiky.tif"
+                },
                 "color0":[
                     0.8,0,0,0.4
                 ],
@@ -205,8 +232,10 @@
                 ]
             },
             "pattern":{
-                "samePageIndex":1,
-                "filePath":"Data/Textures/BallPattern.tif",
+                "texture":{
+                    "kind":"file",
+                    "filePath":"Data/Textures/texBallPatternShield.tif"
+                },
                 "color0":[
                     0,0,0,1
                 ],
@@ -229,7 +258,6 @@
         },
         "HitFlag":0,
         "BallData":{
-            "HP":100,
             "attack":100,
             "movePower":1,
             "rotatePower":1,

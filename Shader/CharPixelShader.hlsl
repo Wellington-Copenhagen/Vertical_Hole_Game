@@ -18,7 +18,7 @@ PSOutput main(CharVSOutput input)
 {
     PSOutput output;
     float4 mask = textures.Sample(g_sampler, input.UV);
-    output.Color = mask.r * 4 * input.Color + (1 - mask.r * 4) * float4(0, 0, 0, 0);
+    output.Color = mask.r * input.Color + (1 - mask.r) * float4(0, 0, 0, 0);
     
     return output;
 }

@@ -1,7 +1,8 @@
 #pragma once
 #include "Source/DirectX/DirectX.h"
 #include "Interfaces.h"
-
+#include "Source/Game/Component.h"
+extern int Tick;
 //マスクは
 // r->1枚目テクスチャ濃度
 // g->2枚目テクスチャ濃度
@@ -12,64 +13,132 @@
 
 // : public Interface::IAppearances<DCType,IType>
 
-template <class DCType, class IType, int InstancePerEntity, int InstanceMaxCount>
-class Appearances{
+template <class DCType, class IType,class CompType,int InstancePerEntity>
+class EntityBindAppearances{
 public:
+	int InstanceMaxCount;
 	//実際のインスタンスデータ
-	IType* Instances;
+	std::vector<IType> Instances;
 	//登録したエンティティ
-	entt::entity* InstanceEntities;
+	std::vector<entt::entity> InstanceEntities;
 	//ドローコールの情報
-	DCType DrawCall[4];
+	std::vector<DCType> DrawCall;
 	//各分類ごとの登録数
 	Interface::RectAppId InstanceCount;
-	Appearances(int separation, float bottomXscale=1, float topXscale=1, float Yscale=1, float Yoffset=0) {
-		Instances = new IType[InstanceMaxCount * InstancePerEntity];
-		InstanceEntities = new entt::entity[InstanceMaxCount];
-		ZeroMemory(Instances, sizeof(Instances));
-		ZeroMemory(InstanceEntities, sizeof(InstanceEntities));
-		ZeroMemory(DrawCall, sizeof(DrawCall));
+	EntityBindAppearances(int instanceMaxCount) {
+		InstanceMaxCount = instanceMaxCount;
+		Instances = std::vector<IType>(InstanceMaxCount * InstancePerEntity);
+		DrawCall = std::vector<DCType>(4 * InstancePerEntity);
+		InstanceEntities = std::vector<entt::entity>(InstanceMaxCount);
 		InstanceCount = 0;
-		float width = 0.5f;
-		DrawCall[0].Pos = { -1 * bottomXscale * width,-1 * Yscale * width + Yoffset,0.0f,1.0f };
-		DrawCall[1].Pos = { -1 * topXscale * width,Yscale * width + Yoffset,0.0f,1.0f };
-		DrawCall[2].Pos = { bottomXscale * width,-1 * Yscale * width + Yoffset,0.0f,1.0f };
-		DrawCall[3].Pos = { topXscale * width,Yscale * width + Yoffset,0.0f,1.0f };
-		DrawCall[0].UV = { 0.0f,1.0f / separation,(float)separation };
-		DrawCall[1].UV = { 0.0f,0.0f,(float)separation };
-		DrawCall[2].UV = { 1.0f / separation,1.0f / separation,(float)separation };
-		DrawCall[3].UV = { 1.0f / separation,0.0f,(float)separation };
 	}
-	Appearances() {
-		Instances = nullptr;
-		InstanceEntities = nullptr;
+	EntityBindAppearances() {
 	}
+	inline IType* GetInstancePointer(int index) {
+		return &Instances[index * InstanceMaxCount];
+	}
+	inline DCType* GetDrawCallPointer(int index) {
+		return &DrawCall[index * 4];
+	}
+
 	//頭のインスタンスのポインタを返すということで
-	inline Interface::RectAppId Add(entt::entity entity, IType** pInstanceData) {
+	inline Interface::RectAppId Add(entt::entity entity, IType* pInstanceData[InstancePerEntity]) {
 		if (InstanceCount >= InstanceMaxCount - 1) {
 			return -1;
 		}
-		*pInstanceData = &Instances[InstanceCount*InstancePerEntity];
+		for (int i = 0; i < InstancePerEntity; i++) {
+			pInstanceData[i] = &Instances[i * InstanceMaxCount + InstanceCount];
+		}
 		InstanceEntities[InstanceCount] = entity;
 		InstanceCount++;
 		return InstanceCount - 1;
 	}
-	inline void Update(Interface::RectAppId Id, IType** pInstanceData) {
+	inline void Update(Interface::RectAppId Id, IType* pInstanceData[InstancePerEntity]) {
+		if (Id >= InstanceCount) {
+			//throw("");
+		}
 		if (Id != -1) {
-			*pInstanceData = &Instances[Id*InstancePerEntity];
+			for (int i = 0; i < InstancePerEntity; i++) {
+				pInstanceData[i] = &Instances[i * InstanceMaxCount + Id];
+			}
 		}
 	}
-	//
-	inline entt::entity Delete(Interface::RectAppId toDelete) {
-		//頂点データの移動
-		for (int i = 0; i < InstancePerEntity; i++) {
-			Instances[toDelete * InstancePerEntity + i] = Instances[InstanceCount * InstancePerEntity + i];
+	// 削除時に申告させる方式だと抜けが防げないので全チェックにする
+	void EraseDeletedEntities(entt::registry* pRegistry) {
+		for (int i = 0; i < InstanceCount; i++) {
+			if (!pRegistry->valid(InstanceEntities[i])) {
+				//頂点データの移動
+				for (int j = 0; j < InstancePerEntity; j++) {
+					Instances[i * InstancePerEntity + j] = Instances[(InstanceCount - 1) * InstancePerEntity + j];
+					ZeroMemory(&Instances[(InstanceCount - 1) * InstancePerEntity + j], sizeof(IType));
+				}
+				//EntIdの移動
+				InstanceEntities[i] = InstanceEntities[InstanceCount - 1];
+				// 移動させたエンティティに新しい情報を与える
+				CompType* replacedComp = pRegistry->try_get<CompType>(InstanceEntities[i]);
+				if (replacedComp!=nullptr) {
+					replacedComp->SetInstanceId(i);
+				}
+				//カウントを減らす
+				InstanceCount--;
+				i--;
+			}
 		}
-		//EntIdの移動
-		InstanceEntities[toDelete] = InstanceEntities[InstanceCount];
-		//カウントを減らす
-		InstanceCount--;
-		//移動させたもののSameArchIndexを出力
-		return InstanceEntities[toDelete];
+	}
+};
+
+
+template <class DCType, class IType,int InstancePerEntity>
+class TimeBindAppearances {
+public:
+	int InstanceMaxCount;
+	//実際のインスタンスデータ
+	std::vector<IType> Instances;
+	// 削除するティック
+	std::vector<std::tuple<int, bool>> TickToDelete;
+	//ドローコールの情報
+	std::vector<DCType> DrawCall;
+	//各分類ごとの登録数
+	Interface::RectAppId InstanceCount;
+	TimeBindAppearances(int instanceMaxCount) {
+		InstanceMaxCount = instanceMaxCount;
+		Instances = std::vector<IType>(InstanceMaxCount * InstancePerEntity);
+		DrawCall = std::vector<DCType>(4 * InstancePerEntity);
+		TickToDelete = std::vector<std::tuple<int,bool>>(InstanceMaxCount);
+		InstanceCount = 0;
+	}
+	TimeBindAppearances() {
+	}
+	inline IType* GetInstancePointer(int index) {
+		return &Instances[index * InstanceMaxCount];
+	}
+	inline DCType* GetDrawCallPointer(int index) {
+		return &DrawCall[index * 4];
+	}
+	inline void Add(int timeToDelete,bool isEternal, IType* pInstanceData[InstancePerEntity]) {
+		for (int i = 0; i < InstancePerEntity; i++) {
+			pInstanceData[i] = &Instances[i * InstanceMaxCount + InstanceCount];
+		}
+		TickToDelete[InstanceCount] = { Tick + timeToDelete ,isEternal};
+		InstanceCount++;
+	}
+	void EraseExpired() {
+		for (int i = 0; i < InstanceCount; i++) {
+			if (std::get<0>(TickToDelete[i])<Tick && !std::get<1>(TickToDelete[i])) {
+				//頂点データの移動
+				for (int j = 0; j < InstancePerEntity; j++) {
+					Instances[i * InstancePerEntity + j] = Instances[(InstanceCount - 1) * InstancePerEntity + j];
+					ZeroMemory(&Instances[(InstanceCount - 1) * InstancePerEntity + j], sizeof(IType));
+				}
+				//EntIdの移動
+				TickToDelete[i] = TickToDelete[InstanceCount - 1];
+				//カウントを減らす
+				InstanceCount--;
+				i--;
+			}
+		}
+	}
+	void Clear() {
+		InstanceCount = 0;
 	}
 };

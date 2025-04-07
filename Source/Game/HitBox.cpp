@@ -3,7 +3,7 @@
 extern int Tick;
 
 void Hurtboxes::DeleteUnit(int x, int y, entt::entity entity,Interface::HostilityTeam team){
-	int pos = y * WorldWidth + x;
+	int pos = (y / CellWidth) * (WorldWidth / CellWidth) + x / CellWidth;
 	if (OccupyingUnitCount[pos] < 0) {
 		OccupyingUnitCount[pos] = 0;
 		return;
@@ -20,36 +20,28 @@ void Hurtboxes::DeleteUnit(int x, int y, entt::entity entity,Interface::Hostilit
 	}
 }
 bool Hurtboxes::CheckUnitCollid(entt::entity coreEntity) {
-	pMainRegistry->get<Component::HitFlag>(coreEntity).IsHit =
-		CheckCircleCollid(pMainRegistry->get<Component::WorldPosition>(coreEntity).NextTickWorldPos.Parallel,
-			pMainRegistry->get<Component::WorldPosition>(coreEntity).WorldPos.Ratio * 3,
-			nullptr, false, pMainRegistry->get<Component::UnitData>(coreEntity).Team);
-	/*
-	for (int i = 0; i < 7; i++) {
-		entt::entity ball = pMainRegistry->get<Component::UnitData>(coreEntity).BallIds[i];
-		//このコアに属するボールに対して喰らい処理
-		pMainRegistry->get<Component::HitFlag>(ball).IsHit =
-			CheckCircleCollid(pMainRegistry->get<Component::WorldPosition>(ball).NextTickWorldPos.Parallel,
-				pMainRegistry->get<Component::WorldPosition>(coreEntity).WorldPos.Ratio *
-				pMainRegistry->get<Component::BallHurtbox>(ball).DiameterCoef,
-				&pMainRegistry->get<Component::GiveDamage>(ball).Damage,
-				false, pMainRegistry->get<Component::UnitData>(coreEntity).Team);
-	}
-	*/
+	//pMainRegistry->get<Component::HitFlag>(coreEntity).IsHit = CheckCircleCollid(coreEntity);
 	//移動阻害の判定
 	return CheckCircleInterfare(coreEntity);
 }
 //衝突時の運動として貫通、消滅、阻害の3つのパターンが考えられる
-bool Hurtboxes::CheckCircleCollid(DirectX::XMVECTOR center, float radius, Interface::Damage* giveDamage
-	, bool checkOnlyOnce, int team)
+bool Hurtboxes::CheckCircleCollid(entt::entity subjectEntity)
 {
+	Component::UnitData* sUnitData = pMainRegistry->try_get<Component::UnitData>(subjectEntity);
+	bool isUnit = sUnitData != nullptr;
+	Component::BulletData* sBulletData = pMainRegistry->try_get<Component::BulletData>(subjectEntity);
+	bool isBullet = sBulletData != nullptr;
+	DirectX::XMVECTOR sCenter = pMainRegistry->get<Component::WorldPosition>(subjectEntity).NextTickWorldPos.Parallel;
+	DirectX::XMVECTOR sPrevCenter = pMainRegistry->get<Component::WorldPosition>(subjectEntity).WorldPos.Parallel;
+	float sRadius = pMainRegistry->get<Component::WorldPosition>(subjectEntity).NextTickWorldPos.Ratio * 0.5;
+	Interface::Damage* sGiveDamage = &pMainRegistry->try_get<Component::GiveDamage>(subjectEntity)->Damage;
+	bool hasDamage = sGiveDamage != nullptr;
 	//判定対象が含むエリア
-	int left = max(0,min(WorldWidth,(int)roundf(center.m128_f32[0] - radius * 0.5)));
-	int right = max(0, min(WorldWidth, (int)roundf(center.m128_f32[0] + radius * 0.5)));
-	int top = max(0, min(WorldHeight, (int)roundf(center.m128_f32[1] + radius * 0.5)));
-	int bottom = max(0, min(WorldHeight, (int)roundf(center.m128_f32[1] - radius * 0.5)));
+	int left = max(0, min(WorldWidth, (int)roundf(sCenter.m128_f32[0] - sRadius * 0.5)));
+	int right = max(0, min(WorldWidth, (int)roundf(sCenter.m128_f32[0] + sRadius * 0.5)));
+	int top = max(0, min(WorldHeight, (int)roundf(sCenter.m128_f32[1] + sRadius * 0.5)));
+	int bottom = max(0, min(WorldHeight, (int)roundf(sCenter.m128_f32[1] - sRadius * 0.5)));
 	//衝突したかどうかの変数
-	bool collided = false;
 	for (int x = left; x <= right; x++) {
 		for (int y = bottom; y <= top; y++) {
 			int pos = y * WorldWidth + x;
@@ -57,21 +49,18 @@ bool Hurtboxes::CheckCircleCollid(DirectX::XMVECTOR center, float radius, Interf
 			if (WallIsThere[pos]) {
 				entt::entity wall = OccupyingWalls[pos];
 				Component::DamagePool* pWallDamagePool = pMainRegistry->try_get<Component::DamagePool>(wall);
-				if (pWallDamagePool != nullptr) {
-					pWallDamagePool->Damage += *giveDamage;
+				if (pWallDamagePool != nullptr && hasDamage) {
+					pWallDamagePool->AddDamage(sGiveDamage);
 				}
-				if (checkOnlyOnce) {
-					return true;
-				}
-				collided = true;
+				return true;
 			}
 		}
 	}
 	//すでにチェックしたキャラクターのリスト
 	std::vector<entt::entity> checkedUnit = std::vector<entt::entity>();
-	for (int x = left; x <= right; x++) {
-		for (int y = bottom; y <= top; y++) {
-			int pos = y * WorldWidth + x;
+	for (int x = left / CellWidth; x <= right / CellWidth; x++) {
+		for (int y = bottom / CellWidth; y <= top / CellWidth; y++) {
+			int pos = y * WorldWidth / CellWidth + x;
 			//キャラクターとの衝突
 			for (int i = 0; i < OccupyingUnitCount[pos]; i++) {
 				entt::entity core = OccupyingUnits[pos * UnitCountPerCell + i];
@@ -82,34 +71,70 @@ bool Hurtboxes::CheckCircleCollid(DirectX::XMVECTOR center, float radius, Interf
 				}
 				//チェック済みに含める
 				checkedUnit.push_back(core);
-				if (pMainRegistry->get<Component::UnitOccupationbox>(core).AlredayChecked) {
+				Component::UnitOccupationbox* pSubjectUnitOcc = pMainRegistry->try_get<Component::UnitOccupationbox>(core);
+				if (pSubjectUnitOcc!=nullptr&& pSubjectUnitOcc->AlredayChecked) {
 					continue;
 				}
-				for (int j = 0; j < 7; j++) {
-					entt::entity ball = pMainRegistry->get<Component::UnitData>(core).BallIds[j];
+				// 前ティックでの位置関係から衝突した位置を推測する
+				Component::WorldPosition* pCorePos = pMainRegistry->try_get<Component::WorldPosition>(core);
+				if (pCorePos == nullptr) {
+					DeleteUnit(x, y, core, 0);
+					continue;
+				}
+				DirectX::XMVECTOR relativeVector = DirectX::XMVectorSubtract(
+					sPrevCenter, pMainRegistry->get<Component::WorldPosition>(core).WorldPos.Parallel);
+				float coreToSubject = atan2(relativeVector.m128_f32[1], relativeVector.m128_f32[0]);
+				int ballIndex = (int)std::floorf((coreToSubject - pMainRegistry->get<Component::WorldPosition>(core).WorldPos.Rotate) / (PI / 3)) % 6 + 1;
+				if (ballIndex < 1) {
+					ballIndex += 6;
+				}
+				entt::entity ball = pMainRegistry->get<Component::UnitData>(core).BallIds[ballIndex];
+				// これ以降ダメージの受け渡し
+				if (isUnit) {
 					//敵味方の判定
-					bool hostiling = Interface::HostilityTable[team * TeamCount + pMainRegistry->get<Component::UnitData>(core).Team];
+					bool hostiling = Interface::HostilityTable[sUnitData->Team * TeamCount + pMainRegistry->get<Component::UnitData>(core).Team];
 					//敵対しているなら
 					if (hostiling) {
 						//距離の算出
-						float length = DirectX::XMVector2Length(DirectX::XMVectorSubtract(center,
+						float length = DirectX::XMVector2Length(DirectX::XMVectorSubtract(sCenter,
 							pMainRegistry->get<Component::WorldPosition>(ball)
 							.NextTickWorldPos.Parallel)).m128_f32[0];
-						if (length < radius / 2 + pMainRegistry->get<Component::BallHurtbox>(ball).DiameterCoef*
+						if (length < sRadius / 2 + pMainRegistry->get<Component::BallHurtbox>(ball).DiameterCoef *
 							pMainRegistry->get<Component::WorldPosition>(core).WorldPos.Ratio / 2) {
 							//衝突していてなおかつ敵対しているならダメージを与える
-							pMainRegistry->get<Component::DamagePool>(ball).Damage += *giveDamage;
-							if (checkOnlyOnce) {
-								return true;
+							int sBallIndex = (int)std::floorf((coreToSubject + PI - pMainRegistry->get<Component::WorldPosition>(subjectEntity).WorldPos.Rotate) / (PI / 3)) % 6 + 1;
+							if (sBallIndex < 1)
+								sBallIndex += 6;
+							entt::entity sBall = sUnitData->BallIds[sBallIndex];
+							if (hasDamage) {
+								pMainRegistry->get<Component::DamagePool>(ball).AddDamage(sGiveDamage);
 							}
-							collided = true;
+							pMainRegistry->get<Component::DamagePool>(sBall).AddDamage(&pMainRegistry->get<Component::GiveDamage>(ball).Damage);
+							return true;
+						}
+					}
+				}
+				if(isBullet) {
+					//敵味方の判定
+					bool hostiling = Interface::HostilityTable[sBulletData->Team * TeamCount + pMainRegistry->get<Component::UnitData>(core).Team];
+					//敵対しているなら
+					if (hostiling) {
+						//距離の算出
+						float length = DirectX::XMVector2Length(DirectX::XMVectorSubtract(sCenter,
+							pMainRegistry->get<Component::WorldPosition>(ball)
+							.NextTickWorldPos.Parallel)).m128_f32[0];
+						if (length < sRadius / 2 + pMainRegistry->get<Component::BallHurtbox>(ball).DiameterCoef *
+							pMainRegistry->get<Component::WorldPosition>(core).WorldPos.Ratio / 2) {
+							//衝突していてなおかつ敵対しているならダメージを与える
+							pMainRegistry->get<Component::DamagePool>(ball).AddDamage(sGiveDamage);
+							return true;
 						}
 					}
 				}
 			}
 		}
 	}
-	return collided;
+	return false;
 }
 bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 	//判定対象が含むエリア
@@ -119,11 +144,11 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 	int right = max(0, min(WorldWidth, (int)roundf(center.m128_f32[0] + radius)));
 	int top = max(0, min(WorldHeight, (int)roundf(center.m128_f32[1] + radius)));
 	int bottom = max(0, min(WorldHeight, (int)roundf(center.m128_f32[1] - radius)));
-	int centerX = (int)roundf(center.m128_f32[0]);
-	int centerY = (int)roundf(center.m128_f32[1]);
+	int centerX = max(0, min(WorldWidth, (int)roundf(center.m128_f32[0])));
+	int centerY = max(0, min(WorldHeight, (int)roundf(center.m128_f32[1])));
 	//衝突したかどうかの変数
 	bool collided = false;
-	// 中心がある行列を基準に衝突判定後に力が発生する向きを決める
+	// 中心がある行と列を基準に衝突判定後に力が発生する向きを決める
 	if (true) {
 		for (int x = left; x <= right; x++) {
 			int pos = centerY * WorldWidth + x;
@@ -138,6 +163,9 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 				pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel,
 					DirectX::XMVectorScale(thisToOther, -1.2));
 				collided = true;
+				if (DirectX::XMVector2Length(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel).m128_f32[0] > 2) {
+					throw("");
+				}
 				break;
 			}
 		}
@@ -154,12 +182,17 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 				pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel,
 					DirectX::XMVectorScale(thisToOther, -1.2));
 				collided = true;
+				if (DirectX::XMVector2Length(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel).m128_f32[0] > 2) {
+					throw("");
+				}
 				break;
 			}
 		}
 		if (!collided) {
 			for (int x = left; x <= right; x++) {
+				if (x == centerX)continue;
 				for (int y = bottom; y <= top; y++) {
+					if (y == centerY)continue;
 					int pos = y * WorldWidth + x;
 					//壁との衝突　壁はそこにあるなら衝突している
 					if (WallIsThere[pos]) {
@@ -172,7 +205,7 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 								thisToOther = { 0,0.5f + radius - (y - center.m128_f32[1]),0,0 };
 							}
 							pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel,
-								DirectX::XMVectorScale(thisToOther, -1.2));
+								DirectX::XMVectorScale(thisToOther, -0.3));
 						}
 						{
 							DirectX::XMVECTOR thisToOther;
@@ -183,7 +216,10 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 								thisToOther = { 0.5f + radius - (x - center.m128_f32[0]),0,0,0 };
 							}
 							pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel,
-								DirectX::XMVectorScale(thisToOther, -1.2));
+								DirectX::XMVectorScale(thisToOther, -0.3));
+						}
+						if (DirectX::XMVector2Length(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel).m128_f32[0] > 2) {
+							throw("");
 						}
 						collided = true;
 						break;
@@ -197,12 +233,13 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 		}
 
 	}
+	return collided;
 	//すでにチェックしたキャラクターのリスト
 	std::vector<entt::entity> checkedUnit = std::vector<entt::entity>();
 	if (true) {
-		for (int x = left; x <= right; x++) {
-			for (int y = bottom; y <= top; y++) {
-				int pos = y * WorldWidth + x;
+		for (int x = left / CellWidth; x <= right / CellWidth; x++) {
+			for (int y = bottom / CellWidth; y <= top / CellWidth; y++) {
+				int pos = y * WorldWidth / CellWidth + x;
 				//キャラクターとの衝突
 				for (int i = 0; i < OccupyingUnitCount[pos]; i++) {
 					entt::entity core = OccupyingUnits[pos * UnitCountPerCell + i];
@@ -214,12 +251,9 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 					//チェック済みに含める
 					checkedUnit.push_back(core);
 					if (pMainRegistry->get<Component::UnitOccupationbox>(core).AlredayChecked) {
-						continue;
+						//continue;
 					}
 					if (core == thisUnitEntity) {
-						continue;
-					}
-					if (Tick%5 > 1) {
 						continue;
 					}
 					//距離の算出
@@ -236,13 +270,17 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 						pMainRegistry->get<Component::Motion>(core).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(core).WorldDelta.Parallel,
 							DirectX::XMVectorScale(thisToOther, 0.1 * overlapRate));
 						collided = true;
+						if (DirectX::XMVector2Length(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel).m128_f32[0] > 2) {
+							throw("");
+						}
 					}
 				}
 			}
 		}
 	}
-	return collided;
 
+
+	return collided;
 }
 /*
 bool Hurtboxes::LimitateInOneBlock(DirectX::XMVECTOR* center, DirectX::XMVECTOR* moveTo, DirectX::XMVECTOR* velocity, float* limitation, float radius, std::vector<Interface::EntId>* pCheckedBall, int x, int y) {

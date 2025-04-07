@@ -1,9 +1,9 @@
 {
     "playerCorpsSpawnArea":{
-        "top":20,
-        "bottom":5,
-        "right":30,
-        "left":5
+        "top":19,
+        "bottom":6,
+        "right":40,
+        "left":6
     },
     "areaList":[
         {
@@ -11,40 +11,40 @@
             "bottom":5,
             "right":60,
             "left":5,
-            "floorEntity":"floorStoneFloor",
-            "wallEntity":"wallBrick"
+            "floorEntity":"floorTransparent",
+            "wallEntity":"wallBlockWall"
         },
         {
             "top":50,
             "bottom":30,
             "right":60,
             "left":5,
-            "floorEntity":"floorStoneFloor",
-            "wallEntity":"wallBrick"
+            "floorEntity":"floorTransparent",
+            "wallEntity":"wallBlockWall"
         },
         {
             "top":80,
             "bottom":60,
             "right":60,
             "left":5,
-            "floorEntity":"floorStoneFloor",
-            "wallEntity":"wallBrick"
+            "floorEntity":"floorTransparent",
+            "wallEntity":"wallBlockWall"
         },
         {
             "top":30,
             "bottom":20,
             "right":35,
             "left":30,
-            "floorEntity":"floorStoneFloor",
-            "wallEntity":"wallBrick"
+            "floorEntity":"floorTransparent",
+            "wallEntity":"wallBlockWall"
         },
         {
             "top":60,
             "bottom":50,
             "right":35,
             "left":30,
-            "floorEntity":"floorStoneFloor",
-            "wallEntity":"wallBrick"
+            "floorEntity":"floorTransparent",
+            "wallEntity":"wallBlockWall"
         }
     ]
 }

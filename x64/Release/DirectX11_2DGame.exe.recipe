@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\DirectX11_2DGame.exe</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\BlockPixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\BlockVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\BulletPixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\BulletVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\BallPixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\BallVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\CharPixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\CharVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\EffectPixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\EffectVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\FreeShapeVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\GeneralPixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\GeneralVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Release\LineVertexShader.cso</FullPath>
+    </ContentFile>
+  </ContentFiles>
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>

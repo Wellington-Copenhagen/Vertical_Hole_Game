@@ -16,8 +16,6 @@ struct BulletVSOutput
 {
     float4 Pos : SV_Position; // 頂点の座標(射影座標系)
     float4 UVM : TEXCOORD0; // UV座標
-    float4 Color0 : COLOR0;
-    float4 Color1 : COLOR1;
 };
 struct PSOutput
 {
@@ -27,9 +25,7 @@ struct PSOutput
 PSOutput main(BulletVSOutput input)
 {
     PSOutput output;
-    float4 mask = textures.Sample(g_sampler, input.UVM.xyz);
-    output.Color = input.Color0 * mask.r;
-    output.Color = output.Color * (1 - mask.g) + input.Color1 * mask.g;
+    output.Color = textures.Sample(g_sampler, input.UVM.xyz);
     
     output.Depth = input.UVM.w;
     return output;

@@ -1,7 +1,6 @@
 ﻿// DirectX11_Test.cpp : アプリケーションのエントリ ポイントを定義します。
 //
 
-
 #include "iostream"
 #include "framework.h"
 #include "Interfaces.h"
@@ -84,6 +83,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     */
     while (true)
     {
+        _ASSERT(_CrtCheckMemory());
         //peekMessageの場合はメッセージがなかったらfalseを返して関数から出る
         //第1～4変数はGetMessageと同様、5は出力したメッセージをキューから消すとかそういう
         while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -176,13 +176,15 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    }
    //Direct3Dクラス唯一のインスタンスの生成及び初期化
    Direct3D::CreateInstance();
-   D3D.Initialize(hWnd, 1280, 720);
+   D3D.Initialize(hWnd, WindowWidth, WindowHeight);
+
+   // ウィンドウサイズを決めてる
    RECT rectWindow;
    RECT rectClient;
    GetWindowRect(hWnd, &rectWindow);
    GetClientRect(hWnd, &rectClient);
-   int newHeight = 720 + (rectWindow.bottom - rectWindow.top) - (rectClient.bottom - rectClient.top);
-   int newWidth = 1280 + (rectWindow.right - rectWindow.left) - (rectClient.right - rectClient.left);
+   int newHeight = WindowHeight + (rectWindow.bottom - rectWindow.top) - (rectClient.bottom - rectClient.top);
+   int newWidth = WindowWidth + (rectWindow.right - rectWindow.left) - (rectClient.right - rectClient.left);
    SetWindowPos(hWnd, nullptr, 0, 0, newWidth, newHeight, 0);
    GetWindowRect(hWnd, &rectWindow);
    GetClientRect(hWnd, &rectClient);

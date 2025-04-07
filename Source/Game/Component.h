@@ -11,13 +11,15 @@
 // Initに関しては引数が異なるのでそれぞれSameArchetype::Addに書く(void*とか使えば何とかなるんかな？型チェックがされないのであんまやりたくないけど)
 // これは同時に生成したり消したいので
 // コンポーネントのデータ型、と簡単な管理を行う関数
-extern SameFormatTextureArray<256> BlockTextureArray;
-extern SameFormatTextureArray<256> BallTextureArray;
-extern SameFormatTextureArray<256> BulletTextureArray;
+extern SameFormatTextureArray BlockTextureArray;
+extern SameFormatTextureArray BallTextureArray;
+extern SameFormatTextureArray BulletTextureArray;
+extern SameFormatTextureArray LineTextureArray;
 namespace Component {
 	struct KillFlag {
 		bool KillOnThisTick;
 		void Init(Interface::EntityInitData* pInitData) {
+			KillOnThisTick = false;
 		}
 		KillFlag() {
 			KillOnThisTick = false;
@@ -107,6 +109,7 @@ namespace Component {
 			LocalReferenceToCore.Parallel = Interface::GetVectorFromJson(fromLoad.get("parallel", ""));
 			LocalReferenceToCore.Ratio = fromLoad.get("width", "").asFloat();
 			LocalReferenceToCore.Rotate = 0;
+			NeedUpdate = true;
 		}
 	};
  	// TODO 運動に関しては整理したい
@@ -156,28 +159,29 @@ namespace Component {
 	struct BlockAppearance {
 	public:
 		Interface::RectAppId BufferDataIndex;
-		DirectX::XMVECTOR TexCoord12;
-		DirectX::XMVECTOR TexCoord3M;
+		DirectX::XMVECTOR TexIndex;
+		DirectX::XMVECTOR TexHeadIndex;
 		//ブロックに色がつくやつ
 		DirectX::XMVECTOR Stain;
 		void Init(Interface::EntityInitData* pInitData) {
 		}
 		BlockAppearance(Json::Value fromLoad) {
-			TexCoord12 = DirectX::XMVECTOR
+			TexHeadIndex = DirectX::XMVECTOR
 			{
-				fromLoad.get("tex1SamePageIndex", "").asFloat(),
-				(float)BlockTextureArray.AppendFromFileName(fromLoad.get("tex1FilePath", "").asString()),
-				fromLoad.get("tex2SamePageIndex", "").asFloat(),
-				(float)BlockTextureArray.AppendFromFileName(fromLoad.get("tex2FilePath", "").asString()),
+				(float)BlockTextureArray.Append(fromLoad.get("tex1", "")),
+				(float)BlockTextureArray.Append(fromLoad.get("tex2", "")),
+				(float)BlockTextureArray.Append(fromLoad.get("tex3", "")),
+				(float)BlockTextureArray.Append(fromLoad.get("mask", ""))
 			};
-			TexCoord3M = DirectX::XMVECTOR
-			{
-				fromLoad.get("tex3SamePageIndex", "").asFloat(),
-				(float)BlockTextureArray.AppendFromFileName(fromLoad.get("tex3FilePath", "").asString()),
-				fromLoad.get("maskSamePageIndex", "").asFloat(),
-				(float)BlockTextureArray.AppendFromFileName(fromLoad.get("maskFilePath", "").asString()),
-			};
+			TexIndex = TexHeadIndex;
 			Stain = { 0,0,0,0 };
+		}
+		void CopyToBuffer(Interface::BlockInstanceType* pDst,
+			Component::WorldPosition& worldPosition) {
+			pDst->Set(&worldPosition.WorldMatrix, &TexIndex);
+		}
+		void SetInstanceId(Interface::RectAppId newId) {
+			BufferDataIndex = newId;
 		}
 	};
 	struct BallAppearance {
@@ -187,19 +191,16 @@ namespace Component {
 		DirectX::XMVECTOR Color0[3];
 		DirectX::XMVECTOR Color1[3];
 		DirectX::XMVECTOR Color2[3];
-		DirectX::XMVECTOR TexCoord[3];
+		float TexIndex[3];
+		float TexHeadIndex[3];
 		void Init(Interface::EntityInitData* pInitData) {
 			// 1はBaseのインデックス
 			Color0[1] = pInitData->BaseColor0;
 			Color1[1] = pInitData->BaseColor1;
 		}
 		void Load(Json::Value fromLoad,std::string layerName,int index) {
-			TexCoord[index] = DirectX::XMVECTOR
-			{
-				fromLoad.get(layerName,"").get("samePageIndex", "").asFloat(),
-				(float)BallTextureArray.AppendFromFileName(fromLoad.get(layerName,"").get("filePath", "").asString()),
-				0,0
-			};
+			TexHeadIndex[index] = (float)BallTextureArray.Append(fromLoad.get(layerName, "").get("texture", ""));
+			TexIndex[index] = TexHeadIndex[index];
 			Color0[index] = Interface::GetVectorFromJson(fromLoad.get(layerName, "").get("color0", ""));
 			Color1[index] = Interface::GetVectorFromJson(fromLoad.get(layerName, "").get("color1", ""));
 			Color2[index] = Interface::GetVectorFromJson(fromLoad.get(layerName, "").get("color2", ""));
@@ -209,25 +210,99 @@ namespace Component {
 			Load(fromLoad, "base", 1);
 			Load(fromLoad, "pattern", 2);
 		}
+		void CopyToBuffer(Interface::BallInstanceType* pDst[3],
+			Component::WorldPosition& worldPosition) {
+			//影
+			DirectX::XMMATRIX shadowWorld{
+				{worldPosition.WorldPos.Ratio, 0.0f, 0.0f, 0.0f},
+				{0.0f, worldPosition.WorldPos.Ratio, 0.0f, 0.0f},
+				{0.0f, 0.0f, 0.0f, 0.0f},
+				DirectX::XMVectorAdd({0.0f, worldPosition.WorldPos.Ratio * -0.1f, 0.0f, 0.0f},worldPosition.WorldPos.Parallel)
+			};
+			pDst[0]->Set(&shadowWorld,
+				TexIndex[0],
+				&Color0[0],
+				&Color1[0],
+				&Color2[0]);
+
+
+			//本体
+			DirectX::XMMATRIX baseWorld{
+				{worldPosition.WorldPos.Ratio, 0.0f, 0.0f, 0.0f },
+				{0.0f, worldPosition.WorldPos.Ratio, 0.0f, 0.0f},
+				{0.0f, 0.0f, 0.0f, 0.0f},
+				worldPosition.WorldPos.Parallel
+			};
+			pDst[1]->Set(&baseWorld,
+				TexIndex[1],
+				&Color0[1],
+				&Color1[1],
+				&Color2[1]);
+
+			//模様
+			//上にあるものが奥に見えるのの再現
+			DirectX::XMMATRIX patternWorld{
+				0.0f, 0.0f, 0.0f, 0.0f,
+					0.0f, 0.0f, 0.0f, 0.0f,
+					0.0f, 0.0f, 0.0f, 0.0f,
+					0.0f, worldPosition.WorldPos.Ratio * 0.2f, 0.0f, 0.0f
+			};
+			patternWorld = patternWorld + worldPosition.WorldMatrix;
+			pDst[2]->Set(&patternWorld,
+				TexIndex[2],
+				&Color0[2],
+				&Color1[2],
+				&Color2[2]);
+		}
+		void SetInstanceId(Interface::RectAppId newId) {
+			BufferDataIndex = newId;
+		}
 	};
 	struct BulletAppearance {
 	public:
 		Interface::RectAppId BufferDataIndex;
-		DirectX::XMVECTOR Color0;
-		DirectX::XMVECTOR Color1;
-		DirectX::XMVECTOR TexCoord;
+		float TexIndex;
+		float TexHeadIndex;
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
 		BulletAppearance(Json::Value fromLoad) {
-			TexCoord = DirectX::XMVECTOR
-			{
-				fromLoad.get("baseSamePageIndex", "").asFloat(),
-				(float)BulletTextureArray.AppendFromFileName(fromLoad.get("baseFilePath", "").asString()),
-				0,0
-			};
+			TexHeadIndex = (float)BulletTextureArray.Append(fromLoad.get("texture", ""));
+			TexIndex = TexHeadIndex;
+		}
+		void CopyToBuffer(Interface::BulletInstanceType* pDst,
+			Component::WorldPosition& worldPosition) {
+			pDst->Set(&worldPosition.WorldMatrix,TexIndex);
+		}
+		void SetInstanceId(Interface::RectAppId newId) {
+			BufferDataIndex = newId;
+		}
+	};
+	struct EffectAppearance {
+	public:
+		Interface::RectAppId BufferDataIndex;
+		DirectX::XMVECTOR Color0;
+		DirectX::XMVECTOR Color1;
+		float TexIndex;
+		float TexHeadIndex;
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
+		EffectAppearance(Json::Value fromLoad) {
+			TexHeadIndex = (float)BulletTextureArray.Append(fromLoad.get("texture", ""));
+			TexIndex = TexHeadIndex;
 			Color0 = Interface::GetVectorFromJson(fromLoad.get("baseColor0", ""));
 			Color1 = Interface::GetVectorFromJson(fromLoad.get("baseColor1", ""));
+		}
+		void CopyToBuffer(Interface::EffectInstanceType* pDst,
+			Component::WorldPosition& worldPosition) {
+			pDst->Set(&worldPosition.WorldMatrix,
+				TexIndex,
+				&Color0,
+				&Color1);
+		}
+		void SetInstanceId(Interface::RectAppId newId) {
+			BufferDataIndex = newId;
 		}
 	};
 	//当たり判定に関する性質
@@ -243,11 +318,7 @@ namespace Component {
 		}
 		CircleHitbox(Json::Value fromLoad) {
 			DiameterCoef = fromLoad.get("diameterCoef","").asFloat();
-			RelativeCenter = {
-				fromLoad.get("relativeCenter", "")[0].asFloat(),
-				fromLoad.get("relativeCenter", "")[1].asFloat(),
-				0,1
-			};
+			RelativeCenter = Interface::GetVectorFromJson(fromLoad.get("relativeCenter", ""));
 		}
 	};
 	// 各ボールに付随する当たり判定/喰らい判定に関する性質
@@ -324,6 +395,8 @@ namespace Component {
 	public:
 		Interface::HostilityTeam Team;
 		entt::entity Leader;
+		float MaxHP;
+
 
 		// 移動速度系
 		float RadianPerTick;
@@ -360,6 +433,9 @@ namespace Component {
 		// Centerを中心としてLengthの範囲内の場所へ移動する
 		// 定点位置、方向で停止する
 
+		// 攻撃系の命令
+		float AttackAt;
+		bool Fire;
 
 
 		void Init(Interface::EntityInitData* pInitData) {
@@ -383,27 +459,53 @@ namespace Component {
 			PreviousTickArea = -1;
 			PreviousTargetPos = {0,0,0,1};
 			Heading = { 0,0,0,0 };
+			Fire = false;
+			NextPosReloadTick = 0;
+
+			MaxHP = MaxHP * pInitData->HealthMultiply;
 		}
 		UnitData(Json::Value fromLoad) {
 			AttackRange = 20;
+			MaxHP = 100;
+		}
+	};
+	struct Attack {
+	public:
+		int CoolTime;
+		int NextAbleTick;
+		entt::entity Bullet;
+		int Count;
+		float headingError;// この角度分ずつ正負に幅をとって誤差とする
+		float headingFork;// 複数個発射するときこの角度ずつ差をつける
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
+		Attack(Json::Value fromLoad) {
+			CoolTime = fromLoad.get("coolTime", "").asInt();
+			NextAbleTick = 0;
+			Bullet = Interface::EntNameHash[fromLoad.get("bullet", "").asString()];
+			Count = fromLoad.get("count", "").asInt();
+			headingError = fromLoad.get("headingError", "").asFloat();
+			headingFork = fromLoad.get("headingFork", "").asFloat();
 		}
 	};
 	struct BallData {
 	public:
 		entt::entity CoreId;
-		float HP;
+		float AngleFromCore;
+		bool OnCenter;
 		float Attack;
 		float MovePower;
 		float RotatePower;
 		float Weight;
 
 		void Init(Interface::EntityInitData* pInitData){
-			HP = HP * pInitData->HealthMultiply;
+			AngleFromCore = atan2f(pInitData->Pos.Parallel.m128_f32[1], pInitData->Pos.Parallel.m128_f32[0]);
+			OnCenter = pInitData->Pos.Parallel.m128_f32[0] == 0 && pInitData->Pos.Parallel.m128_f32[1] == 0;
 			Attack = Attack * pInitData->DamageMultiply;
 			CoreId = pInitData->CoreId;
 		}
 		BallData(Json::Value fromLoad) {
-			HP = fromLoad.get("HP","").asFloat();
 			Attack = fromLoad.get("attack", "").asFloat();
 			MovePower = fromLoad.get("movePower", "").asFloat();
 			RotatePower = fromLoad.get("rotatePower", "").asFloat();
@@ -415,7 +517,7 @@ namespace Component {
 		bool InterfareToBall;
 		Interface::HostilityTeam Team;
 		void Init(Interface::EntityInitData* pInitData) {
-
+			Team = pInitData->Team;
 		}
 		BulletData(Json::Value fromLoad) {
 			InterfareToWall = fromLoad.get("interfareToWall", "").asBool();
@@ -454,6 +556,10 @@ namespace Component {
 		}
 		DamagePool(Json::Value fromLoad) {
 			Damage = Interface::Damage(fromLoad);
+		}
+		// 防御とかダメージカットを加味してダメージを加算する
+		void AddDamage(Interface::Damage* damage) {
+			Damage += *damage;
 		}
 	};
 	//他のオブジェクトの生成にかかわる性質

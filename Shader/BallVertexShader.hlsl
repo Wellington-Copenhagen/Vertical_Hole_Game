@@ -1,10 +1,10 @@
 //çÇÇ≥Çï™ÇØÇÈÇΩÇﬂÇ…Ç±ÇÍÇï°êîâÒ
 struct BallVSInput
 {
-    float3 UV : TEXCOORD0;
+    float2 UV : TEXCOORD0;
     float4 Pos : POSITION0;
     column_major float4x4 World : MWorld;
-    float2 texCoordMask : TEXCOORD1;
+    float texIndex : TEXCOORD1;
     float4 Color0 : COLOR0;
     float4 Color1 : COLOR1;
     float4 Color2 : COLOR2;
@@ -29,9 +29,8 @@ BallVSOutput main(BallVSInput input)
     BallVSOutput output;
     output.Pos = mul(input.World, input.Pos);
     output.Pos = mul(ViewProjection, output.Pos);
-    output.UVM.x = input.UV.x + floor(input.texCoordMask.x % input.UV.z) / input.UV.z;
-    output.UVM.y = input.UV.y + floor(input.texCoordMask.x / input.UV.z) / input.UV.z;
-    output.UVM.z = input.texCoordMask.y;
+    output.UVM.xy = input.UV.xy;
+    output.UVM.z = input.texIndex;
     
     output.UVM.w = output.Pos.z;
     output.Color0 = input.Color0;

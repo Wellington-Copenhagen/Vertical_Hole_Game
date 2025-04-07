@@ -4,6 +4,11 @@
             "leaderUnit":"unitLeader",
             "memberUnit":"unitMember",
             "count":9
+        },
+        {
+            "leaderUnit":"unitLeader",
+            "memberUnit":"unitMember",
+            "count":9
         }
     ]
 }

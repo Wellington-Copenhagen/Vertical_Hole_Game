@@ -1,14 +1,12 @@
 {
     "effectFlame":{
-        "RectAppearance":{
-            "tex1SamePageIndex":0,
-            "tex1FilePath":"Data/Textures/Flame.tif",
-            "tex2SamePageIndex":0,
-            "tex2FilePath":"Data/Textures/Flame.tif",
-            "tex3SamePageIndex":0,
-            "tex3FilePath":"Data/Textures/Flame.tif",
-            "maskSamePageIndex":1,
-            "maskFilePath":"Data/Textures/OneColor.tif"
+        "EffectAppearance":{
+            "texture":{
+                "kind":"file",
+                "filePath":"Data/Textures/texBulletSpear.tif"
+            },
+            "baseColor0":[1,0,0,1],
+            "baseColor1":[1,1,0,1]
         },
         "WorldPosition":{
             "width":1,

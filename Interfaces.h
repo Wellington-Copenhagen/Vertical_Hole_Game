@@ -7,11 +7,12 @@
 // 直前のMotionInfo
 // 
 // 見た目や当たり判定や派生処理間でデータを共有できるオブジェクト
-// 
+#define WindowWidth 1280
+#define WindowHeight 720
 #define MaxUnitCount 1024
 #define MaxBallCount MaxUnitCount * 7
 #define MaxBulletCount 65536
-#define MaxLineCount 65536
+#define MaxEffectCount 65536
 #define WorldWidth 256
 #define WorldHeight 256
 
@@ -40,6 +41,12 @@ namespace Interface {
 		OutputDebugStringA("]\n");
 		OutputDebugStringA(prefix.c_str());
 	}
+	template<typename ... Args>
+	inline void fDebugOutput(Args... args) {
+		char* c = new char[256];
+		sprintf_s(c,256, args...);
+		OutputDebugStringA(c);
+	}
 	// 文字を表示するやつ
 
 	//プロトタイプにないデータで指定したいものはすべてこれ経由
@@ -67,50 +74,57 @@ namespace Interface {
 	};
 	*/
 
-
-
+	template<class DCType>
+	void InitDrawCallUV(std::vector<DCType>& drawcallVector,int index) {
+		drawcallVector[index * 4 + 0].UV = { 0.0f,1.0f };
+		drawcallVector[index * 4 + 1].UV = { 0.0f,0.0f };
+		drawcallVector[index * 4 + 2].UV = { 1.0f,1.0f };
+		drawcallVector[index * 4 + 3].UV = { 1.0f,0.0f };
+	}
+	template<class DCType>
+	void InitDrawCallPos(std::vector<DCType>& drawcallVector, int index, float bottomXscale = 1, float topXscale = 1, float Yscale = 1, float Yoffset = 0) {
+		float width = 0.5f;
+		drawcallVector[index * 4 + 0].Pos = { -1 * bottomXscale * width,-1 * Yscale * width + Yoffset,0.0f,1.0f };
+		drawcallVector[index * 4 + 1].Pos = { -1 * topXscale * width,Yscale * width + Yoffset,0.0f,1.0f };
+		drawcallVector[index * 4 + 2].Pos = { bottomXscale * width,-1 * Yscale * width + Yoffset,0.0f,1.0f };
+		drawcallVector[index * 4 + 3].Pos = { topXscale * width,Yscale * width + Yoffset,0.0f,1.0f };
+	}
 	//描画バッファに入れる構造体
 	struct BlockInstanceType {
 	public:
-		void Set(DirectX::XMMATRIX* world, DirectX::XMVECTOR* texCoord12, DirectX::XMVECTOR* texCoord3M) {
+		void Set(DirectX::XMMATRIX* world, DirectX::XMVECTOR* texIndex) {
 			DirectX::XMStoreFloat2(&World, world->r[3]);
-			DirectX::XMStoreFloat4(&TexCoord12, *texCoord12);
-			DirectX::XMStoreFloat4(&TexCoord3M, *texCoord3M);
+			DirectX::XMStoreFloat4(&TexIndex, *texIndex);
 			Stain = DirectX::XMFLOAT4{
 				0,0,0,0
 			};
 		}
 		DirectX::XMFLOAT2 World;
-		//同じテクスチャ画像内での位置のインデックス(左上→右上→左下→右下順),TexArray内でのインデックス
 		//画像1,2,3,マスクの順
-		DirectX::XMFLOAT4 TexCoord12;
-		//同じテクスチャ画像内での位置のインデックス(左上→右上→左下→右下順),TexArray内でのインデックス
-		//画像1,2,3,マスクの順
-		DirectX::XMFLOAT4 TexCoord3M;
+		DirectX::XMFLOAT4 TexIndex;
 
 		DirectX::XMFLOAT4 Stain;
 		
 	};
 	struct BlockDrawCallType {
 	public:
-		DirectX::XMFLOAT3 UV;//各頂点のU,各頂点のV,分割数
+		DirectX::XMFLOAT2 UV;//各頂点のU,各頂点のV,分割数
 		DirectX::XMFLOAT4 Pos;
 	};
 
 
 	struct BallInstanceType {
 	public:
-		void Set(DirectX::XMMATRIX* world, DirectX::XMVECTOR* texCoordMask, DirectX::XMVECTOR* color0, DirectX::XMVECTOR* color1, DirectX::XMVECTOR* color2) {
+		void Set(DirectX::XMMATRIX* world, float texIndex, DirectX::XMVECTOR* color0, DirectX::XMVECTOR* color1, DirectX::XMVECTOR* color2) {
 			DirectX::XMStoreFloat4x4(&World, *world);
-			DirectX::XMStoreFloat2(&TexCoordMask, *texCoordMask);
+			TexIndex = texIndex;
 			DirectX::XMStoreFloat4(&Color0, *color0);
 			DirectX::XMStoreFloat4(&Color1, *color1);
 			DirectX::XMStoreFloat4(&Color2, *color2);
 		}
 		DirectX::XMFLOAT4X4 World;
-		//同じテクスチャ画像内での位置のインデックス(左上→右上→左下→右下順),TexArray内でのインデックス
-		//マスクの順
-		DirectX::XMFLOAT2 TexCoordMask;
+		//マスクのテクスチャ番号
+		float TexIndex;
 		//マスクに従って塗る色の情報
 		DirectX::XMFLOAT4 Color0;
 		DirectX::XMFLOAT4 Color1;
@@ -119,31 +133,46 @@ namespace Interface {
 	};
 	struct BallDrawCallType {
 	public:
-		DirectX::XMFLOAT3 UV;//各頂点のU,各頂点のV,分割数
+		DirectX::XMFLOAT2 UV;//各頂点のU,各頂点のV
 		DirectX::XMFLOAT4 Pos;
 	};
 
 
 	struct BulletInstanceType {
 	public:
-		void Set(DirectX::XMMATRIX* world, DirectX::XMVECTOR* texCoordMask, DirectX::XMVECTOR* color0, DirectX::XMVECTOR* color1) {
+		void Set(DirectX::XMMATRIX* world, float texIndex) {
 			DirectX::XMStoreFloat4x4(&World, *world);
-			DirectX::XMStoreFloat2(&TexCoordMask, *texCoordMask);
+			TexIndex = texIndex;
+		}
+		DirectX::XMFLOAT4X4 World;
+		float TexIndex;
+
+	};
+	struct BulletDrawCallType {
+	public:
+		DirectX::XMFLOAT2 UV;//各頂点のU,各頂点のV
+		DirectX::XMFLOAT4 Pos;
+	};
+
+	struct EffectInstanceType {
+	public:
+		void Set(DirectX::XMMATRIX* world, float texIndex, DirectX::XMVECTOR* color0, DirectX::XMVECTOR* color1) {
+			DirectX::XMStoreFloat4x4(&World, *world);
+			TexIndex = texIndex;
 			DirectX::XMStoreFloat4(&Color0, *color0);
 			DirectX::XMStoreFloat4(&Color1, *color1);
 		}
 		DirectX::XMFLOAT4X4 World;
-		//同じテクスチャ画像内での位置のインデックス(左上→右上→左下→右下順),TexArray内でのインデックス
 		//マスクの順
-		DirectX::XMFLOAT2 TexCoordMask;
+		float TexIndex;
 		//マスクに従って塗る色の情報
 		DirectX::XMFLOAT4 Color0;
 		DirectX::XMFLOAT4 Color1;
 
 	};
-	struct BulletDrawCallType {
+	struct EffectDrawCallType {
 	public:
-		DirectX::XMFLOAT3 UV;//各頂点のU,各頂点のV,分割数
+		DirectX::XMFLOAT2 UV;//各頂点のU,各頂点のV
 		DirectX::XMFLOAT4 Pos;
 	};
 
@@ -169,52 +198,54 @@ namespace Interface {
 		DirectX::XMFLOAT4 Pos;
 	};
 
+	struct GeneralInstanceType {
+	public:
+		void Set(DirectX::XMMATRIX* world, float texIndex) {
+			DirectX::XMStoreFloat4x4(&World, *world);
+			TexIndex = texIndex;
+		}
+		DirectX::XMFLOAT4X4 World;
+		float TexIndex;
 
-	struct IconInstanceType {
-		DirectX::XMFLOAT4 Vertex1;
-		DirectX::XMFLOAT4 Vertex2;
-		DirectX::XMFLOAT4 Vertex3;
-		DirectX::XMFLOAT4 Vertex4;
-		float texIndex;
 	};
-	struct IconDrawCallType {
+	struct GeneralDrawCallType {
+	public:
+		DirectX::XMFLOAT2 UV;//各頂点のU,各頂点のV
+		DirectX::XMFLOAT4 Pos;
+	};
+	// 左下 左上　右下 右上
+	struct FreeShapeInstanceType {
+		void Set(DirectX::XMVECTOR* pos1, DirectX::XMVECTOR* pos2, DirectX::XMVECTOR* pos3, DirectX::XMVECTOR* pos4, float texIndex) {
+			DirectX::XMMATRIX pos;
+			pos.r[0] = *pos1;
+			pos.r[1] = *pos2;
+			pos.r[2] = *pos3;
+			pos.r[3] = *pos4;
+			DirectX::XMStoreFloat4x4(&Pos, pos);
+			TexIndex = texIndex;
+		}
+		DirectX::XMFLOAT4X4 Pos;
+		float TexIndex;
+	};
+	struct FreeShapeDrawCallType {
 		DirectX::XMFLOAT2 UV;//各頂点のU,各頂点のV
 	};
 
 	struct LineInstanceType {
-		DirectX::XMFLOAT4 Vertex1;
-		DirectX::XMFLOAT4 Vertex2;
-		float width;
-		float texIndex;
+		void Set(DirectX::XMVECTOR left, DirectX::XMVECTOR right, float width, float texIndex) {
+			DirectX::XMStoreFloat4(&Left, left);
+			DirectX::XMStoreFloat4(&Right, right);
+			Width = width;
+			TexIndex = texIndex;
+		}
+		DirectX::XMFLOAT4 Left;
+		DirectX::XMFLOAT4 Right;
+		float Width;
+		float TexIndex;
 	};
 	struct LineDrawCallType {
 		DirectX::XMFLOAT2 UV;//各頂点のU,各頂点のV
-	};
-
-	struct OCGInstanceType {
-	public:
-		void Set(DirectX::XMVECTOR* vertex1, DirectX::XMVECTOR* vertex2, DirectX::XMVECTOR* vertex3, DirectX::XMVECTOR* vertex4, 
-			DirectX::XMVECTOR* color1, DirectX::XMVECTOR* color2,float colorChange) {
-			DirectX::XMStoreFloat4(&Vertex1, *vertex1);
-			DirectX::XMStoreFloat4(&Vertex2, *vertex2);
-			DirectX::XMStoreFloat4(&Vertex3, *vertex3);
-			DirectX::XMStoreFloat4(&Vertex4, *vertex4);
-			DirectX::XMStoreFloat4(&Color1, *color1);
-			DirectX::XMStoreFloat4(&Color2, *color2);
-			ColorChange = colorChange;
-		}
-		DirectX::XMFLOAT4 Vertex1;
-		DirectX::XMFLOAT4 Vertex2;
-		DirectX::XMFLOAT4 Vertex3;
-		DirectX::XMFLOAT4 Vertex4;
-		DirectX::XMFLOAT4 Color1;
-		DirectX::XMFLOAT4 Color2;
-		float ColorChange;
-
-	};
-	struct OCGDrawCallType {
-	public:
-		float Triangle;
+		DirectX::XMFLOAT4 Pos;
 	};
 
 
@@ -287,6 +318,7 @@ namespace Interface {
 				DirectX::XMVectorScale(prescding, subsequent.Ratio),
 				DirectX::XMMatrixRotationZ(subsequent.Rotate))
 			, subsequent.Parallel);
+		output.m128_f32[3] = 1;
 		return output;
 	}
 #define CompCount 32
@@ -330,9 +362,15 @@ namespace Interface {
 		}
 		return true;
 	}
-	static std::map<std::string, int> AppearanceNameHash;
+
+	inline std::map<std::string, int> AppearanceNameHash;
 	inline entt::entity PlayingUnit;
-	static std::bitset<TeamCount*TeamCount> HostilityTable;//8team*8teamのテーブルでtrueの場所は敵対する
+	inline std::bitset<TeamCount*TeamCount> HostilityTable;//チーム数*チーム数のテーブルでtrueの場所は敵対する
+	inline std::map<std::string, Interface::UnitIndex> UnitNameHash;
+	inline std::map<std::string, entt::entity> EntNameHash;
+
+
+
 	static std::mt19937 RandEngine;
 	inline DirectX::XMVECTOR GetVectorFromJson(Json::Value input) {
 		DirectX::XMVECTOR output = {
@@ -343,8 +381,6 @@ namespace Interface {
 		};
 		return output;
 	}
-	inline std::map<std::string, Interface::UnitIndex> UnitNameHash;
-	inline std::map<std::string, entt::entity> EntNameHash;
 	struct EntityInitData {
 		// 常に使う
 		entt::entity thisEntities;

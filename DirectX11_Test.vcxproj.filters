@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="リソース ファイル\Shaders">
+      <UniqueIdentifier>{0783a7e8-4c68-41f0-80c6-0056b5e48910}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -81,6 +84,9 @@
     <ClInclude Include="Source\Game\UserInterface.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Source\DirectX\LineDraw.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DirectX11_Test.cpp">
@@ -137,6 +143,9 @@
     <ClCompile Include="Source\Game\UserInterface.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Source\DirectX\LineDraw.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11_Test.rc">
@@ -144,26 +153,56 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="small.ico">
+    <Image Include="DirectX11_Test.ico">
       <Filter>リソース ファイル</Filter>
     </Image>
-    <Image Include="DirectX11_Test.ico">
+    <Image Include="small.ico">
       <Filter>リソース ファイル</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shader\SpriteShader.hlsl" />
-    <FxCompile Include="Shader\SpriteShader_TestBed.hlsl" />
-    <FxCompile Include="Shader\ColoredShader.hlsl" />
-    <FxCompile Include="Shader\Shader.hlsl" />
-    <FxCompile Include="Shader\BlockPixelShader.hlsl" />
-    <FxCompile Include="Shader\BlockVertexShader.hlsl" />
-    <FxCompile Include="Shader\BulletPixelShader.hlsl" />
-    <FxCompile Include="Shader\BulletVertexShader.hlsl" />
-    <FxCompile Include="Shader\BallPixelShader.hlsl" />
-    <FxCompile Include="Shader\BallVertexShader.hlsl" />
-    <FxCompile Include="Shader\CharPixelShader.hlsl" />
-    <FxCompile Include="Shader\CharVertexShader.hlsl" />
+    <FxCompile Include="Shader\BallPixelShader.hlsl">
+      <Filter>リソース ファイル\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\BallVertexShader.hlsl">
+      <Filter>リソース ファイル\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\BlockPixelShader.hlsl">
+      <Filter>リソース ファイル\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\BlockVertexShader.hlsl">
+      <Filter>リソース ファイル\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\BulletPixelShader.hlsl">
+      <Filter>リソース ファイル\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\BulletVertexShader.hlsl">
+      <Filter>リソース ファイル\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\CharPixelShader.hlsl">
+      <Filter>リソース ファイル\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\CharVertexShader.hlsl">
+      <Filter>リソース ファイル\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\EffectPixelShader.hlsl">
+      <Filter>リソース ファイル\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\EffectVertexShader.hlsl">
+      <Filter>リソース ファイル\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\GeneralPixelShader.hlsl">
+      <Filter>リソース ファイル\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\GeneralVertexShader.hlsl">
+      <Filter>リソース ファイル\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\LineVertexShader.hlsl">
+      <Filter>リソース ファイル\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\FreeShapeVertexShader.hlsl">
+      <Filter>リソース ファイル\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -14,18 +14,22 @@
 #include "Source/DirectX/Appearance.h"
 #include "Routing.h"
 #include "Source/DirectX/StringDraw.h"
+#include "Source/DirectX/LineDraw.h"
+#include "UserInterface.h"
 
 //=========================================
 // GameSystemクラス
 // ・このゲームの土台となるもの
 //=========================================
-extern SameFormatTextureArray<256> BlockTextureArray;
-extern SameFormatTextureArray<256> BallTextureArray;
-extern SameFormatTextureArray<256> BulletTextureArray;
-extern SameFormatTextureArray<256> LineTextureArray;
+extern SameFormatTextureArray BlockTextureArray;
+extern SameFormatTextureArray BallTextureArray;
+extern SameFormatTextureArray BulletTextureArray;
+extern SameFormatTextureArray EffectTextureArray;
 class GameSystem
 {
 public :
+
+
 	AllSystem mAllSystem;
 	Entities mEntities;
 
@@ -36,28 +40,28 @@ public :
 	// 頂点バッファと頂点のデータを記録するAppearance
 
 	//マップ最大サイズに床と壁全部配置した場合の大きさ
-	VertexBuffer<Interface::BlockDrawCallType, 4,0> mFloorDrawCallBuffer;
-	VertexBuffer<Interface::BlockDrawCallType, 4, 0> mWallDrawCallBuffer;
-	Appearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, WorldWidth* WorldHeight> mFloorAppearances;
-	VertexBuffer<Interface::BlockInstanceType, WorldWidth* WorldHeight,1> mFloorInstanceBuffer;
-	VertexBuffer<Interface::BlockInstanceType, WorldWidth* WorldHeight, 1> mWallInstanceBuffer;
-	Appearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, 1, WorldWidth* WorldHeight> mWallAppearances;
+	VertexBuffer<Interface::BlockDrawCallType> mFloorDrawCallBuffer;
+	VertexBuffer<Interface::BlockDrawCallType> mWallDrawCallBuffer;
+	EntityBindAppearances<Interface::BlockDrawCallType, Interface::BlockInstanceType,Component::BlockAppearance, 1> mFloorAppearances;
+	VertexBuffer<Interface::BlockInstanceType> mFloorInstanceBuffer;
+	VertexBuffer<Interface::BlockInstanceType> mWallInstanceBuffer;
+	EntityBindAppearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, Component::BlockAppearance, 1> mWallAppearances;
 
 
 	//影、本体、模様
-	VertexBuffer<Interface::BallDrawCallType, 4,0> mBallDrawCallBuffer[3];
-	VertexBuffer<Interface::BallInstanceType, MaxBallCount,1> mBallInstanceBuffer[3];
-	Appearances<Interface::BallDrawCallType, Interface::BallInstanceType, 1, MaxBallCount> mBallAppearances[3];
+	VertexBuffer<Interface::BallDrawCallType> mBallDrawCallBuffer[3];
+	VertexBuffer<Interface::BallInstanceType> mBallInstanceBuffer[3];
+	EntityBindAppearances<Interface::BallDrawCallType, Interface::BallInstanceType, Component::BallAppearance, 3> mBallAppearances;
 
 
 
-	VertexBuffer<Interface::BulletDrawCallType, 4,0> mBulletDrawCallBuffer;
-	VertexBuffer<Interface::BulletInstanceType, MaxBulletCount,1> mBulletInstanceBuffer;
-	Appearances<Interface::BulletDrawCallType, Interface::BulletInstanceType, 1, MaxBulletCount> mBulletAppearances;
+	VertexBuffer<Interface::BulletDrawCallType> mBulletDrawCallBuffer;
+	VertexBuffer<Interface::BulletInstanceType> mBulletInstanceBuffer;
+	EntityBindAppearances<Interface::BulletDrawCallType, Interface::BulletInstanceType,Component::BulletAppearance, 1> mBulletAppearances;
 
-	VertexBuffer<Interface::LineDrawCallType, 4, 0> mLineDrawCallBuffer;
-	VertexBuffer<Interface::LineInstanceType, MaxLineCount, 1> mLineInstanceBuffer;
-	Appearances<Interface::LineDrawCallType, Interface::LineInstanceType, 1, MaxLineCount> mLineAppearances;
+	VertexBuffer<Interface::EffectDrawCallType> mEffectDrawCallBuffer;
+	VertexBuffer<Interface::EffectInstanceType> mEffectInstanceBuffer;
+	EntityBindAppearances<Interface::EffectDrawCallType, Interface::EffectInstanceType,Component::EffectAppearance, 1> mEffectAppearances;
 
 
 
@@ -67,8 +71,9 @@ public :
 
 	HDC hdc;
 	// 32*32*64
-	GraphicalStringDraw<65536,2048,32> StringDrawTest;
-
+	GraphicalStringDraw StringDrawTest;
+	UserInterface mUserInterface;
+ 
 	// このゲームの初期設定を行う
 	void Initialize(HWND hWnd);
 

@@ -46,8 +46,7 @@ public:
 	void LoadUnits(std::vector<std::string> fileNames);
 	void LoadMission(std::string missionFileName);
 	entt::entity EmplaceUnitWithInitData(int unitIndex, Interface::EntityInitData* pInitData, Interface::RelationOfCoord* pCorePos);
-	int GetFloorShadow(int x, int y);
-	int GetWallShadow(int x, int y);
+	int GetShadowIndex(int x, int y, bool searchFloor);
 	void DeleteWall(int x, int y);
 	std::pair<entt::entity,float> GetNearestHostilingUnit(DirectX::XMVECTOR pos, Interface::HostilityTeam team);
 };

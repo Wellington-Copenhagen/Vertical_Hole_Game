@@ -34,6 +34,12 @@
       <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\ColoredShader.cso</FullPath>
     </ContentFile>
     <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\EffectPixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\EffectVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
       <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\SpriteShader.cso</FullPath>
     </ContentFile>
     <ContentFile>

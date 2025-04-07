@@ -38,11 +38,13 @@ private:
 };
 #define sBuffer StripVertexBuffer::GetInstance()
 */
-template<typename DataType,int maxCount,int slot>
+template<typename DataType>
 class VertexBuffer {
 public:
+	int Slot;
 	VertexBuffer(){}
-	VertexBuffer(DataType* pData) {
+	VertexBuffer(DataType* pData, int maxCount, int slot) {
+		Slot = slot;
 		D3D11_BUFFER_DESC bDesc = {};
 		bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// デバイスにバインドするときの種類(頂点バッファ、インデックスバッファ、定数バッファなど)
 		bDesc.ByteWidth = sizeof(DataType) * maxCount;					// 作成するバッファのバイトサイズ
@@ -67,7 +69,7 @@ public:
 		//頂点バッファのうち何番から(第1引数)何個を(第2引数)を使うのか
 		//vbは配列の先頭のアドレスを指すことになる
 		//strideとoffsetも各頂点バッファごとに指定することになるのでこれらも配列
-		D3D.m_deviceContext->IASetVertexBuffers(slot, 1, Buffer.GetAddressOf(), &stride, &offset);
+		D3D.m_deviceContext->IASetVertexBuffers(Slot, 1, Buffer.GetAddressOf(), &stride, &offset);
 	}
 	void UpdateAndSet(DataType* pData, int offset, int count) {
 		D3D11_MAPPED_SUBRESOURCE mappedSubresource;
@@ -85,7 +87,7 @@ public:
 		//頂点バッファのうち何番から(第1引数)何個を(第2引数)を使うのか
 		//vbは配列の先頭のアドレスを指すことになる
 		//strideとoffsetも各頂点バッファごとに指定することになるのでこれらも配列
-		D3D.m_deviceContext->IASetVertexBuffers(slot, 1, Buffer.GetAddressOf(), &stride, &uOffset);
+		D3D.m_deviceContext->IASetVertexBuffers(Slot, 1, Buffer.GetAddressOf(), &stride, &uOffset);
 	}
 	ComPtr<ID3D11Buffer> Buffer;
 };

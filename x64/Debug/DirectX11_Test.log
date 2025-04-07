@@ -1,207 +1,261 @@
 ﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(531,5): warning MSB8028: 中間ディレクトリ (x64\Debug\) に別のプロジェクト (DirectX11_Test.vcxproj) と共有されているファイルが含まれています。これにより、クリーンしてリビルド動作が適切に行われない可能性があります。
-  Game.cpp
+  DirectX11_Test.cpp
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(342,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(429,77): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(430,77): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Camera.h(5,14): warning C4091: 'static ': 変数が何も宣言されていないときは、'Camera' の左辺を無視します。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(325,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Texture.h(56,27): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(412,77): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Texture.h(196,16): warning C4244: '初期化中': 'double' から 'int' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(413,77): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Texture.h(279,48): warning C4244: '引数': 'double' から 'size_t' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(376,22): warning C4305: '=': 'double' から 'float' へ切り詰めます。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Texture.h(293,16): warning C4244: '初期化中': 'double' から 'int' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\HitBox.h(9,14): warning C4091: 'static ': 変数が何も宣言されていないときは、'Hurtboxes' の左辺を無視します。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Texture.h(314,15): warning C4244: '=': 'double' から 'byte' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Texture.h(317,15): warning C4244: '=': 'double' から 'byte' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Texture.h(320,15): warning C4244: '=': 'double' から 'byte' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Texture.h(323,15): warning C4244: '=': 'double' から 'byte' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Texture.h(348,49): warning C4244: '引数': 'double' から 'size_t' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(452,22): warning C4305: '=': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\HitBox.h(10,14): warning C4091: 'static ': 変数が何も宣言されていないときは、'Hurtboxes' の左辺を無視します。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Routing.h(46,32): warning C4244: '=': 'float' から 'int' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Routing.h(53,24): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Routing.h(57,21): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Routing.h(67,22): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Routing.h(71,23): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(89,20): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(98,20): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(92,23): warning C4244: '初期化中': 'float' から 'int' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(101,23): warning C4244: '初期化中': 'float' から 'int' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(93,19): warning C4244: '初期化中': 'float' から 'int' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(102,19): warning C4244: '初期化中': 'float' から 'int' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(97,23): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(106,23): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(98,23): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(107,23): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(102,23): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(111,23): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(103,23): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(112,23): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(111,73): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(120,73): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(112,73): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(121,73): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(122,74): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
-  
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(123,74): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(131,74): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
 C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(132,74): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(133,74): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(141,74): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(174,45): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(142,74): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(177,45): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(155,20): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(180,45): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(196,45): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(183,45): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(199,45): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(236,86): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(202,45): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(256,62): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(205,45): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(257,62): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(248,112): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(296,108): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(248,97): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(301,99): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(251,127): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(307,90): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(251,112): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(426,88): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(251,141): warning C4305: '初期化中': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(431,88): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(252,103): warning C4305: '初期化中': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(440,23): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(254,24): warning C4305: '-=': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(442,87): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(257,24): warning C4305: '+=': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(448,114): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(269,86): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(637,19): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(274,60): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(658,19): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(274,45): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(768,72): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(302,62): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(805,73): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(303,62): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1077,18): warning C4244: '初期化中': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(342,108): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1078,18): warning C4244: '初期化中': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(347,99): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1090,85): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(353,90): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1090,48): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(472,88): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1091,85): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(477,88): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1091,48): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(486,23): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1213,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(488,87): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(71,97): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(71,92): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(71,87): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(71,82): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(75,93): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(75,89): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(75,85): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(75,81): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(101,34): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(101,22): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(224,123): warning C4244: '引数': 'float' から 'UINT8' への変換です。データが失われる可能性があります。
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(388,25): warning C4244: '初期化中': '_Rep' から 'long' への変換です。データが失われる可能性があります。
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(388,25): warning C4244:         with
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(388,25): warning C4244:         [
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(388,25): warning C4244:             _Rep=std::chrono::system_clock::rep
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(388,25): warning C4244:         ]
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(414,38): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\StringDraw.h(163,34): warning C4018: '<': signed と unsigned の数値を比較しようとしました。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
-      C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\StringDraw.h(163,34):
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(494,114): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(600,43): warning C4305: '-=': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(603,43): warning C4305: '+=': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(627,43): warning C4305: '-=': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(630,43): warning C4305: '+=': 'double' から 'float' へ切り詰めます。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(764,19): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(785,19): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1096,18): warning C4244: '初期化中': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1097,18): warning C4244: '初期化中': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1109,85): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1109,48): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1110,85): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1110,48): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1240,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1246,36): warning C4244: '=': '_Rep' から '_Ty' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1246,36): warning C4244:         with
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1246,36): warning C4244:         [
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1246,36): warning C4244:             _Rep=__int64
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1246,36): warning C4244:         ]
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1246,36): warning C4244:         and
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1246,36): warning C4244:         [
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1246,36): warning C4244:             _Ty=int
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(1246,36): warning C4244:         ]
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\DirectX11_Test.cpp(219,18): warning C4244: '初期化中': 'WPARAM' から 'int' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\DirectX11_Test.cpp(226,18): warning C4244: '初期化中': 'WPARAM' から 'int' への変換です。データが失われる可能性があります。
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\StringDraw.h(161,34): warning C4018: '<': signed と unsigned の数値を比較しようとしました。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
+      C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\StringDraw.h(161,34):
       テンプレートインスタンス化コンテキスト (最初に最も古いもの) は
-          C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(209,5):
+          C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(41,6):
           コンパイル対象の クラス テンプレート インスタンス化 'GraphicalStringDraw<65536,2048,32>' のリファレンスを確認してください
-          C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\StringDraw.h(126,7):
+          C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\StringDraw.h(124,7):
           クラス テンプレート メンバー関数 'void GraphicalStringDraw<65536,2048,32>::Append(std::string,DirectX::XMVECTOR *,DirectX::XMVECTOR *,float,int,StrDrawPos,bool)' のコンパイル中
-              C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(129,25):
-              'GameSystem::Initialize' の 'GraphicalStringDraw<65536,2048,32>::Append' への最初の参照を参照してください
+              C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\StringDraw.h(122,9):
+              'GraphicalStringDraw<65536,2048,32>::SimpleAppend' の 'GraphicalStringDraw<65536,2048,32>::Append' への最初の参照を参照してください
+              C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\System.h(41,35):
+              'Systems::KillGenerate::Update' の 'GraphicalStringDraw<65536,2048,32>::SimpleAppend' への最初の参照を参照してください
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\StringDraw.h(214,40): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\StringDraw.h(212,40): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'DirectX11_Test.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Texture.h(49,27): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/Game.cpp' をコンパイルしています)
-      C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Texture.h(49,27):
-      テンプレートインスタンス化コンテキスト (最初に最も古いもの) は
-          C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Component.h(169,12):
-          コンパイル対象の クラス テンプレート インスタンス化 'SameFormatTextureArray<256>' のリファレンスを確認してください
-          C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\Texture.h(47,2):
-          クラス テンプレート メンバー関数 'SameFormatTextureArray<256>::SameFormatTextureArray(int,bool)' のコンパイル中
-              C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp(55,20):
-              'GameSystem::Initialize' の 'SameFormatTextureArray<256>::SameFormatTextureArray' への最初の参照を参照してください
+  DrawPipe.cpp
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(342,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (ソース ファイル 'Source/DirectX/DrawPipe.cpp' をコンパイルしています)
   
-  UserInterface.cpp
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(325,12): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-  (ソース ファイル 'Source/Game/UserInterface.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(429,77): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'Source/DirectX/DrawPipe.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(412,77): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/UserInterface.cpp' をコンパイルしています)
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(430,77): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル 'Source/DirectX/DrawPipe.cpp' をコンパイルしています)
   
-C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Interfaces.h(413,77): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル 'Source/Game/UserInterface.cpp' をコンパイルしています)
-  
+C:\Users\1011g\source\repos\DirectX11_2DGame\DirectX11_Test\Source\DirectX\DrawPipe.cpp(414,6): warning C4267: '引数': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
   コードを生成中...
   DirectX11_Test.vcxproj -> C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\DirectX11_2DGame.exe
   'pwsh.exe' は、内部コマンドまたは外部コマンド、

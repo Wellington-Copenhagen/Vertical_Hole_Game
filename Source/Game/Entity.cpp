@@ -1,5 +1,5 @@
 #include "Entity.h"
-extern GraphicalStringDraw<65536, 2048, 32> globalStringDraw;
+extern GraphicalStringDraw globalStringDraw;
 extern entt::entity Interface::PlayingUnit;
 //地面と壁は別オブジェクトとする
 void Entities::LoadMap(std::string mapFileName)
@@ -218,11 +218,10 @@ void Entities::LoadMission(std::string missionFileName) {
 		EmplaceFromJson<false>(spawnCondition);
 	}
 	for (Json::Value hostilityPair : root.get("hostility", "")) {
-		for (Json::Value i : hostilityPair.get("other", "")) {
-			for (Json::Value j : hostilityPair.get("another", "")) {
-				Interface::HostilityTable[i.asInt() * TeamCount + j.asInt()] = true;
-			}
-		}
+		int other = hostilityPair.get("other", "").asInt();
+		int another = hostilityPair.get("another", "").asInt();
+		Interface::HostilityTable[other * TeamCount + another] = true;
+		Interface::HostilityTable[another * TeamCount + other] = true;
 	}
 }
 template<typename typeComp, bool asPrototype>
@@ -292,6 +291,7 @@ entt::entity Entities::EmplaceFromJson(Json::Value onePrototypeEntityData) {
 	EmplaceEntityIfNeeded<BlockAppearance,asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<BallAppearance,asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<BulletAppearance,asPrototype>(newEntity, onePrototypeEntityData);
+	EmplaceEntityIfNeeded<EffectAppearance, asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<CircleHitbox,asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<BallHurtbox,asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<UnitOccupationbox,asPrototype>(newEntity, onePrototypeEntityData);
@@ -299,6 +299,7 @@ entt::entity Entities::EmplaceFromJson(Json::Value onePrototypeEntityData) {
 	EmplaceEntityIfNeeded<CorpsData, asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<UnitData,asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<BallData,asPrototype>(newEntity, onePrototypeEntityData);
+	EmplaceEntityIfNeeded<Attack, asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<BulletData,asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<BlockData,asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<GiveDamage,asPrototype>(newEntity, onePrototypeEntityData);
@@ -319,6 +320,8 @@ entt::entity Entities::EmplaceFromPrototypeEntity(Interface::EntityInitData* pIn
 	else {
 		newEntity = Registry.create();
 	}
+	// 2^20個飛ぶ場合がある？
+	// 再利用が行われたときの挙動のよう
 	pInitData->thisEntities = newEntity;
 	EmplaceEntity<KillFlag,asPrototype>(newEntity, pInitData);
 	EmplaceEntity<GenerateFlag,asPrototype>(newEntity, pInitData);
@@ -334,6 +337,7 @@ entt::entity Entities::EmplaceFromPrototypeEntity(Interface::EntityInitData* pIn
 	EmplaceEntityIfNeeded<BlockAppearance,asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<BallAppearance,asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<BulletAppearance,asPrototype>(newEntity, pInitData);
+	EmplaceEntityIfNeeded<EffectAppearance, asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<CircleHitbox,asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<BallHurtbox,asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<UnitOccupationbox,asPrototype>(newEntity, pInitData);
@@ -341,6 +345,7 @@ entt::entity Entities::EmplaceFromPrototypeEntity(Interface::EntityInitData* pIn
 	EmplaceEntityIfNeeded<CorpsData, asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<UnitData,asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<BallData,asPrototype>(newEntity, pInitData);
+	EmplaceEntityIfNeeded<Attack, asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<BulletData,asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<BlockData,asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<GiveDamage,asPrototype>(newEntity, pInitData);
@@ -374,32 +379,34 @@ entt::entity Entities::EmplaceUnitWithInitData(int unitIndex, Interface::EntityI
 	}
 	return core;
 }
-int Entities::GetFloorShadow(int x, int y) {
+int Entities::GetShadowIndex(int x, int y, bool searchFloor) {
 	int maskIndex = 0;
-	if (x != 0 && IsWallMap[y * WorldWidth + x - 1]) {
-		maskIndex += 1;
-	}
-	if (x != WorldWidth - 1 && IsWallMap[y * WorldWidth + x + 1]) {
-		maskIndex += 2;
-	}
-	if (y != 0 && IsWallMap[(y - 1) * WorldWidth + x]) {
-		maskIndex += 4;
-	}
-	if (y != WorldHeight - 1 && IsWallMap[(y + 1) * WorldWidth + x]) {
-		maskIndex += 8;
-	}
-	return maskIndex;
-}
-int Entities::GetWallShadow(int x,int y) {
-	int maskIndex = 0;
-	if (x != 0 && !IsWallMap[y * WorldWidth + x - 1]) {
-		maskIndex += 1;
-	}
-	if (x != WorldWidth - 1 && !IsWallMap[y * WorldWidth + x + 1]) {
-		maskIndex += 2;
-	}
-	if (y != 0 && !IsWallMap[(y - 1) * WorldWidth + x]) {
-		maskIndex += 4;
+	for (int i = 0; i < 8; i++) {
+		// 701
+		// 6 2
+		// 543
+		// の順
+		int searchX = x;
+		int searchY = y;
+		if (i >= 1 && i <= 3) {
+			searchX++;
+		}
+		if (i >= 5) {
+			searchX--;
+		}
+		if (i >= 7 || i <= 1) {
+			searchY++;
+		}
+		if (i >= 3 && i <= 5) {
+			searchY--;
+		}
+		if (searchX >= 0 && 
+			searchX < WorldWidth && 
+			searchY >= 0 && 
+			searchY < WorldHeight && 
+			(IsWallMap[searchY * WorldWidth + searchX]^searchFloor)) {
+			maskIndex += pow(2, i);
+		}
 	}
 	return maskIndex;
 }

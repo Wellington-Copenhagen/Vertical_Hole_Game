@@ -1,17 +1,90 @@
 {
+    "floorTransparent":{
+        "GenerateFlag":{
+
+        },
+        "BlockAppearance":{
+            "tex1":{
+                "kind":"file",
+                "filePath":"Data/Textures/texBlockTransparent.tif"
+            },
+            "tex2":{
+                "kind":"oneColor",
+                "color":[0,0,0,0]
+            },
+            "tex3":{
+                "kind":"oneColor",
+                "color":[0,0,0,0]
+            },
+            "mask":{
+                "kind":"file",
+                "filePath":"Data/Textures/texFloorShadow.tif"
+            }
+        },
+        "WorldPosition":{
+            "width":1,
+            "parallel":[
+                0,0,0,1
+            ]
+        },
+        "BlockData":{
+
+        }
+    },
+    "wallBlockWall":{
+        "GenerateFlag":0,
+        "BlockAppearance":{
+            "tex1":{
+                "kind":"file",
+                "filePath":"Data/Textures/texBlockWall.tif"
+            },
+            "tex2":{
+                "kind":"oneColor",
+                "color":[0,0,0,0]
+            },
+            "tex3":{
+                "kind":"oneColor",
+                "color":[0,0,0,0]
+            },
+            "mask":{
+                "kind":"file",
+                "filePath":"Data/Textures/texWallShadow.tif"
+            }
+        },
+        "WorldPosition":{
+            "width":1,
+            "parallel":[
+                0,0,0,1
+            ]
+        },
+        "WallHurtbox":{
+            
+        },
+        "BlockData":{
+
+        }
+    },
     "floorStoneFloor":{
         "GenerateFlag":{
 
         },
         "BlockAppearance":{
-            "tex1SamePageIndex":0,
-            "tex1FilePath":"Data/Textures/Block.tif",
-            "tex2SamePageIndex":0,
-            "tex2FilePath":"Data/Textures/Block.tif",
-            "tex3SamePageIndex":0,
-            "tex3FilePath":"Data/Textures/OneColor.tif",
-            "maskSamePageIndex":0,
-            "maskFilePath":"Data/Textures/FloorShadowMask.tif"
+            "tex1":{
+                "kind":"file",
+                "filePath":"Data/Textures/texBlockStoneFloor.tif"
+            },
+            "tex2":{
+                "kind":"oneColor",
+                "color":[0,0,0,1]
+            },
+            "tex3":{
+                "kind":"oneColor",
+                "color":[0,0,0,1]
+            },
+            "mask":{
+                "kind":"file",
+                "filePath":"Data/Textures/texFloorShadow.tif"
+            }
         },
         "WorldPosition":{
             "width":1,
@@ -26,14 +99,22 @@
     "wallBrick":{
         "GenerateFlag":0,
         "BlockAppearance":{
-            "tex1SamePageIndex":1,
-            "tex1FilePath":"Data/Textures/Block.tif",
-            "tex2SamePageIndex":1,
-            "tex2FilePath":"Data/Textures/Block.tif",
-            "tex3SamePageIndex":0,
-            "tex3FilePath":"Data/Textures/OneColor.tif",
-            "maskSamePageIndex":0,
-            "maskFilePath":"Data/Textures/WallShadowMask.tif"
+            "tex1":{
+                "kind":"file",
+                "filePath":"Data/Textures/texBlockBrick.tif"
+            },
+            "tex2":{
+                "kind":"oneColor",
+                "color":[0,0,0,1]
+            },
+            "tex3":{
+                "kind":"oneColor",
+                "color":[0,0,0,1]
+            },
+            "mask":{
+                "kind":"file",
+                "filePath":"Data/Textures/texWallShadow.tif"
+            }
         },
         "WorldPosition":{
             "width":1,
