@@ -363,8 +363,6 @@ namespace Interface {
 		return true;
 	}
 
-	inline std::map<std::string, int> AppearanceNameHash;
-	inline entt::entity PlayingUnit;
 	inline std::bitset<TeamCount*TeamCount> HostilityTable;//チーム数*チーム数のテーブルでtrueの場所は敵対する
 	inline std::map<std::string, Interface::UnitIndex> UnitNameHash;
 	inline std::map<std::string, entt::entity> EntNameHash;

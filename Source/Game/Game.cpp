@@ -170,7 +170,6 @@ void GameSystem::Initialize(HWND hWnd)
 
 	mEntities.LoadMission(missionName);
 	mEntities.LoadPlayerCorps("Data/SaveData/PlayerCorps.json");
-	entt::entity pu = Interface::PlayingUnit;
 	mAllSystem = AllSystem(this);
 
 	std::random_device RandSeedGen;

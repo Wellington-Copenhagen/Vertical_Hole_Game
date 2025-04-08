@@ -179,17 +179,15 @@ public:
 		if (itr != ColorIndexTable.end()) {
 			return itr->second;
 		}
-		byte* pInit = new byte[Width * Width * 4];
-		ZeroMemory(pInit, Width * Width * 4);
+		std::vector<byte> pInit = std::vector<byte>(Width * Width * 4, 0);
 		for (int i = 0; i < Width * Width; i++) {
 			pInit[i * 4] = iRed;
 			pInit[i * 4 + 1] = iGreen;
 			pInit[i * 4 + 2] = iBlue;
 			pInit[i * 4 + 3] = iAlpha;
 		}
-		int headIndex = Append((void*)pInit, Width * Width * 4, Width * 4);
+		int headIndex = Append((void*)&pInit[0], Width * Width * 4, Width * 4);
 		ColorIndexTable.emplace(color, headIndex);
-		delete pInit;
 		return headIndex;
 	}
 	static void SaveShadowTexture(int width, std::string filePath, int topShadowWidth, int bottomShadowWidth, int leftShadowWidth, int rightShadowWidth) {

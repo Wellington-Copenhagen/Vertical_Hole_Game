@@ -7,7 +7,6 @@
 #include "Source/DirectX/StringDraw.h"
 #include "Source/Game/Camera.h"
 extern GraphicalStringDraw globalStringDraw;
-extern entt::entity Interface::PlayingUnit;
 extern int Tick;
 //関連するシステムは同じものに収める方が良いと考えられる
 class GameSystem;
@@ -227,7 +226,7 @@ namespace Systems {
 			Component::KillFlag>().each()) {
 				globalStringDraw.SimpleAppend(std::to_string((int)entity), 0, 0, 0, worldPosition.WorldPos.Parallel, 1, 1, StrDrawPos::AsCenter);
 				//プレイヤーの行動
-				if (entity == Interface::PlayingUnit) {
+				if (entity == pEntities->PlayingUnit) {
 					motion.WorldDelta.Ratio = 1;
 					float moveTilePerTick = unitData.MoveTilePerTick * unitData.SpeedBuff;
 					DirectX::XMVECTOR vector = { 0,0,0,0 };
@@ -469,12 +468,12 @@ namespace Systems {
 					// 目標地点への移動を行う
 					if (unitData.VectorNavigation) {
 						if (unitData.NextPosReloadTick - 90 > Tick) {
-							motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8);
+							motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8f);
 							motion.WorldDelta.Parallel = DirectX::XMVectorAdd(motion.WorldDelta.Parallel, unitData.Heading);
 							globalStringDraw.SimpleAppend("Vector Navigation", 1, 0, 0, worldPosition.WorldPos.Parallel, 0.5, 1, StrDrawPos::AsCenter);
 						}
 						else {
-							motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8);
+							motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8f);
 						}
 					}
 					else
@@ -483,15 +482,15 @@ namespace Systems {
 						DirectX::XMVECTOR vector = DirectX::XMVectorAdd(DirectX::XMVectorScale(
 							unitData.AreaBorderTarget.Pos, 0.5), DirectX::XMVectorScale(
 								worldPosition.WorldPos.Parallel, -0.5));
-						float slipRange = DirectX::XMVector2Length(motion.WorldDelta.Parallel).m128_f32[0] / (1.0 - 0.8);
+						float slipRange = DirectX::XMVector2Length(motion.WorldDelta.Parallel).m128_f32[0] / (1.0f - 0.8f);
 						float distance = DirectX::XMVector2Length(vector).m128_f32[0] * 2;
-						motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8);
+						motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8f);
 						// ぴったり止めるためにちょうどいいところでで進むのを止める
 						if (distance > slipRange) {
 							if (!unitData.HeadingFree) {
 								// 進入方向に制約がある場合
 								// ない場合は一直線に向かう
-								vector = DirectX::XMVectorAdd(vector, DirectX::XMVectorScale(unitData.AreaBorderTarget.Heading, distance * -0.2));
+								vector = DirectX::XMVectorAdd(vector, DirectX::XMVectorScale(unitData.AreaBorderTarget.Heading, distance * -0.2f));
 							}
 							float length = DirectX::XMVector2Length(vector).m128_f32[0];
 							DirectX::XMVECTOR v = vector;
@@ -597,10 +596,10 @@ namespace Systems {
 						moveFlag.Moved = true;
 						worldPosition.WorldPos = worldPosition.WorldPos + motion.WorldDelta;
 						if (worldPosition.WorldPos.Rotate > PI) {
-							worldPosition.WorldPos.Rotate -= 2 * PI;
+							worldPosition.WorldPos.Rotate -= 2.0f * PI;
 						}
-						if (worldPosition.WorldPos.Rotate < -1 * PI) {
-							worldPosition.WorldPos.Rotate += 2 * PI;
+						if (worldPosition.WorldPos.Rotate < -1.0f * PI) {
+							worldPosition.WorldPos.Rotate += 2.0f * PI;
 						}
 						worldPosition.WorldMatrix = worldPosition.WorldPos.GetMatrix();
 
@@ -624,10 +623,10 @@ namespace Systems {
 						worldPosition.WorldPos = worldPosition.LocalReferenceToCore *
 							pEntities->Registry.get<Component::WorldPosition>(positionReference.ReferenceTo).NextTickWorldPos;
 						if (worldPosition.WorldPos.Rotate > PI) {
-							worldPosition.WorldPos.Rotate -= 2 * PI;
+							worldPosition.WorldPos.Rotate -= 2.0f * PI;
 						}
-						if (worldPosition.WorldPos.Rotate < -1 * PI) {
-							worldPosition.WorldPos.Rotate += 2 * PI;
+						if (worldPosition.WorldPos.Rotate < -1.0f * PI) {
+							worldPosition.WorldPos.Rotate += 2.0f * PI;
 						}
 						moveFlag.Moved = true;
 						worldPosition.WorldMatrix = worldPosition.WorldPos.GetMatrix();
@@ -761,7 +760,7 @@ namespace Systems {
 				Component::KillFlag	>().each()) {
 				unitOccupationbox.AlredayChecked = false;
 				if (generateFlag.GeneratedOnThisTick) {
-					float radius = worldPosition.WorldPos.Ratio * 0.5;
+					float radius = worldPosition.WorldPos.Ratio * 0.5f;
 					int bottom = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1] - radius);
 					int top = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1] + radius);
 					int left = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[0] - radius);
@@ -782,7 +781,7 @@ namespace Systems {
 					int OccupyingTop = unitOccupationbox.OccupingRectTop;
 					int OccupyingLeft = unitOccupationbox.OccupingRectLeft;
 					int OccupyingRight = unitOccupationbox.OccupingRectRight;
-					float radius = worldPosition.WorldPos.Ratio * 0.5;
+					float radius = worldPosition.WorldPos.Ratio * 0.5f;
 					int CurrentBottom = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1] - radius);
 					int CurrentTop = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1] + radius);
 					int CurrentLeft = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[0] - radius);
@@ -1092,8 +1091,8 @@ namespace Systems {
 					if (spawn.TimeGapSince <= 0 && 0 < spawn.CountLeft) {
 						// 部隊長のスポーン
 						Interface::UnitIndex leader = spawn.Leader;
-						float Xpos = Interface::UniformRandInt(spawn.SpawnAreaLeft, spawn.SpawnAreaRight);
-						float Ypos = Interface::UniformRandInt(spawn.SpawnAreaBottom, spawn.SpawnAreaTop);
+						float Xpos = Interface::UniformRandInt((float)spawn.SpawnAreaLeft, (float)spawn.SpawnAreaRight);
+						float Ypos = Interface::UniformRandInt((float)spawn.SpawnAreaBottom, (float)spawn.SpawnAreaTop);
 						Interface::RelationOfCoord pos = Interface::RelationOfCoord();
 						pos.Parallel = {
 							(float)Xpos,(float)Ypos,0,1
@@ -1105,8 +1104,8 @@ namespace Systems {
 						spawn.CoreData.IsLeader = false;
 						Interface::UnitIndex member = spawn.Member;
 						while (0 < spawn.CountLeft) {
-							Xpos = Interface::UniformRandFloat(spawn.SpawnAreaLeft, spawn.SpawnAreaRight - 1);
-							Ypos = Interface::UniformRandFloat(spawn.SpawnAreaBottom, spawn.SpawnAreaTop - 1);
+							Xpos = Interface::UniformRandFloat((float)spawn.SpawnAreaLeft, (float)spawn.SpawnAreaRight - 1.0f);
+							Ypos = Interface::UniformRandFloat((float)spawn.SpawnAreaBottom, (float)spawn.SpawnAreaTop - 1.0f);
 							Interface::RelationOfCoord pos = Interface::RelationOfCoord();
 							pos.Parallel = {
 								(float)Xpos,(float)Ypos,0,1

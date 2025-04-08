@@ -21,6 +21,7 @@ public:
 
 	std::tuple<int, int, int, int> PlayerCorpsSpawnArea;
 
+	entt::entity PlayingUnit;
 	Entities() {
 		UnitCountEachTeam = std::vector<int>();
 		for (int i = 0; i < TeamCount; i++) {

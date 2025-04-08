@@ -31,22 +31,22 @@
       <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\CharVertexShader.cso</FullPath>
     </ContentFile>
     <ContentFile>
-      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\ColoredShader.cso</FullPath>
-    </ContentFile>
-    <ContentFile>
       <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\EffectPixelShader.cso</FullPath>
     </ContentFile>
     <ContentFile>
       <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\EffectVertexShader.cso</FullPath>
     </ContentFile>
     <ContentFile>
-      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\SpriteShader.cso</FullPath>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\FreeShapeVertexShader.cso</FullPath>
     </ContentFile>
     <ContentFile>
-      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\SpriteShader_TestBed.cso</FullPath>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\GeneralPixelShader.cso</FullPath>
     </ContentFile>
     <ContentFile>
-      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\Shader.cso</FullPath>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\GeneralVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1011g\source\repos\DirectX11_2DGame\x64\Debug\LineVertexShader.cso</FullPath>
     </ContentFile>
   </ContentFiles>
   <SatelliteDlls />

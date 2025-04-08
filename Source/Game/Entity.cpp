@@ -1,6 +1,5 @@
 #include "Entity.h"
 extern GraphicalStringDraw globalStringDraw;
-extern entt::entity Interface::PlayingUnit;
 //地面と壁は別オブジェクトとする
 void Entities::LoadMap(std::string mapFileName)
 {
@@ -176,7 +175,7 @@ void Entities::LoadPlayerCorps(std::string fileName) {
 		initData.IsLeader = true;
 		initData.LeaderId = EmplaceUnitWithInitData(leader, &initData, &pos);
 		if (i == 0) {
-			Interface::PlayingUnit = initData.LeaderId;
+			PlayingUnit = initData.LeaderId;
 		}
 
 		// 部下のスポーン

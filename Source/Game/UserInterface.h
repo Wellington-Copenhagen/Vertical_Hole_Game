@@ -52,12 +52,6 @@ public:
 	Entities* pEntities;
 	ConstantBuffer* pCBuffer;
 	UserInterface() {}
-	DirectX::XMVECTOR GetFourVFromTwoV() {
-		DirectX::XMVECTOR pos1;
-		DirectX::XMVECTOR pos2;
-		DirectX::XMVECTOR pos3;
-		DirectX::XMVECTOR pos4;
-	}
 	UserInterface(Entities* pentities,ConstantBuffer* pcBuffer) {
 		pEntities = pentities;
 		pCBuffer = pcBuffer;
@@ -102,24 +96,26 @@ public:
 			{ width, height, 0.5, 1 }),
 			1);
 		// HP•\Ž¦@‰Eã
-		Component::UnitData& playerUnitData = pEntities->Registry.get<Component::UnitData>(Interface::PlayingUnit);
-		Component::DamagePool& playerDamagePool = pEntities->Registry.get<Component::DamagePool>(Interface::PlayingUnit);
-		float HPvar = 20 + 380 * (1 - playerDamagePool.Damage.physical / playerUnitData.MaxHP);
-		mLineDraw.Append(0, 0, 0,
-			{ 19, height - 30, 0.5, 1 },
-			{ 401, height - 30, 0.5, 1 }, 8, 1);
-		mLineDraw.Append(0.2, 1.0, 0.2,
-			{ 20, height - 30, 0.5, 1 },
-			{ HPvar, height - 30, 0.5, 1 }, 6, 1);
-		int leftHP = (int)roundf(playerUnitData.MaxHP - playerDamagePool.Damage.physical);
-		mStringDraw.SimpleAppend(std::to_string(leftHP), 1, 1, 1,
-			{ 22, height - 45, 0.5, 1 }, 20, 1, StrDrawPos::AsTopLeftCorner);
-		mFreeShapeDraw.Append(0.2f, 0.2f, 0.6f,FourPoints(
-			{ 20, height - 67, 0.5, 1 },
-			{ 20, height - 43, 0.5, 1 },
-			{ 160, height - 67, 0.5, 1 },
-			{ 160, height - 43, 0.5, 1 }),
-			1);
+		Component::UnitData* pPlayerUnitData = pEntities->Registry.try_get<Component::UnitData>(pEntities->PlayingUnit);
+		Component::DamagePool* pPlayerDamagePool = pEntities->Registry.try_get<Component::DamagePool>(pEntities->PlayingUnit);
+		if (pPlayerUnitData != nullptr && pPlayerDamagePool != nullptr) {
+			float HPvar = 20 + 380 * (1 - pPlayerDamagePool->Damage.physical / pPlayerUnitData->MaxHP);
+			mLineDraw.Append(0, 0, 0,
+				{ 19, height - 30, 0.5, 1 },
+				{ 401, height - 30, 0.5, 1 }, 8, 1);
+			mLineDraw.Append(0.2, 1.0, 0.2,
+				{ 20, height - 30, 0.5, 1 },
+				{ HPvar, height - 30, 0.5, 1 }, 6, 1);
+			int leftHP = (int)roundf(pPlayerUnitData->MaxHP - pPlayerDamagePool->Damage.physical);
+			mStringDraw.SimpleAppend(std::to_string(leftHP), 1, 1, 1,
+				{ 22, height - 45, 0.5, 1 }, 20, 1, StrDrawPos::AsTopLeftCorner);
+			mFreeShapeDraw.Append(0.2f, 0.2f, 0.6f, FourPoints(
+				{ 20, height - 67, 0.5, 1 },
+				{ 20, height - 43, 0.5, 1 },
+				{ 160, height - 67, 0.5, 1 },
+				{ 160, height - 43, 0.5, 1 }),
+				1);
+		}
 
 
 

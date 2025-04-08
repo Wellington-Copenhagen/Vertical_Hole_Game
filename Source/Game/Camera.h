@@ -2,7 +2,7 @@
 #include "framework.h"
 #include "Source/DirectX/DirectX.h"
 
-static class Camera {
+class Camera {
 public:
 	static DirectX::XMMATRIX CameraMatrix;
 	static float Aspect;//Width/Height

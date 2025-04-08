@@ -130,17 +130,16 @@ public:
 				if (bufferSize == GDI_ERROR) {
 					throw("");
 				}
-				byte* pData = new byte[bufferSize];
-				bufferSize = GetGlyphOutlineA(hdc, code, GGO_GRAY8_BITMAP, &glyphMatrix, bufferSize, (void*)pData, &mat2);
+				std::vector<byte> pData(bufferSize);
+				GetGlyphOutlineA(hdc, code, GGO_GRAY8_BITMAP, &glyphMatrix, bufferSize, (void*)&pData[0], &mat2);
 				if (bufferSize == GDI_ERROR) {
 					throw("");
 				}
 				int adjustedWidth = glyphMatrix.gmBlackBoxX + (4 - (glyphMatrix.gmBlackBoxX % 4)) % 4;
-				byte* pInit = new byte[TexHeight * TexHeight * 4];
-				ZeroMemory(pInit, TexHeight * TexHeight * 4);
+				std::vector<byte> pInit = std::vector<byte>(TexHeight * TexHeight * 4, 0);
 				for (int y = 0; y < TexHeight; y++) {
 					for (int x = 0; x < TexHeight; x++) {
-						if (x < adjustedWidth && y < glyphMatrix.gmBlackBoxY) {
+						if (x < adjustedWidth && y < glyphMatrix.gmBlackBoxY && y * adjustedWidth + x < pData.size()) {
 							pInit[(y * TexHeight + x) * 4] = min(pData[y * adjustedWidth + x] * 4, 255);
 						}
 						else {
@@ -148,9 +147,7 @@ public:
 						}
 					}
 				}
-				int texIndex = mTextureArray.Append((void*)pInit, TexHeight * TexHeight * 4, TexHeight * 4);
-				delete pData;
-				delete pInit;
+				int texIndex = mTextureArray.Append((void*)&pInit[0], TexHeight * TexHeight * 4, TexHeight * 4);
 
 				TextureIndexDict.emplace(code, texIndex);
 				// ¶‰ºŠî€
@@ -177,6 +174,9 @@ public:
 			leftBottom = DirectX::XMVectorAdd(*pPos, { 0.0f,height * -1.0f,0.0f,0.0f });
 			break;
 		case AsBottomLeftCorner:
+			leftBottom = *pPos;
+			break;
+		default:
 			leftBottom = *pPos;
 			break;
 		}

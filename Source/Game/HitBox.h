@@ -7,7 +7,7 @@
 extern GraphicalStringDraw globalStringDraw;
 #define UnitCountPerCell 1
 #define CellWidth 1
-static class Hurtboxes {
+class Hurtboxes {
 public:
 
 	entt::registry* pMainRegistry;
