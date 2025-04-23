@@ -220,7 +220,13 @@ ConstantBuffer::ConstantBuffer() {
 	}
 	D3D.m_deviceContext->VSSetConstantBuffers(0, 1, Buffer.GetAddressOf());
 }
-void ConstantBuffer::UpdateAndSet() {
+void ConstantBuffer::UpdateAndSet(DirectX::XMMATRIX* pViewProjection, std::vector<DirectX::XMFLOAT4>* pBlackBoxMatrices) {
+	if (pViewProjection != nullptr) {
+		DirectX::XMStoreFloat4x4(&Data.ViewProjection, *pViewProjection);
+	}
+	if (pBlackBoxMatrices != nullptr) {
+		memcpy_s(&Data.BlackBox, sizeof(DirectX::XMFLOAT4) * 2048, &(*pBlackBoxMatrices)[0], sizeof(DirectX::XMFLOAT4) * pBlackBoxMatrices->size());
+	}
 	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
 	//ここでGPUから頂点バッファへのアクセスを止め、CPUからのアクセスができるようにしている
 	if (FAILED(D3D.m_deviceContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource))) {

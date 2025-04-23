@@ -45,55 +45,21 @@
         }
     },
     "ballRegenerate":{
-        "BallAppearance":{
-            "shadow":{
-                "texture":{
-                    "kind":"file",
-                    "filePath":"Data/Textures/texBallShadowPlain.tif"
-                },
-                "color0":[
-                    0,0.2,0.2,0.5
-                ],
-                "color1":[
-                    0,0,0,1
-                ],
-                "color2":[
-                    0,0,0,1
-                ]
+        "VariableAppearance":{
+            "texture":{
+                "kind":"file",
+                "filePath":"Data/Textures/texBallShadowPlain.tif"
             },
-            "base":{
-                "texture":{
-                    "kind":"file",
-                    "filePath":"Data/Textures/texBallBasePlain.tif"
-                },
-                "color0":[
-                    0,0.8,0.6,0.4
-                ],
-                "color1":[
-                    1,0,0,1
-                ],
-                "color2":[
-                    0,0,0,0.7
-                ]
-            },
-            "pattern":{
-                "texture":{
-                    "kind":"file",
-                    "filePath":"Data/Textures/texBallPatternCross.tif"
-                },
-                "color0":[
-                    1,1,1,1
-                ],
-                "color1":[
-                    1,1,0.3,0.8
-                ],
-                "color2":[
-                    0,0,0,0
-                ]
-            }
+            "color1":[
+                0,0.8,0.6,0.4
+            ],
+            "color2":[
+                1,0,0,1
+            ]
         },
+        "Texture":0,
         "WorldPosition":{
-            "width":1,
+            "width":0.5,
             "parallel":[
                 0,0,0,1
             ]
@@ -104,8 +70,8 @@
         "Attack":{
             "coolTime":20,
             "bullet":"bulletSpear",
-            "count":3,
-            "headingError":0,
+            "count":1,
+            "headingError":0.05,
             "headingFork":0.1
         },
         "HitFlag":0,
@@ -126,55 +92,21 @@
         }
     },
     "ballGuard":{
-        "BallAppearance":{
-            "shadow":{
-                "texture":{
-                    "kind":"file",
-                    "filePath":"Data/Textures/texBallShadowPlain.tif"
-                },
-                "color0":[
-                    0,0,0.3,0.5
-                ],
-                "color1":[
-                    0,0,0,1
-                ],
-                "color2":[
-                    0,0,0,1
-                ]
+        "VariableAppearance":{
+            "texture":{
+                "kind":"file",
+                "filePath":"Data/Textures/texBallShadowPlain.tif"
             },
-            "base":{
-                "texture":{
-                    "kind":"file",
-                    "filePath":"Data/Textures/texBallBasePlain.tif"
-                },
-                "color0":[
-                    0,0,0.8,0.4
-                ],
-                "color1":[
-                    1,0,0,1
-                ],
-                "color2":[
-                    0,0,0,0.7
-                ]
-            },
-            "pattern":{
-                "texture":{
-                    "kind":"file",
-                    "filePath":"Data/Textures/texBallPatternShield.tif"
-                },
-                "color0":[
-                    0,0,0,1
-                ],
-                "color1":[
-                    0.8,0.8,0.8,0.8
-                ],
-                "color2":[
-                    0.5,0,0,0.8
-                ]
-            }
+            "color1":[
+                0,0,0.8,0.4
+            ],
+            "color2":[
+                1,0,0,1
+            ]
         },
+        "Texture":0,
         "WorldPosition":{
-            "width":1,
+            "width":0.5,
             "parallel":[
                 0,0,0,1
             ]
@@ -200,55 +132,21 @@
         }
     },
     "ballSpiky":{
-        "BallAppearance":{
-            "shadow":{
-                "texture":{
-                    "kind":"file",
-                    "filePath":"Data/Textures/texBallShadowPlain.tif"
-                },
-                "color0":[
-                    0.3,0,0,0.5
-                ],
-                "color1":[
-                    0,0,0,1
-                ],
-                "color2":[
-                    0,0,0,1
-                ]
+        "VariableAppearance":{
+            "texture":{
+                "kind":"file",
+                "filePath":"Data/Textures/texBallBaseSpiky.tif"
             },
-            "base":{
-                "texture":{
-                    "kind":"file",
-                    "filePath":"Data/Textures/texBallBaseSpiky.tif"
-                },
-                "color0":[
-                    0.8,0,0,0.4
-                ],
-                "color1":[
-                    0.9,0.9,0.9,1
-                ],
-                "color2":[
-                    0,0,0,0.7
-                ]
-            },
-            "pattern":{
-                "texture":{
-                    "kind":"file",
-                    "filePath":"Data/Textures/texBallPatternShield.tif"
-                },
-                "color0":[
-                    0,0,0,1
-                ],
-                "color1":[
-                    0.8,0.8,0.8,0.8
-                ],
-                "color2":[
-                    0.5,0,0,0.8
-                ]
-            }
+            "color1":[
+                0.8,0,0,0.4
+            ],
+            "color2":[
+                0.9,0.9,0.9,1
+            ]
         },
+        "Texture":0,
         "WorldPosition":{
-            "width":1,
+            "width":0.5,
             "parallel":[
                 0,0,0,1
             ]

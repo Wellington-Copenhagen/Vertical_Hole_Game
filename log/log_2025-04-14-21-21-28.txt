@@ -1,0 +1,2 @@
+DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp/line54,funcName:Initialize,Tick:0,hello 1
+DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp/line55,funcName:Initialize,Tick:0,hello

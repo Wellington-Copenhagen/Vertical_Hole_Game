@@ -14,12 +14,14 @@ class System {
 public:
 	Hurtboxes* pHurtboxes;
 	Entities* pEntities;
-	EntityBindAppearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, Component::BlockAppearance, 1>* pFloorAppearance;
-	EntityBindAppearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, Component::BlockAppearance, 1>* pWallAppearance;
+	EntityBindAppearances<Interface::BlockDCType, Interface::BlockIType, Component::BlockAppearance, 1>* pFloorAppearances;
+	EntityBindAppearances<Interface::BlockDCType, Interface::BlockIType, Component::BlockAppearance, 1>* pWallAppearances;
 	//影、本体、模様
-	EntityBindAppearances<Interface::BallDrawCallType, Interface::BallInstanceType, Component::BallAppearance, 3>* pBallAppearance;
-	EntityBindAppearances<Interface::BulletDrawCallType, Interface::BulletInstanceType, Component::BulletAppearance, 1>* pBulletAppearance;
-	EntityBindAppearances<Interface::EffectDrawCallType, Interface::EffectInstanceType, Component::EffectAppearance, 1>* pEffectAppearance;
+	EntityBindAppearances < Interface::GeneralDCType, Interface::GeneralIType, Component::ConstantAppearance, 1 > *pConstantAppearances;
+	EntityBindAppearances < Interface::EffectDCType, Interface::EffectIType, Component::VariableAppearance, 1 >* pVariableAppearances;
+
+	EntityBindAppearances < Interface::GeneralDCType, Interface::GeneralIType, Component::ShadowAppearance, 1 >* pConstantShadowAppearances;
+	EntityBindAppearances < Interface::GeneralDCType, Interface::GeneralIType, Component::ShadowAppearance, 1 >* pVariableShadowAppearances;
 	System(GameSystem* pGameSystem);
 	virtual void Update() = 0;
 };
@@ -30,20 +32,34 @@ namespace Systems {
 		KillGenerate(GameSystem* pGameSystem) : System(pGameSystem){}
 		void Update() override {
 			int count = 0;
-			for (auto [entity, generateFlag, killFlag, worldPosition] : pEntities->Registry.view<
+			for (auto [entity, generateFlag, killFlag, worldPosition,motion] : pEntities->Registry.view<
 				Component::GenerateFlag, 
 				Component::KillFlag,
-				Component::WorldPosition>().each()) {
+				Component::WorldPosition,
+				Component::Motion>().each()) {
 				generateFlag.GeneratedOnThisTick = false;
 				if (killFlag.KillOnThisTick) {
-					Interface::OutputVector(worldPosition.WorldPos.Parallel, "Killed", "");
-					globalStringDraw.SimpleAppend("kill", 0, 0, 1, worldPosition.WorldPos.Parallel, 1, 20, StrDrawPos::AsBottomLeftCorner);
-					killFlag.KillOnThisTick = false;
+					//Interface::OutputVector(worldPosition.WorldPos.r[3], "Killed", "");
+					globalStringDraw.SimpleAppend("kill", 0, 0, 1, worldPosition.WorldPos.r[3], 1, 20, StrDrawPos::AsBottomLeftCorner);
 					pEntities->Registry.destroy(entity);
 				}
 				count++;
 			}
-			Interface::fDebugOutput("entity count:%d\n", count);
+			if (Tick % 60 == 0) {
+				for (auto [entity, generateFlag, killFlag, worldPosition] : pEntities->Registry.view<
+					Component::GenerateFlag,
+					Component::KillFlag,
+					Component::WorldPosition>().each()) {
+					generateFlag.GeneratedOnThisTick = false;
+					if (killFlag.KillOnThisTick) {
+						//Interface::OutputVector(worldPosition.WorldPos.r[3], "Killed", "");
+						globalStringDraw.SimpleAppend("kill", 0, 0, 1, worldPosition.WorldPos.r[3], 1, 20, StrDrawPos::AsBottomLeftCorner);
+						pEntities->Registry.destroy(entity);
+					}
+					count++;
+				}
+			}
+			//Interface::fDebugOutput("entity count:%d\n", count);
 		}
 	};
 	class ControlUnitCount : public System {
@@ -224,10 +240,10 @@ namespace Systems {
 				Component::WorldPosition,
 				Component::DamagePool,
 			Component::KillFlag>().each()) {
-				globalStringDraw.SimpleAppend(std::to_string((int)entity), 0, 0, 0, worldPosition.WorldPos.Parallel, 1, 1, StrDrawPos::AsCenter);
+				globalStringDraw.SimpleAppend(std::to_string((int)entity), 0, 0, 0, worldPosition.WorldPos.r[3], 1, 1, StrDrawPos::AsCenter);
 				//プレイヤーの行動
 				if (entity == pEntities->PlayingUnit) {
-					motion.WorldDelta.Ratio = 1;
+					motion.WorldDelta = Interface::SetScale(&motion.WorldDelta, 1);
 					float moveTilePerTick = unitData.MoveTilePerTick * unitData.SpeedBuff;
 					DirectX::XMVECTOR vector = { 0,0,0,0 };
 					if (Input::KeyPushed.test(0x57)) {//w
@@ -244,35 +260,17 @@ namespace Systems {
 					}
 
 					// マウスポインターの方に向かせる
-					DirectX::XMVECTOR toMouse = DirectX::XMVectorSubtract(Camera::MousePointingWorldPos(Input::MouseX, Input::MouseY), worldPosition.WorldPos.Parallel);
+					DirectX::XMVECTOR toMouse = DirectX::XMVectorSubtract(Camera::MousePointingWorldPos(Input::MouseX, Input::MouseY), worldPosition.WorldPos.r[3]);
 					float pointFor = atan2(toMouse.m128_f32[1], toMouse.m128_f32[0]);
-					float headingDist = pointFor - worldPosition.WorldPos.Rotate;
-					globalStringDraw.SimpleAppend("Mouse", 1, 1, 1, DirectX::XMVectorAdd(Camera::MousePointingWorldPos(Input::MouseX, Input::MouseY), {0,0,0.1,0}), 1, 5, StrDrawPos::AsCenter);
-					globalStringDraw.SimpleAppend("Center", 1, 1, 1, DirectX::XMVectorAdd(Camera::CenterCoord, { 0,0,0.1,0 }), 1, 5, StrDrawPos::AsCenter);
-					if (headingDist > PI) {
-						headingDist -= 2 * PI;
-					}
-					if (headingDist < -1 * PI) {
-						headingDist += 2 * PI;
-					}
-					motion.WorldDelta.Rotate = 0;
-					if (headingDist>0) {//q
-						motion.WorldDelta.Rotate = min(0.1f,headingDist);
-					}
-					if (headingDist<0) {//e
-						motion.WorldDelta.Rotate = max(headingDist, -0.1f);
-					}
-					Camera::CenterCoord = worldPosition.WorldPos.Parallel;
+					motion.Headfor(pointFor, &worldPosition.WorldPos, 0.1f);
+					Camera::CenterCoord = worldPosition.WorldPos.r[3];
 					float length = DirectX::XMVector2Length(vector).m128_f32[0];
 					vector = DirectX::XMVectorScale(vector, min(1, unitData.MoveTilePerTick / length));
-					motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8);
-					motion.WorldDelta.Parallel = DirectX::XMVectorAdd(motion.WorldDelta.Parallel, vector);
+					motion.WorldDelta.r[3] = DirectX::XMVectorScale(motion.WorldDelta.r[3], 0.8);
+					motion.WorldDelta.r[3] = DirectX::XMVectorAdd(motion.WorldDelta.r[3], vector);
 					if (Input::MouseLeftPushed) {
 						unitData.Fire = true;
-						DirectX::XMVECTOR currentToMouse = DirectX::XMVectorSubtract(
-							Camera::MousePointingWorldPos(Input::MouseX, Input::MouseY),
-							worldPosition.WorldPos.Parallel);
-						unitData.AttackAt = std::atan2(currentToMouse.m128_f32[1],currentToMouse.m128_f32[0]);
+						unitData.AttackAt = Camera::MousePointingWorldPos(Input::MouseX, Input::MouseY);
 					}
 					else {
 						unitData.Fire = false;
@@ -293,7 +291,7 @@ namespace Systems {
 						|| corpsData.CurrentMovementOrder == Interface::MovementOrder::Charge) {
 						// Chargeモードで最も近い敵を探して更新する
 						if (corpsData.CurrentMovementOrder == Interface::MovementOrder::Charge && Tick%10==0) {
-							auto nearest = pEntities->GetNearestHostilingUnit(worldPosition.WorldPos.Parallel, unitData.Team);
+							auto nearest = pEntities->GetNearestHostilingUnit(worldPosition.WorldPos.r[3], unitData.Team);
 							// 索敵範囲
 							if (nearest.second < unitData.AttackRange * 2) {
 								// 攻撃対象がいる場合
@@ -315,28 +313,28 @@ namespace Systems {
 							if (targetWorldPos == nullptr) {
 								// 標的が消失してる場合
 								// いったんその場待機にして次の検索で新しい標的を探す
-								unitData.FinalTarget.Pos = worldPosition.WorldPos.Parallel;
+								unitData.FinalTarget.Pos = worldPosition.WorldPos.r[3];
 								unitData.DistanceThresholdMax = 0;
 								unitData.DistanceThresholdMin = 0;
 							}
 							else {
-								unitData.FinalTarget.Pos = targetWorldPos->WorldPos.Parallel;
+								unitData.FinalTarget.Pos = targetWorldPos->WorldPos.r[3];
 							}
 						}
 						// この時点でFinalTargetは完全に更新済み
 
-						DirectX::XMVECTOR toFinal = DirectX::XMVectorSubtract(unitData.FinalTarget.Pos, worldPosition.WorldPos.Parallel);
+						DirectX::XMVECTOR toFinal = DirectX::XMVectorSubtract(unitData.FinalTarget.Pos, worldPosition.WorldPos.r[3]);
 						float lengthToFinal = DirectX::XMVector2Length(toFinal).m128_f32[0];
 						if (Tick % 10 == 0) {
 							if (lengthToFinal < unitData.DistanceThresholdMax &&
-								pHurtboxes->IsWayClear(&worldPosition.WorldPos.Parallel, &unitData.FinalTarget.Pos)) {
+								pHurtboxes->IsWayClear(&worldPosition.WorldPos.r[3], &unitData.FinalTarget.Pos)) {
 								// 距離、射線が問題ない
 								// ランダム移動へ移行
 								unitData.VectorNavigation = true;
 								if (unitData.NextPosReloadTick < Tick) {
 									DirectX::XMVECTOR navigateHeading = { 0,0,0,0 };
 									if (lengthToFinal < unitData.DistanceThresholdMin) {
-										globalStringDraw.SimpleAppend("Too Near", 0, 1, 0, worldPosition.WorldPos.Parallel, 0.5, 1, StrDrawPos::AsCenter);
+										globalStringDraw.SimpleAppend("Too Near", 0, 1, 0, worldPosition.WorldPos.r[3], 0.5, 1, StrDrawPos::AsCenter);
 										if (lengthToFinal < 1) {
 											navigateHeading = DirectX::XMVectorAdd(navigateHeading, Interface::NormalRandHeadingVector(0, 2 * PI, 0));
 										}
@@ -349,12 +347,12 @@ namespace Systems {
 
 
 									// 方向での誘導になっていてかつクールタイムが消化されている
-									unitData.Heading = DirectX::XMVectorAdd(Interface::NormalRandHeadingVector(0, 2 * PI, 0), motion.WorldDelta.Parallel);
+									unitData.Heading = DirectX::XMVectorAdd(Interface::NormalRandHeadingVector(0, 2 * PI, 0), motion.WorldDelta.r[3]);
 									unitData.Heading = DirectX::XMVector2Normalize(unitData.Heading);
 									unitData.Heading = DirectX::XMVectorAdd(unitData.Heading, navigateHeading);
 									unitData.Heading = DirectX::XMVector2Normalize(unitData.Heading);
 									globalStringDraw.SimpleAppend("New Vector", 1, 1, 0,
-										DirectX::XMVectorAdd(worldPosition.WorldPos.Parallel, unitData.Heading)
+										DirectX::XMVectorAdd(worldPosition.WorldPos.r[3], unitData.Heading)
 										, 0.5, 60, StrDrawPos::AsCenter);
 									unitData.Heading = DirectX::XMVectorScale(unitData.Heading, unitData.MoveTilePerTick / 2);
 									unitData.NextPosReloadTick = Tick + Interface::UniformRandInt(100,120);
@@ -372,12 +370,12 @@ namespace Systems {
 							}
 						}
 						if (unitData.NextPosReloadTick >= Tick) {
-							globalStringDraw.SimpleAppend("Cool Time", 0, 1, 0, worldPosition.WorldPos.Parallel, 0.5, 1, StrDrawPos::AsCenter);
+							globalStringDraw.SimpleAppend("Cool Time", 0, 1, 0, worldPosition.WorldPos.r[3], 0.5, 1, StrDrawPos::AsCenter);
 						}
 
 
-						float lengthToAreaBorder = DirectX::XMVector2Length(DirectX::XMVectorSubtract(unitData.AreaBorderTarget.Pos, worldPosition.WorldPos.Parallel)).m128_f32[0];
-						int current = pEntities->mRouting.GetAreaIndex(pEntities->mRouting.NearestWalkablePosition(worldPosition.WorldPos.Parallel));
+						float lengthToAreaBorder = DirectX::XMVector2Length(DirectX::XMVectorSubtract(unitData.AreaBorderTarget.Pos, worldPosition.WorldPos.r[3])).m128_f32[0];
+						int current = pEntities->mRouting.GetAreaIndex(pEntities->mRouting.NearestWalkablePosition(worldPosition.WorldPos.r[3]));
 						int previousArea = unitData.PreviousTickArea;
 						if (DirectX::XMVector2Length(DirectX::XMVectorSubtract(unitData.PreviousTargetPos, unitData.FinalTarget.Pos)).m128_f32[0] > 3) {
 							unitData.TargetUpdated = true;
@@ -393,7 +391,7 @@ namespace Systems {
 							while (true) {
 								//1エリアずつ進めていって通路が通らなくなった時か、目標エリアまで通路が通っているとわかった時に探索を止める
 								if (current == target) {
-									if (pHurtboxes->IsWayClear(&unitData.FinalTarget.Pos, &worldPosition.WorldPos.Parallel)) {
+									if (pHurtboxes->IsWayClear(&unitData.FinalTarget.Pos, &worldPosition.WorldPos.r[3])) {
 										// 現在地から最終目標まで直線で行くことができる
 
 
@@ -402,18 +400,18 @@ namespace Systems {
 										// 現在位置から直進できる経路がある場所を次の移動目標とする
 										/*
 										if (unitData.DistanceThresholdMax > 0.5) {
-											DirectX::XMVECTOR gap = DirectX::XMVectorSubtract(worldPosition.WorldPos.Parallel, unitData.FinalTarget.Pos);
+											DirectX::XMVECTOR gap = DirectX::XMVectorSubtract(worldPosition.WorldPos.r[3], unitData.FinalTarget.Pos);
 											gap = DirectX::XMVectorScale(gap, Interface::UniformRandFloat(unitData.DistanceThresholdMin, unitData.DistanceThresholdMax) / DirectX::XMVector2Length(gap).m128_f32[0]);
 											gap = DirectX::XMVector2Transform(gap, DirectX::XMMatrixRotationZ(Interface::UniformRandFloat(PI / -8.0f, PI / 8.0f)));
 											unitData.AreaBorderTarget.Pos = DirectX::XMVectorAdd(unitData.FinalTarget.Pos, gap);
 											if (pEntities->mRouting.GetAreaIndex(unitData.AreaBorderTarget.Pos)==-1) {
 												unitData.AreaBorderTarget.Pos = pEntities->mRouting.NearestWalkablePosition(unitData.AreaBorderTarget.Pos);
 											}
-											if (!pHurtboxes->IsWayClear(&unitData.AreaBorderTarget.Pos, &worldPosition.WorldPos.Parallel)) {
-												gap = DirectX::XMVectorSubtract(worldPosition.WorldPos.Parallel, unitData.FinalTarget.Pos);
+											if (!pHurtboxes->IsWayClear(&unitData.AreaBorderTarget.Pos, &worldPosition.WorldPos.r[3])) {
+												gap = DirectX::XMVectorSubtract(worldPosition.WorldPos.r[3], unitData.FinalTarget.Pos);
 												gap = DirectX::XMVectorScale(gap, min(1, Interface::UniformRandFloat(unitData.DistanceThresholdMin, unitData.DistanceThresholdMax) / DirectX::XMVector2Length(gap).m128_f32[0]));
 												unitData.AreaBorderTarget.Pos = DirectX::XMVectorAdd(unitData.FinalTarget.Pos, gap);
-												globalStringDraw.SimpleAppend("NotClear", 0, 1, 1, worldPosition.WorldPos.Parallel, 0.5, 1, StrDrawPos::AsCenter);
+												globalStringDraw.SimpleAppend("NotClear", 0, 1, 1, worldPosition.WorldPos.r[3], 0.5, 1, StrDrawPos::AsCenter);
 											}
 										}
 										else {
@@ -438,8 +436,8 @@ namespace Systems {
 									}
 								}
 								Interface::WayPoint targetNotSureWayClear;
-								targetNotSureWayClear = pEntities->mRouting.GetWayPoint(current, target, worldPosition.WorldPos.Parallel);
-								if (pHurtboxes->IsWayClear(&targetNotSureWayClear.Pos, &worldPosition.WorldPos.Parallel)) {
+								targetNotSureWayClear = pEntities->mRouting.GetWayPoint(current, target, worldPosition.WorldPos.r[3]);
+								if (pHurtboxes->IsWayClear(&targetNotSureWayClear.Pos, &worldPosition.WorldPos.r[3])) {
 
 									// そのエリア境界のウェイポイントまで一直線で行ける場合
 									unitData.AreaBorderTarget = targetNotSureWayClear;
@@ -468,12 +466,12 @@ namespace Systems {
 					// 目標地点への移動を行う
 					if (unitData.VectorNavigation) {
 						if (unitData.NextPosReloadTick - 90 > Tick) {
-							motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8f);
-							motion.WorldDelta.Parallel = DirectX::XMVectorAdd(motion.WorldDelta.Parallel, unitData.Heading);
-							globalStringDraw.SimpleAppend("Vector Navigation", 1, 0, 0, worldPosition.WorldPos.Parallel, 0.5, 1, StrDrawPos::AsCenter);
+							motion.WorldDelta.r[3] = DirectX::XMVectorScale(motion.WorldDelta.r[3], 0.8f);
+							motion.WorldDelta.r[3] = DirectX::XMVectorAdd(motion.WorldDelta.r[3], unitData.Heading);
+							globalStringDraw.SimpleAppend("Vector Navigation", 1, 0, 0, worldPosition.WorldPos.r[3], 0.5, 1, StrDrawPos::AsCenter);
 						}
 						else {
-							motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8f);
+							motion.WorldDelta.r[3] = DirectX::XMVectorScale(motion.WorldDelta.r[3], 0.8f);
 						}
 					}
 					else
@@ -481,10 +479,10 @@ namespace Systems {
 						// 現在地と一時目標の中間地点に進入方向の逆側への補正をかけた地点へ向かう
 						DirectX::XMVECTOR vector = DirectX::XMVectorAdd(DirectX::XMVectorScale(
 							unitData.AreaBorderTarget.Pos, 0.5), DirectX::XMVectorScale(
-								worldPosition.WorldPos.Parallel, -0.5));
-						float slipRange = DirectX::XMVector2Length(motion.WorldDelta.Parallel).m128_f32[0] / (1.0f - 0.8f);
+								worldPosition.WorldPos.r[3], -0.5));
+						float slipRange = DirectX::XMVector2Length(motion.WorldDelta.r[3]).m128_f32[0] / (1.0f - 0.8f);
 						float distance = DirectX::XMVector2Length(vector).m128_f32[0] * 2;
-						motion.WorldDelta.Parallel = DirectX::XMVectorScale(motion.WorldDelta.Parallel, 0.8f);
+						motion.WorldDelta.r[3] = DirectX::XMVectorScale(motion.WorldDelta.r[3], 0.8f);
 						// ぴったり止めるためにちょうどいいところでで進むのを止める
 						if (distance > slipRange) {
 							if (!unitData.HeadingFree) {
@@ -497,30 +495,35 @@ namespace Systems {
 							vector = DirectX::XMVectorScale(vector, min(1, unitData.MoveTilePerTick / length));
 							vector.m128_f32[2] = 0;
 							vector.m128_f32[3] = 0;
-							motion.WorldDelta.Parallel = DirectX::XMVectorAdd(motion.WorldDelta.Parallel, vector);
-							v = DirectX::XMVectorAdd(v, worldPosition.WorldPos.Parallel);
+							motion.WorldDelta.r[3] = DirectX::XMVectorAdd(motion.WorldDelta.r[3], vector);
+							v = DirectX::XMVectorAdd(v, worldPosition.WorldPos.r[3]);
 							v.m128_f32[2] = 0;
 							globalStringDraw.SimpleAppend("Temp", 0, 1, 0, v, 0.5, 1, StrDrawPos::AsCenter);
 						}
 						else {
-							globalStringDraw.SimpleAppend("Coasting", 0, 1, 0, worldPosition.WorldPos.Parallel, 0.5, 1, StrDrawPos::AsCenter);
+							globalStringDraw.SimpleAppend("Coasting", 0, 1, 0, worldPosition.WorldPos.r[3], 0.5, 1, StrDrawPos::AsCenter);
 						}
 					}
+					// 攻撃
 					if (Tick % 10 == 0) {
 						unitData.Fire = false;
 						DirectX::XMVECTOR target = {0,0,0,1};
 						if (corpsData.CurrentAttackOrder == Interface::AttackOrder::Nearest) {
-							auto nearest = pEntities->GetNearestHostilingUnit(worldPosition.WorldPos.Parallel, unitData.Team);
+							auto nearest = pEntities->GetNearestHostilingUnit(worldPosition.WorldPos.r[3], unitData.Team);
 							if (std::get<1>(nearest) < unitData.AttackRange) {
 								target = pEntities->Registry.get<Component::WorldPosition>(
-									std::get<0>(nearest)).WorldPos.Parallel;
+									std::get<0>(nearest)).WorldPos.r[3];
 								unitData.Fire = true;
 							}
 						}
 						if (unitData.Fire) {
-							target = DirectX::XMVectorSubtract(target, worldPosition.WorldPos.Parallel);
-							unitData.AttackAt = std::atan2(target.m128_f32[1], target.m128_f32[0]);
+							unitData.AttackAt = target;
 						}
+					}
+					{
+						DirectX::XMVECTOR target = DirectX::XMVectorSubtract(unitData.AttackAt, worldPosition.WorldPos.r[3]);
+						float pointFor = atan2(target.m128_f32[1], target.m128_f32[0]);
+						motion.Headfor(pointFor, &worldPosition.WorldPos, 0.1f);
 					}
 				}
 
@@ -545,20 +548,21 @@ namespace Systems {
 				Component::Attack>().each()) {
 				Component::UnitData& unitData = pEntities->Registry.get<Component::UnitData>(ballData.CoreId);
 				Component::WorldPosition& unitWorldPosition = pEntities->Registry.get<Component::WorldPosition>(ballData.CoreId);
+				DirectX::XMVECTOR target = DirectX::XMVectorSubtract(unitData.AttackAt, worldPosition.WorldPos.r[3]);
+				float pointFor = atan2(target.m128_f32[1], target.m128_f32[0]);
 				if (unitData.Fire && attack.NextAbleTick < Tick && !ballData.OnCenter &&
-					abs(unitData.AttackAt - (unitWorldPosition.WorldPos.Rotate + ballData.AngleFromCore)) < PI / 2) {
+					abs(pointFor - (Interface::RotationOfMatrix(&unitWorldPosition.WorldPos) + ballData.AngleFromCore)) < PI / 2) {
 					for (int i = 0; i < attack.Count; i++) {
-						float heading = unitData.AttackAt;
+						float heading = pointFor;
 						heading = heading + attack.headingFork * (i - (attack.Count - 1) / 2);
 						heading = heading + Interface::UniformRandFloat(attack.headingError * -1, attack.headingError);
 						Interface::EntityInitData initData;
 						initData.Team = unitData.Team;
 						initData.Prototype = attack.Bullet;
-						initData.Pos = worldPosition.WorldPos;
-						initData.Pos.Rotate = heading;
+						initData.Pos = Interface::GetMatrix(&worldPosition.WorldPos.r[3],heading,1);
 						initData.IsCore = true;
 						pEntities->EmplaceFromPrototypeEntity<false>(&initData);
-						globalStringDraw.SimpleAppend("fire", 1, 0, 0, worldPosition.WorldPos.Parallel, 1, 5, StrDrawPos::AsCenter);
+						globalStringDraw.SimpleAppend("fire", 1, 0, 0, worldPosition.WorldPos.r[3], 1, 5, StrDrawPos::AsCenter);
 					}
 					attack.NextAbleTick = Tick + attack.CoolTime;
 				}
@@ -584,90 +588,45 @@ namespace Systems {
 	public:
 		UpdateWorld(GameSystem* pGameSystem) : System(pGameSystem) {}
 		void Update() override {
-			for(auto [entity,motion,worldPosition,moveFlag,hitFlag,positionReference] : pEntities->Registry.view<
+			for (auto [entity, motion, worldPosition, moveFlag, hitFlag] : pEntities->Registry.view<
+				Component::Motion,
+				Component::WorldPosition,
+				Component::MoveFlag,
+				Component::HitFlag>().each()) {
+				worldPosition.Updated = false;
+			}
+			for(auto [entity,motion,worldPosition,moveFlag,hitFlag] : pEntities->Registry.view<
+				Component::Motion,
+				Component::WorldPosition,
+				Component::MoveFlag,
+				Component::HitFlag>().each()) {
+				if (worldPosition.PositionalRoot) {
+					moveFlag.Moved = true;
+					DirectX::XMVECTOR parallel = DirectX::XMVectorAdd(worldPosition.WorldPos.r[3], motion.WorldDelta.r[3]);
+					worldPosition.WorldPos = worldPosition.WorldPos * motion.WorldDelta;
+					worldPosition.WorldPos.r[3] = parallel;
+					worldPosition.WorldPos.r[3].m128_f32[3] = 1;
+					if (worldPosition.WorldPos.r[3].m128_f32[3] > 1.9) {
+						throw("");
+					}
+					worldPosition.Updated = true;
+				}
+			}
+			for (auto [entity, motion, worldPosition, moveFlag, hitFlag, killFlag] : pEntities->Registry.view <
 				Component::Motion,
 				Component::WorldPosition,
 				Component::MoveFlag,
 				Component::HitFlag,
-				Component::PositionReference>().each()) {
-				DirectX::XMVECTOR zeros{ 0.0f,0.0f,0.0f,0.0f };
-				if (positionReference.IsCore) {
-					if (worldPosition.NeedUpdate) {
-						moveFlag.Moved = true;
-						worldPosition.WorldPos = worldPosition.WorldPos + motion.WorldDelta;
-						if (worldPosition.WorldPos.Rotate > PI) {
-							worldPosition.WorldPos.Rotate -= 2.0f * PI;
-						}
-						if (worldPosition.WorldPos.Rotate < -1.0f * PI) {
-							worldPosition.WorldPos.Rotate += 2.0f * PI;
-						}
-						worldPosition.WorldMatrix = worldPosition.WorldPos.GetMatrix();
-
+				Component::KillFlag> ().each()) {
+				if (!worldPosition.PositionalRoot) {
+					DirectX::XMMATRIX temp;
+					if (!worldPosition.UpdateAndGet(&pEntities->Registry,&temp)) {
+						killFlag.KillOnThisTick = true;
 					}
-					else {
-						moveFlag.Moved = false;
-						worldPosition.NextTickWorldPos = worldPosition.WorldPos;
+					if (worldPosition.WorldPos.r[3].m128_f32[3] > 1.9) {
+						throw("");
 					}
-				}
-			}
-			for (auto [entity, motion, worldPosition, moveFlag, hitFlag, positionReference,generateFlag] : pEntities->Registry.view <
-				Component::Motion,
-				Component::WorldPosition,
-				Component::MoveFlag,
-				Component::HitFlag,
-				Component::PositionReference,
-				Component::GenerateFlag > ().each()) {
-				if (!positionReference.IsCore) {
-					if (pEntities->Registry.get<Component::MoveFlag>(positionReference.ReferenceTo).Moved ||
-						generateFlag.GeneratedOnThisTick) {
-						worldPosition.WorldPos = worldPosition.LocalReferenceToCore *
-							pEntities->Registry.get<Component::WorldPosition>(positionReference.ReferenceTo).NextTickWorldPos;
-						if (worldPosition.WorldPos.Rotate > PI) {
-							worldPosition.WorldPos.Rotate -= 2.0f * PI;
-						}
-						if (worldPosition.WorldPos.Rotate < -1.0f * PI) {
-							worldPosition.WorldPos.Rotate += 2.0f * PI;
-						}
-						moveFlag.Moved = true;
-						worldPosition.WorldMatrix = worldPosition.WorldPos.GetMatrix();
-					}
-					else {
-						moveFlag.Moved = false;
-						worldPosition.NextTickWorldPos = worldPosition.WorldPos;
-					}
-				}
-			}
-		}
-	};
-	// 速度にNaNが発生したときにそれが位置に流れ込まないようにする処理が必要
-	class CalcurateGeneratedWorld : public System {
-	public:
-		CalcurateGeneratedWorld(GameSystem* pGameSystem) : System(pGameSystem) {}
-		void Update() override {
-			for(auto [entity,worldPosition,positionReference,generateFlag,motion] : pEntities->Registry.view<
-				Component::WorldPosition,
-				Component::PositionReference,
-				Component::GenerateFlag,
-				Component::Motion>().each()) {
-				if (positionReference.IsCore &&
-					generateFlag.GeneratedOnThisTick) {
-					worldPosition.WorldPos = motion.WorldDelta +
-						worldPosition.WorldPos;
-					worldPosition.NextTickWorldPos = worldPosition.WorldPos;
-					worldPosition.WorldMatrix = worldPosition.WorldPos.GetMatrix();
-				}
-			}
-			for (auto [entity, worldPosition, positionReference, generateFlag, motion] : pEntities->Registry.view<
-				Component::WorldPosition,
-				Component::PositionReference, 
-				Component::GenerateFlag, 
-				Component::Motion>().each()) {
-				if (!positionReference.IsCore &&
-					generateFlag.GeneratedOnThisTick) {
-					worldPosition.WorldPos = worldPosition.LocalReferenceToCore *
-						pEntities->Registry.get < Component::WorldPosition>(positionReference.ReferenceTo).WorldPos;
-					worldPosition.NextTickWorldPos = worldPosition.WorldPos;
-					worldPosition.WorldMatrix = worldPosition.WorldPos.GetMatrix();
+					moveFlag.Moved = true;
 				}
 			}
 		}
@@ -676,8 +635,11 @@ namespace Systems {
 	public:
 		CoreApplyLinearAcceralation(GameSystem* pGameSystem) : System(pGameSystem) {}
 		void Update() override {
-			for (auto [entity, motion, linearAcceralation, positionReference] : pEntities->Registry.view < Component::Motion, Component::LinearAcceralation, Component::PositionReference > ().each()) {
-				if (positionReference.IsCore) {
+			for (auto [entity, motion, linearAcceralation,worldPosition] : pEntities->Registry.view < 
+				Component::Motion, 
+				Component::LinearAcceralation,
+				Component::WorldPosition> ().each()) {
+				if (worldPosition.PositionalRoot) {
 					motion.WorldDelta = motion.WorldDelta +
 						linearAcceralation.World;
 				}
@@ -688,38 +650,70 @@ namespace Systems {
 	public:
 		CalculateNextTickWorld(GameSystem* pGameSystem) : System(pGameSystem) {}
 		void Update() override {
-			
-			for (auto [entity, worldPosition, positionReference, motion] : pEntities->Registry.view <
+
+			for (auto [entity, motion, worldPosition] : pEntities->Registry.view<
+				Component::Motion,
+				Component::WorldPosition>().each()) {
+				worldPosition.Updated = false;
+			}
+			for (auto [entity, worldPosition, motion] : pEntities->Registry.view <
 				Component::WorldPosition,
-				Component::PositionReference,
 				Component::Motion > ().each()) {
-				DirectX::XMVECTOR zeros{ 0.0f,0.0f,0.0f,0.0f };
-				if (positionReference.IsCore) {
-					if (!DirectX::XMVector4Equal(zeros, motion.WorldDelta.Parallel) ||
-						motion.WorldDelta.Ratio != 1 ||
-						motion.WorldDelta.Rotate != 0) {
-						worldPosition.NextTickWorldPos = motion.WorldDelta +
-							worldPosition.WorldPos;
-						worldPosition.NeedUpdate = true;// とりあえずtrueにしてあとでfalseにしていく
-					}
-					else {
-						worldPosition.NeedUpdate = false;
-					}
+				if (worldPosition.PositionalRoot) {
+					DirectX::XMVECTOR parallel = DirectX::XMVectorAdd(worldPosition.WorldPos.r[3], motion.WorldDelta.r[3]);
+					worldPosition.NextTickWorldPos = worldPosition.WorldPos * motion.WorldDelta;
+					worldPosition.NextTickWorldPos.r[3] = parallel;
 				}
 			}
-			for (auto [entity, worldPosition, positionReference, motion] : pEntities->Registry.view < 
-				Component::WorldPosition, 
-				Component::PositionReference,
-				Component::Motion >().each()) {
-				if (!positionReference.IsCore) {
-					if (pEntities->Registry.get<Component::WorldPosition>(positionReference.ReferenceTo).NeedUpdate) {
-						worldPosition.NextTickWorldPos = worldPosition.LocalReferenceToCore *
-							pEntities->Registry.get<Component::WorldPosition>(positionReference.ReferenceTo).NextTickWorldPos;
-						worldPosition.NeedUpdate = true;
-					}
-					else {
-						worldPosition.NeedUpdate = false;
-					}
+			for (auto [entity, motion, worldPosition] : pEntities->Registry.view <
+				Component::Motion,
+				Component::WorldPosition>().each()) {
+				if (!worldPosition.PositionalRoot) {
+					DirectX::XMMATRIX temp;
+					worldPosition.UpdateAndGetNext(&pEntities->Registry, &temp);
+				}
+			}
+		}
+	};
+	class Unrotate : public System {
+		Unrotate(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+
+			for (auto [entity, worldPosition] : pEntities->Registry.view <
+				Component::WorldPosition>().each()) {
+				worldPosition.WorldPos = Interface::SetRotation(&worldPosition.WorldPos, 0);
+			}
+		}
+	};
+	class LineMotion : public System {
+		LineMotion(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+
+			for (auto [entity, worldPosition, lineMotion, killFlag] : pEntities->Registry.view <
+				Component::WorldPosition,
+				Component::LineMotion,
+				Component::KillFlag>().each()) {
+				Component::WorldPosition* pLeft = pEntities->Registry.try_get<Component::WorldPosition>(lineMotion.Left);
+				Component::WorldPosition* pRight = pEntities->Registry.try_get<Component::WorldPosition>(lineMotion.Right);
+				if (pLeft == nullptr || pRight == nullptr) {
+					// 端になるオブジェクトが消えたら削除される
+					killFlag.KillOnThisTick = true;
+				}
+				else {
+					DirectX::XMVECTOR center = DirectX::XMVectorScale(
+						DirectX::XMVectorAdd(pLeft->WorldPos.r[3], pRight->WorldPos.r[3]), 0.5f);
+					DirectX::XMVECTOR xCoord =DirectX::XMVectorSubtract(pRight->WorldPos.r[3], pLeft->WorldPos.r[3]);
+					float length = DirectX::XMVector2Length(xCoord).m128_f32[0];
+					xCoord = DirectX::XMVector2Normalize(xCoord);
+					DirectX::XMVECTOR yCoord = { xCoord.m128_f32[1],xCoord.m128_f32[0],0,0 };
+					xCoord = DirectX::XMVectorScale(xCoord, length + 2 * lineMotion.Margin);
+					yCoord = DirectX::XMVectorScale(yCoord, 2 * lineMotion.Width);
+					worldPosition.WorldPos = {
+						xCoord,
+						yCoord,
+						{0,0,1,0},
+						center
+					};
 				}
 			}
 		}
@@ -729,19 +723,18 @@ namespace Systems {
 	public:
 		WallHurtbox(GameSystem* pGameSystem) : System(pGameSystem) {}
 		void Update() override {
-
 			for (auto [entity, wallHurtbox, worldPosition, generateFlag, killFlag] : pEntities->Registry.view <
 				Component::WallHurtbox,
 				Component::WorldPosition,
 				Component::GenerateFlag,
 				Component::KillFlag >().each()) {
 				if (generateFlag.GeneratedOnThisTick) {
-					pHurtboxes->SetWall((int)roundf(worldPosition.WorldPos.Parallel.m128_f32[0]),
-						(int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1]), entity);
+					pHurtboxes->SetWall((int)roundf(worldPosition.WorldPos.r[3].m128_f32[0]),
+						(int)roundf(worldPosition.WorldPos.r[3].m128_f32[1]), entity);
 				}
 				if (killFlag.KillOnThisTick) {
-					pHurtboxes->DeleteWall((int)roundf(worldPosition.WorldPos.Parallel.m128_f32[0]),
-						(int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1]));
+					pHurtboxes->DeleteWall((int)roundf(worldPosition.WorldPos.r[3].m128_f32[0]),
+						(int)roundf(worldPosition.WorldPos.r[3].m128_f32[1]));
 				}
 			}
 		}
@@ -760,11 +753,11 @@ namespace Systems {
 				Component::KillFlag	>().each()) {
 				unitOccupationbox.AlredayChecked = false;
 				if (generateFlag.GeneratedOnThisTick) {
-					float radius = worldPosition.WorldPos.Ratio * 0.5f;
-					int bottom = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1] - radius);
-					int top = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1] + radius);
-					int left = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[0] - radius);
-					int right = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[0] + radius);
+					float radius = Interface::ScaleOfMatrix(&worldPosition.WorldPos) * 0.5f;
+					int bottom = (int)roundf(worldPosition.WorldPos.r[3].m128_f32[1] - radius);
+					int top = (int)roundf(worldPosition.WorldPos.r[3].m128_f32[1] + radius);
+					int left = (int)roundf(worldPosition.WorldPos.r[3].m128_f32[0] - radius);
+					int right = (int)roundf(worldPosition.WorldPos.r[3].m128_f32[0] + radius);
 					unitOccupationbox.OccupingRectBottom = bottom;
 					unitOccupationbox.OccupingRectTop = top;
 					unitOccupationbox.OccupingRectLeft = left;
@@ -775,17 +768,16 @@ namespace Systems {
 						}
 					}
 				}
-				if (worldPosition.NeedUpdate)
 				{
 					int OccupyingBottom = unitOccupationbox.OccupingRectBottom;
 					int OccupyingTop = unitOccupationbox.OccupingRectTop;
 					int OccupyingLeft = unitOccupationbox.OccupingRectLeft;
 					int OccupyingRight = unitOccupationbox.OccupingRectRight;
-					float radius = worldPosition.WorldPos.Ratio * 0.5f;
-					int CurrentBottom = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1] - radius);
-					int CurrentTop = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[1] + radius);
-					int CurrentLeft = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[0] - radius);
-					int CurrentRight = (int)roundf(worldPosition.WorldPos.Parallel.m128_f32[0] + radius);
+					float radius = Interface::ScaleOfMatrix(&worldPosition.WorldPos) * 0.5f;
+					int CurrentBottom = (int)roundf(worldPosition.WorldPos.r[3].m128_f32[1] - radius);
+					int CurrentTop = (int)roundf(worldPosition.WorldPos.r[3].m128_f32[1] + radius);
+					int CurrentLeft = (int)roundf(worldPosition.WorldPos.r[3].m128_f32[0] - radius);
+					int CurrentRight = (int)roundf(worldPosition.WorldPos.r[3].m128_f32[0] + radius);
 					//占有エリアが変わったなら
 					if (OccupyingBottom != CurrentBottom ||
 						OccupyingTop != CurrentTop ||
@@ -793,12 +785,12 @@ namespace Systems {
 						OccupyingRight != CurrentRight) {
 						for (int x = OccupyingLeft; x <= OccupyingRight; x++) {
 							for (int y = OccupyingBottom; y <= OccupyingTop; y++) {
-								pHurtboxes->DeleteUnit(x, y, entity,unitData.Team);
+								pHurtboxes->DeleteUnit(x, y, entity, unitData.Team);
 							}
 						}
 						for (int x = CurrentLeft; x <= CurrentRight; x++) {
 							for (int y = CurrentBottom; y <= CurrentTop; y++) {
-								pHurtboxes->SetUnit(x, y, entity,unitData.Team);
+								pHurtboxes->SetUnit(x, y, entity, unitData.Team);
 							}
 						}
 					}
@@ -858,80 +850,181 @@ namespace Systems {
 				Component::HitFlag>().each()) {
 				unitOccupationbox.AlredayChecked = true;
 				hitFlag.IsHit = false;
-				//そもそも動こうとしている場合
-				if (worldPosition.NeedUpdate) {
-					//衝突している場合
-					if (pHurtboxes->CheckUnitCollid(entity)) {
-						hitFlag.IsHit = true;
-					}
+				//衝突している場合
+				if (pHurtboxes->CheckUnitCollid(entity)) {
+					hitFlag.IsHit = true;
 				}
 			}
 		}
 	};
 	//見た目に関する
-	class BlockAppearance : public System {
+	class DrawBlockAppearance : public System {
 	public:
-		BlockAppearance(GameSystem* pGameSystem) : System(pGameSystem) {}
+		DrawBlockAppearance(GameSystem* pGameSystem) : System(pGameSystem) {}
 		void Update() override {
-			
-			for(auto [entity,worldPosition,blockAppearance,blockData,generateFlag,moveFlag,appearanceChanged,killFlag] : pEntities->Registry.view<
+			if (Tick % 60 == 0) {
+				for (auto [entity, worldPosition, appearance, blockData, generateFlag, moveFlag, appearanceChanged, killFlag] : pEntities->Registry.view<
+					Component::WorldPosition,
+					Component::BlockAppearance,
+					Component::BlockData,
+					Component::GenerateFlag,
+					Component::MoveFlag,
+					Component::AppearanceChanged,
+					Component::KillFlag>().each()) {
+					if (blockData.OnTop) {
+						// 影の更新
+						int x = (int)worldPosition.WorldPos.r[3].m128_f32[0];
+						int y = (int)worldPosition.WorldPos.r[3].m128_f32[1];
+						if (pEntities->ShouldUpdateShadow[y * WorldWidth + x]) {
+							appearance.TexIndex.m128_f32[3] =
+								appearance.TexHeadIndex.m128_f32[3] + pEntities->GetShadowIndex(x, y, true);
+						}
+						//見た目の登録
+						if (generateFlag.GeneratedOnThisTick) {
+							Interface::BlockIType* pInstance = nullptr;
+							appearance.BufferDataIndex =
+								pWallAppearances->Add(entity, &pInstance);
+							pInstance->Set(&worldPosition.WorldPos, &appearance.TexIndex);
+						}
+						//見た目の更新
+						if (moveFlag.Moved || appearanceChanged.Changed) {
+							appearanceChanged.Changed = false;
+							Interface::BlockIType* pInstance = nullptr;
+							pWallAppearances->Update(appearance.BufferDataIndex, &pInstance);
+							pInstance->Set(&worldPosition.WorldPos, &appearance.TexIndex);
+						}
+					}
+					else {
+						// 影の更新
+						int x = (int)worldPosition.WorldPos.r[3].m128_f32[0];
+						int y = (int)worldPosition.WorldPos.r[3].m128_f32[1];
+						if (pEntities->ShouldUpdateShadow[y * WorldWidth + x]) {
+							appearance.TexIndex.m128_f32[3] =
+								appearance.TexHeadIndex.m128_f32[3] + pEntities->GetShadowIndex(x, y, false);
+						}
+						//見た目の登録
+						if (generateFlag.GeneratedOnThisTick) {
+							Interface::BlockIType* pInstance = nullptr;
+							appearance.BufferDataIndex =
+								pFloorAppearances->Add(entity, &pInstance);
+							pInstance->Set(&worldPosition.WorldPos, &appearance.TexIndex);
+						}
+						//見た目の更新
+						if (moveFlag.Moved || appearanceChanged.Changed) {
+							appearanceChanged.Changed = false;
+							Interface::BlockIType* pInstance = nullptr;
+							pFloorAppearances->Update(appearance.BufferDataIndex, &pInstance);
+							pInstance->Set(&worldPosition.WorldPos, &appearance.TexIndex);
+						}
+					}
+				}
+				pEntities->ShouldUpdateShadow.reset();
+			}
+		}
+	};
+	class DrawConstant : public System {
+	public:
+		DrawConstant(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			for (auto [entity, worldPosition, appearance, generateFlag, moveFlag, appearanceChanged, texture] : pEntities->Registry.view<
 				Component::WorldPosition,
-				Component::BlockAppearance,
-				Component::BlockData,
+				Component::ConstantAppearance,
 				Component::GenerateFlag,
 				Component::MoveFlag,
 				Component::AppearanceChanged,
-				Component::KillFlag>().each()) {
-				if (blockData.OnTop) {
-					// 影の更新
-					int x = (int)worldPosition.WorldPos.Parallel.m128_f32[0];
-					int y = (int)worldPosition.WorldPos.Parallel.m128_f32[1];
-					if (pEntities->ShouldUpdateShadow[y * WorldWidth + x]) {
-						blockAppearance.TexIndex.m128_f32[3] =
-							blockAppearance.TexHeadIndex.m128_f32[3] + pEntities->GetShadowIndex(x, y, true);
-					}
-					//見た目の登録
-					if (generateFlag.GeneratedOnThisTick) {
-						Interface::BlockInstanceType* pInstance = nullptr;
-						blockAppearance.BufferDataIndex =
-							pWallAppearance->Add(entity, &pInstance);
-						blockAppearance.CopyToBuffer(pInstance, worldPosition);
-					}
-					//見た目の更新
-					if (moveFlag.Moved || appearanceChanged.Changed) {
-						appearanceChanged.Changed = false;
-						Interface::BlockInstanceType* pInstance = nullptr;
-						pWallAppearance->Update(blockAppearance.BufferDataIndex, &pInstance);
-						blockAppearance.CopyToBuffer(pInstance, worldPosition);
-					}
+				Component::Texture>().each()) {
+				//見た目の登録
+				if (generateFlag.GeneratedOnThisTick) {
+					Interface::GeneralIType* pInstance;
+					appearance.BufferDataIndex = pConstantAppearances->Add(entity, &pInstance);
+					Interface::fDebugOutput("new const index:%d\n", appearance.BufferDataIndex);
+					pInstance->Set(&worldPosition.WorldPos, texture.TexOffset + appearance.TexHeadIndex);
 				}
-				else {
-					// 影の更新
-					int x = (int)worldPosition.WorldPos.Parallel.m128_f32[0];
-					int y = (int)worldPosition.WorldPos.Parallel.m128_f32[1];
-					if (pEntities->ShouldUpdateShadow[y * WorldWidth + x]) {
-						blockAppearance.TexIndex.m128_f32[3] =
-							blockAppearance.TexHeadIndex.m128_f32[3] + pEntities->GetShadowIndex(x, y, false);
-					}
-					//見た目の登録
-					if (generateFlag.GeneratedOnThisTick) {
-						Interface::BlockInstanceType* pInstance = nullptr;
-						blockAppearance.BufferDataIndex =
-							pFloorAppearance->Add(entity, &pInstance);
-						blockAppearance.CopyToBuffer(pInstance, worldPosition);
-					}
-					//見た目の更新
-					if (moveFlag.Moved || appearanceChanged.Changed) {
-						appearanceChanged.Changed = false;
-						Interface::BlockInstanceType* pInstance = nullptr;
-						pFloorAppearance->Update(blockAppearance.BufferDataIndex, &pInstance);
-						blockAppearance.CopyToBuffer(pInstance, worldPosition);
-					}
+				//見た目の更新
+				if (moveFlag.Moved || appearanceChanged.Changed) {
+					appearanceChanged.Changed = false;
+					Interface::GeneralIType* pInstance;
+					pConstantAppearances->Update(appearance.BufferDataIndex, &pInstance);
+					pInstance->Set(&worldPosition.WorldPos, texture.TexOffset + appearance.TexHeadIndex);
 				}
 			}
-			pEntities->ShouldUpdateShadow.reset();
 		}
 	};
+	class DrawVariable : public System {
+	public:
+		DrawVariable(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			for (auto [entity, worldPosition, appearance, generateFlag, moveFlag, appearanceChanged, texture] : pEntities->Registry.view<
+				Component::WorldPosition,
+				Component::VariableAppearance,
+				Component::GenerateFlag,
+				Component::MoveFlag,
+				Component::AppearanceChanged,
+				Component::Texture>().each()) {
+				globalStringDraw.SimpleAppend(std::to_string(appearance.BufferDataIndex), 0, 1, 0, worldPosition.WorldPos.r[3], 0.3, 1, StrDrawPos::AsTopLeftCorner);
+				//見た目の登録
+				if (generateFlag.GeneratedOnThisTick) {
+					Interface::EffectIType* pInstance;
+					appearance.BufferDataIndex = pVariableAppearances->Add(entity, &pInstance);
+					pInstance->Set(&worldPosition.WorldPos, texture.TexOffset + appearance.TexHeadIndex, &appearance.Color1, &appearance.Color2);
+				}
+				//見た目の更新
+				if (moveFlag.Moved || appearanceChanged.Changed) {
+					appearanceChanged.Changed = false;
+					Interface::EffectIType* pInstance;
+					pVariableAppearances->Update(appearance.BufferDataIndex, &pInstance);
+					pInstance->Set(&worldPosition.WorldPos, texture.TexOffset + appearance.TexHeadIndex, &appearance.Color1, &appearance.Color2);
+				}
+			}
+		}
+	};
+	class DrawShadow : public System {
+	public:
+		DrawShadow(GameSystem* pGameSystem) : System(pGameSystem) {}
+		void Update() override {
+			for (auto [entity, worldPosition, appearance, mainAppearance,generateFlag, moveFlag, texture] : pEntities->Registry.view<
+				Component::WorldPosition,
+				Component::ShadowAppearance,
+				Component::VariableAppearance,
+				Component::GenerateFlag,
+				Component::MoveFlag,
+				Component::Texture>().each()) {
+				//見た目の登録
+				if (generateFlag.GeneratedOnThisTick) {
+					Interface::GeneralIType* pInstance;
+					appearance.BufferDataIndex = pVariableShadowAppearances->Add(entity, &pInstance);
+					pInstance->Set(&worldPosition.WorldPos, texture.TexOffset);
+				}
+				//見た目の更新
+				if (moveFlag.Moved) {
+					Interface::GeneralIType* pInstance;
+					pVariableShadowAppearances->Update(appearance.BufferDataIndex, &pInstance);
+					pInstance->Set(&worldPosition.WorldPos, texture.TexOffset);
+				}
+			}
+			for (auto [entity, worldPosition, appearance, mainAppearance, generateFlag, moveFlag, texture] : pEntities->Registry.view<
+				Component::WorldPosition,
+				Component::ShadowAppearance,
+				Component::ConstantAppearance,
+				Component::GenerateFlag,
+				Component::MoveFlag,
+				Component::Texture>().each()) {
+				//見た目の登録FUpda
+				if (generateFlag.GeneratedOnThisTick) {
+					Interface::GeneralIType* pInstance;
+					appearance.BufferDataIndex = pConstantShadowAppearances->Add(entity, &pInstance);
+					pInstance->Set(&worldPosition.WorldPos, texture.TexOffset);
+				}
+				//見た目の更新
+				if (moveFlag.Moved) {
+					Interface::GeneralIType* pInstance;
+					pConstantShadowAppearances->Update(appearance.BufferDataIndex, &pInstance);
+					pInstance->Set(&worldPosition.WorldPos, texture.TexOffset);
+				}
+			}
+		}
+	};
+	/*
 	class BallAppearance : public System {
 	public:
 		BallAppearance(GameSystem* pGameSystem) : System(pGameSystem) {}
@@ -946,7 +1039,7 @@ namespace Systems {
 				Component::KillFlag>().each()) {
 				//見た目の登録
 				if (generateFlag.GeneratedOnThisTick) {
-					Interface::BallInstanceType* pInstance[3];
+					Interface::BallIType* pInstance[3];
 
 					ballAppearance.BufferDataIndex = pBallAppearance->Add(entity, pInstance);
 					ballAppearance.CopyToBuffer(pInstance, worldPosition);
@@ -957,7 +1050,7 @@ namespace Systems {
 					appearanceChanged.Changed = false;
 
 
-					Interface::BallInstanceType* pInstance[3];
+					Interface::BallIType* pInstance[3];
 
 					pBallAppearance->Update(ballAppearance.BufferDataIndex, pInstance);
 					ballAppearance.CopyToBuffer(pInstance, worldPosition);
@@ -979,7 +1072,7 @@ namespace Systems {
 				Component::KillFlag>().each()) {
 				//見た目の登録
 				if (generateFlag.GeneratedOnThisTick) {
-					Interface::BulletInstanceType* pInstance = nullptr;
+					Interface::BulletIType* pInstance = nullptr;
 					bulletAppearance.BufferDataIndex =
 						pBulletAppearance->Add(entity, &pInstance);
 					bulletAppearance.CopyToBuffer(pInstance, worldPosition);
@@ -988,12 +1081,12 @@ namespace Systems {
 				//見た目の更新
 				if (moveFlag.Moved || appearanceChanged.Changed) {
 					appearanceChanged.Changed = false;
-					Interface::BulletInstanceType* pInstance = nullptr;
+					Interface::BulletIType* pInstance = nullptr;
 					pBulletAppearance->Update(bulletAppearance.BufferDataIndex, &pInstance);
 					bulletAppearance.CopyToBuffer(pInstance, worldPosition);
 				}
-				globalStringDraw.SimpleAppend(std::to_string((int)entity), 1, 0.5, 0.5, worldPosition.WorldPos.Parallel, 0.5, 1, StrDrawPos::AsTopLeftCorner);
-				globalStringDraw.SimpleAppend(std::to_string((int)bulletAppearance.BufferDataIndex), 0.5, 1, 0.5, worldPosition.WorldPos.Parallel, 0.5, 1, StrDrawPos::AsBottomLeftCorner);
+				globalStringDraw.SimpleAppend(std::to_string((int)entity), 1, 0.5, 0.5, worldPosition.WorldPos.r[3], 0.5, 1, StrDrawPos::AsTopLeftCorner);
+				globalStringDraw.SimpleAppend(std::to_string((int)bulletAppearance.BufferDataIndex), 0.5, 1, 0.5, worldPosition.WorldPos.r[3], 0.5, 1, StrDrawPos::AsBottomLeftCorner);
 			}
 			Interface::fDebugOutput("bullet app count:%d\n", pBulletAppearance->InstanceCount);
 		}
@@ -1013,7 +1106,7 @@ namespace Systems {
 				Component::KillFlag>().each()) {
 				//見た目の登録
 				if (generateFlag.GeneratedOnThisTick) {
-					Interface::EffectInstanceType* pInstance = nullptr;
+					Interface::EffectIType* pInstance = nullptr;
 					effectAppearance.BufferDataIndex =
 						pEffectAppearance->Add(entity, &pInstance);
 					effectAppearance.CopyToBuffer(pInstance, worldPosition);
@@ -1021,13 +1114,14 @@ namespace Systems {
 				//見た目の更新
 				if (moveFlag.Moved || appearanceChanged.Changed) {
 					appearanceChanged.Changed = false;
-					Interface::EffectInstanceType* pInstance = nullptr;
+					Interface::EffectIType* pInstance = nullptr;
 					pEffectAppearance->Update(effectAppearance.BufferDataIndex, &pInstance);
 					effectAppearance.CopyToBuffer(pInstance, worldPosition);
 				}
 			}
 		}
 	};
+	*/
 	//オブジェクトの生成に関する
 	class GenerateHitEffect : public System {
 	public:
@@ -1093,11 +1187,9 @@ namespace Systems {
 						Interface::UnitIndex leader = spawn.Leader;
 						float Xpos = Interface::UniformRandInt((float)spawn.SpawnAreaLeft, (float)spawn.SpawnAreaRight);
 						float Ypos = Interface::UniformRandInt((float)spawn.SpawnAreaBottom, (float)spawn.SpawnAreaTop);
-						Interface::RelationOfCoord pos = Interface::RelationOfCoord();
-						pos.Parallel = {
-							(float)Xpos,(float)Ypos,0,1
-						};
-						pos.Parallel = pEntities->mRouting.NearestWalkablePosition(pos.Parallel);
+						DirectX::XMMATRIX pos = DirectX::XMMatrixIdentity();
+						pos.r[3] = { (float)Xpos,(float)Ypos,0.0f,1.0f };
+						pos.r[3] = pEntities->mRouting.NearestWalkablePosition(pos.r[3]);
 						spawn.CoreData.IsLeader = true;
 						spawn.CoreData.LeaderId = pEntities->EmplaceUnitWithInitData(leader, &spawn.CoreData, &pos);
 						// 部下のスポーン
@@ -1106,11 +1198,9 @@ namespace Systems {
 						while (0 < spawn.CountLeft) {
 							Xpos = Interface::UniformRandFloat((float)spawn.SpawnAreaLeft, (float)spawn.SpawnAreaRight - 1.0f);
 							Ypos = Interface::UniformRandFloat((float)spawn.SpawnAreaBottom, (float)spawn.SpawnAreaTop - 1.0f);
-							Interface::RelationOfCoord pos = Interface::RelationOfCoord();
-							pos.Parallel = {
-								(float)Xpos,(float)Ypos,0,1
-							};
-							pos.Parallel = pEntities->mRouting.NearestWalkablePosition(pos.Parallel);
+							DirectX::XMMATRIX pos = DirectX::XMMatrixIdentity();
+							pos.r[3] = { (float)Xpos,(float)Ypos,0.0f,1.0f };
+							pos.r[3] = pEntities->mRouting.NearestWalkablePosition(pos.r[3]);
 							pEntities->EmplaceUnitWithInitData(member, &spawn.CoreData, &pos);
 							spawn.CountLeft--;
 						}
@@ -1207,13 +1297,11 @@ public:
 		SystemArray.push_back(new Systems::ControlUnitCount(pGameSystem));
 		SystemArray.push_back(new Systems::BindCoreBall(pGameSystem));
 		SystemArray.push_back(new Systems::BindLeaderMember(pGameSystem));
-
-		SystemArray.push_back(new Systems::CalcurateGeneratedWorld(pGameSystem));
 		//描画
-		SystemArray.push_back(new Systems::BlockAppearance(pGameSystem));
-		SystemArray.push_back(new Systems::BallAppearance(pGameSystem));
-		SystemArray.push_back(new Systems::BulletAppearance(pGameSystem));
-		SystemArray.push_back(new Systems::EffectAppearance(pGameSystem));
+		SystemArray.push_back(new Systems::DrawBlockAppearance(pGameSystem));
+		SystemArray.push_back(new Systems::DrawConstant(pGameSystem));
+		SystemArray.push_back(new Systems::DrawVariable(pGameSystem));
+		SystemArray.push_back(new Systems::DrawShadow(pGameSystem));
 
 		//衝突マップに設定する
 		SystemArray.push_back(new Systems::WallHurtbox(pGameSystem));
@@ -1242,6 +1330,34 @@ public:
 			SystemArray[i]->Update();
 			auto end = std::chrono::system_clock::now();
 			ProcessTime[i] = ProcessTime[i] + std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+			//Interface::fDebugOutput("Process:%d finished\n", i);
+			for (auto [entity, worldPosition] : SystemArray[0]->pEntities->Registry.view<
+				Component::WorldPosition>().each()) {
+				if (worldPosition.NextTickWorldPos.r[2].m128_f32[2] > 1.9f && worldPosition.NextTickWorldPos.r[2].m128_f32[2] < 2.1f) {
+					throw("");
+				}
+				if (worldPosition.WorldPos.r[3].m128_f32[0] < -1 || worldPosition.WorldPos.r[3].m128_f32[0] > 1000||
+					worldPosition.WorldPos.r[3].m128_f32[1] < -1 || worldPosition.WorldPos.r[3].m128_f32[1] > 1000||
+					worldPosition.WorldPos.r[3].m128_f32[2] < -10 || worldPosition.WorldPos.r[3].m128_f32[2] > 10) {
+					throw("");
+				}
+				if (Interface::ScaleOfMatrix(&worldPosition.WorldPos) > 4) {
+					throw("");
+				}
+			}
+			for (auto [entity, appearance] : SystemArray[0]->pEntities->Registry.view<
+				Component::ConstantAppearance>().each()) {
+				//Interface::fDebugOutput("const index:%d\n", appearance.BufferDataIndex);
+			}
+			int count = 0;
+			for (auto [entity, unitData] : SystemArray[0]->pEntities->Registry.view<
+				Component::UnitData>().each()) {
+				if (unitData.Team == 1) {
+					count++;
+				}
+			}
+			//Interface::fDebugOutput("team 1 count:%d\n", count);
 		}
 		OutputDebugStringA("Tick End\n");
 		if (Tick % 60 == 0) {

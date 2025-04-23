@@ -1,13 +1,14 @@
 {
     "effectFlame":{
-        "EffectAppearance":{
+        "VariableAppearance":{
             "texture":{
                 "kind":"file",
                 "filePath":"Data/Textures/texBulletSpear.tif"
             },
-            "baseColor0":[1,0,0,1],
-            "baseColor1":[1,1,0,1]
+            "color1":[1,0,0,1],
+            "color2":[1,1,0,1]
         },
+        "Texture":0,
         "WorldPosition":{
             "width":1,
             "parallel":[

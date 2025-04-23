@@ -12,17 +12,22 @@ class LeaderIcon {
 	GraphicalStringDraw* pStringDraw;
 	LineDraw* pLineDraw;
 	Entities* pEntities;
+	int LeaderIndex;
 	// 右上方向が正で左下の角が原点となる座標を使う
 	// 長さの単位はピクセル
-	LeaderIcon(FreeShapeDraw* pFreeShapeDraw, GraphicalStringDraw* pStringDraw, LineDraw* pLineDraw, Entities* pEntities) {
+	LeaderIcon(FreeShapeDraw* pFreeShapeDraw, GraphicalStringDraw* pStringDraw, LineDraw* pLineDraw, Entities* pEntities,int leaderIndex) {
 		this->pFreeShapeDraw = pFreeShapeDraw;
 		this->pStringDraw = pStringDraw;
 		this->pLineDraw = pLineDraw;
 		this->pEntities = pEntities;
+		LeaderIndex = leaderIndex;
 	}
-	void DrawLeaderIcon(float left, float bottom, entt::entity leader) {
+	void DrawLeaderIcon() {
+		float left = 800 + 40 * LeaderIndex;
+		float bottom = D3D.Height - 60;
 		float width = 30;
 		float height = 40;
+		entt::entity leader = pEntities->PlayerLeaders[LeaderIndex];
 		FourPoints outline = FourPoints(
 			{ left,bottom,0.5,1 },
 			{ left,bottom + height,0.5,1 },
@@ -42,6 +47,8 @@ class LeaderIcon {
 
 			pStringDraw->SimpleAppend(std::to_string(pCorpsData->AllMemberUnit.size()), 0.8, 0.8, 0.8, center, 20, 1, StrDrawPos::AsCenter);
 		}
+		// キャラクターの映像を出すにはGameSystemで使ってるバッファから当該キャラクターのものを取り出して座標を補正してこっちのバッファに入れるのが良いだろう
+		// 保存する段階でテクスチャを用意させるのも手か？だけどそれを作れるのなら描画しても変わらんか
 	}
 };
 class UserInterface {
@@ -51,6 +58,8 @@ public:
 	LineDraw mLineDraw;
 	Entities* pEntities;
 	ConstantBuffer* pCBuffer;
+
+
 	UserInterface() {}
 	UserInterface(Entities* pentities,ConstantBuffer* pcBuffer) {
 		pEntities = pentities;
@@ -73,6 +82,7 @@ public:
 			L"BIZ UDゴシック"//フォントの名前
 		);
 		mStringDraw = GraphicalStringDraw(hFont, 65536, 2048, 32);
+
 	}
 	void UpdateWhileMission() {
 		float width = D3D.Width;
@@ -83,8 +93,7 @@ public:
 			0, 0, 1, 0,
 			-1, -1, 0, 1
 		};
-		DirectX::XMStoreFloat4x4(&pCBuffer->Data.ViewProjection,viewProjection);
-		pCBuffer->UpdateAndSet();
+		pCBuffer->UpdateAndSet(&viewProjection,nullptr);
 		mFreeShapeDraw.mAppearances.Clear();
 		mStringDraw.mAppearances.Clear();
 		mLineDraw.mAppearances.Clear();
@@ -118,9 +127,8 @@ public:
 		}
 
 
-
-		mFreeShapeDraw.Draw();
-		mLineDraw.Draw();
-		mStringDraw.Draw();
+		mFreeShapeDraw.Draw(pCBuffer);
+		mLineDraw.Draw(pCBuffer);
+		mStringDraw.Draw(pCBuffer);
 	}
 };

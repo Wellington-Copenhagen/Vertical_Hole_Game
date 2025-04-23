@@ -127,6 +127,6 @@ void TextureArray::SetToGraphicPipeLine() {
 	D3D.m_deviceContext->PSSetShaderResources(0, 1, m_srv.GetAddressOf());
 }
 SameFormatTextureArray BlockTextureArray;
-SameFormatTextureArray BallTextureArray;
-SameFormatTextureArray BulletTextureArray;
-SameFormatTextureArray EffectTextureArray;
+
+SameFormatTextureArray ConstantTextureArray;
+SameFormatTextureArray VariableTextureArray;

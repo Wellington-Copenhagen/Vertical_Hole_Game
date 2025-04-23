@@ -123,7 +123,7 @@ public:
 class ConstantBuffer {
 public:
 	ConstantBuffer();
-	void UpdateAndSet();
+	void UpdateAndSet(DirectX::XMMATRIX* pViewProjection, std::vector<DirectX::XMFLOAT4>* pBlackBoxMatrices);
 	Interface::ConstantType Data;
 	ComPtr<ID3D11Buffer> Buffer;
 };

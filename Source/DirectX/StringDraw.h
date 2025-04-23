@@ -39,9 +39,9 @@ public:
 	// 文字とTextureArray上でのインデックス
 	std::unordered_map<UINT, int> TextureIndexDict;
 
-	TimeBindAppearances<Interface::CharDrawCallType, Interface::CharInstanceType, 1> mAppearances;
-	VertexBuffer<Interface::CharInstanceType> mInstanceBuffer;
-	VertexBuffer<Interface::CharDrawCallType> mDrawCallBuffer;
+	TimeBindAppearances<Interface::EffectDCType, Interface::EffectIType, 1> mAppearances;
+	VertexBuffer<Interface::EffectIType> mInstanceBuffer;
+	VertexBuffer<Interface::EffectDCType> mDrawCallBuffer;
 
 	// 行の高さを1とする
 	// テクスチャ全般の情報
@@ -61,16 +61,13 @@ public:
 	GraphicalStringDraw(HFONT hFont, int maxCharCount, int maxCharKind, int texHeight) {
 		TexHeight = texHeight;
 		TextureIndexDict = std::unordered_map<UINT, int>();
-		mAppearances = TimeBindAppearances<Interface::CharDrawCallType, Interface::CharInstanceType, 1>(maxCharCount);
+		mAppearances = TimeBindAppearances<Interface::EffectDCType, Interface::EffectIType, 1>(maxCharCount);
 		Interface::InitDrawCallUV(mAppearances.DrawCall, 0);
-		mDrawCallBuffer = VertexBuffer < Interface::CharDrawCallType>(mAppearances.GetDrawCallPointer(0), 4, 0);
-		mInstanceBuffer = VertexBuffer<Interface::CharInstanceType>(mAppearances.GetInstancePointer(0), maxCharCount, 1);
+		Interface::InitDrawCallPos(mAppearances.DrawCall, 0);
+		mDrawCallBuffer = VertexBuffer < Interface::EffectDCType>(mAppearances.GetDrawCallPointer(0), 4, 0);
+		mInstanceBuffer = VertexBuffer<Interface::EffectIType>(mAppearances.GetInstancePointer(0), maxCharCount, 1);
 		mTextureArray = SameFormatTextureArray(maxCharKind, true, TexHeight);
 		mhFont = hFont;
-		mAppearances.DrawCall[0].Pos = { 0.0f,0.0f,0.0f,1.0f };
-		mAppearances.DrawCall[1].Pos = { 0.0f,1.0f,0.0f,1.0f };
-		mAppearances.DrawCall[2].Pos = { 1.0f,0.0f,0.0f,1.0f };
-		mAppearances.DrawCall[3].Pos = { 1.0f,1.0f,0.0f,1.0f };
 
 
 		TEXTMETRIC tm;
@@ -91,10 +88,11 @@ public:
 		//時間経過での消滅
 		mAppearances.EraseExpired();
 	}
-	void Draw() {
+	void Draw(ConstantBuffer* pCBuffer) {
 		// 描画処理
 		mTextureArray.SetToGraphicPipeLine();
-		GraphicProcessSetter::SetAsCharacter();
+		pCBuffer->UpdateAndSet(nullptr, &mTextureArray.BlackboxMatrices);
+		GraphicProcessSetter::SetAsEffect();
 		mInstanceBuffer.UpdateAndSet(mAppearances.GetInstancePointer(0), 0, mAppearances.InstanceCount);
 		mDrawCallBuffer.UpdateAndSet(mAppearances.GetDrawCallPointer(0), 0, 4);
 		D3D.m_deviceContext->DrawInstanced(4, mAppearances.InstanceCount, 0, 0);
@@ -126,28 +124,25 @@ public:
 					{0,0},
 					{0,1},
 				};
-				DWORD bufferSize = GetGlyphOutlineA(hdc, code, GGO_GRAY8_BITMAP, &glyphMatrix, 0, nullptr, &mat2);
-				if (bufferSize == GDI_ERROR) {
-					throw("");
-				}
+				DWORD bufferSize = TexHeight * TexHeight;
 				std::vector<byte> pData(bufferSize);
 				GetGlyphOutlineA(hdc, code, GGO_GRAY8_BITMAP, &glyphMatrix, bufferSize, (void*)&pData[0], &mat2);
 				if (bufferSize == GDI_ERROR) {
 					throw("");
 				}
+				int estLength = glyphMatrix.gmBlackBoxX * glyphMatrix.gmBlackBoxY;
 				int adjustedWidth = glyphMatrix.gmBlackBoxX + (4 - (glyphMatrix.gmBlackBoxX % 4)) % 4;
 				std::vector<byte> pInit = std::vector<byte>(TexHeight * TexHeight * 4, 0);
 				for (int y = 0; y < TexHeight; y++) {
 					for (int x = 0; x < TexHeight; x++) {
-						if (x < adjustedWidth && y < glyphMatrix.gmBlackBoxY && y * adjustedWidth + x < pData.size()) {
-							pInit[(y * TexHeight + x) * 4] = min(pData[y * adjustedWidth + x] * 4, 255);
-						}
-						else {
-							pInit[(y * TexHeight + x) * 4] = 0;
+						if (glyphMatrix.gmptGlyphOrigin.x<=x && x < glyphMatrix.gmptGlyphOrigin.x + adjustedWidth
+							&& (tmHeight - tmDescent - glyphMatrix.gmptGlyphOrigin.y)<=y && y < (tmHeight - tmDescent - glyphMatrix.gmptGlyphOrigin.y) + glyphMatrix.gmBlackBoxY 
+							&& y * adjustedWidth + x < pData.size()) {
+							pInit[(y * TexHeight + x) * 4] = min(pData[(y- (tmHeight - tmDescent - glyphMatrix.gmptGlyphOrigin.y)) * adjustedWidth + x- glyphMatrix.gmptGlyphOrigin.x] * 4, 255);
 						}
 					}
 				}
-				int texIndex = mTextureArray.Append((void*)&pInit[0], TexHeight * TexHeight * 4, TexHeight * 4);
+				int texIndex = mTextureArray.AppendImage(SameFormatTextureArray::MakeImageFromColorVector(pInit, TexHeight, TexHeight, 4, 1));
 
 				TextureIndexDict.emplace(code, texIndex);
 				// 左下基準
@@ -191,23 +186,15 @@ public:
 				code = content[i];
 			}
 			int charIndex = TextureIndexDict[code];
-			Interface::CharInstanceType* pNewInstance;
+			Interface::EffectIType* pNewInstance;
 			mAppearances.Add(tickToDelete, isEternal, &pNewInstance);
-			pNewInstance->TexIndex = charIndex;
-			DirectX::XMStoreFloat4(&pNewInstance->Color, *pColor);
-			// 
 			DirectX::XMMATRIX world = {
-				{height * BlackBoxWidths[charIndex],0,0,0},
-				{0,height * BlackBoxHeights[charIndex],0,0},
+				{height,0,0,0},
+				{0,height,0,0},
 				{0,0,1,0},
-				DirectX::XMVectorAdd(leftBottom,
-					DirectX::XMVectorScale(Offsets[charIndex],height))
+				DirectX::XMVectorAdd(leftBottom,{height / 2.0f,height / 2.0f,0,0})
 			};
-			DirectX::XMStoreFloat4x4(&pNewInstance->World,world);
-			pNewInstance->BlackBoxShape = {
-				BlackBoxWidths[charIndex] * (float)tmHeight / (float)TexHeight,
-				BlackBoxHeights[charIndex] * (float)tmHeight / (float)TexHeight,
-			};
+			pNewInstance->Set(&world, charIndex, pColor, pColor);
 			leftBottom = DirectX::XMVectorAdd(leftBottom, { CellWidths[charIndex] * height,0,0,0 });
 		}
 	}

@@ -4,6 +4,7 @@
 #include "Interfaces.h"
 #include "Component.h"
 #include "Source/DirectX/StringDraw.h"
+#include "DebugAssist.h"
 extern GraphicalStringDraw globalStringDraw;
 #define UnitCountPerCell 1
 #define CellWidth 1
@@ -16,17 +17,19 @@ public:
 	std::vector<int> OccupyingUnitCount;
 	std::vector<entt::entity> OccupyingUnits;
 	std::bitset<256 * 256> OccupiedMap;
+	std::bitset<TeamCount* TeamCount>* pHostilityTable;
 	Hurtboxes() {
 
 	}
-	Hurtboxes(entt::registry* pmainregistry) {
-		pMainRegistry = pmainregistry;
+	Hurtboxes(entt::registry* pRegistry, std::bitset<TeamCount* TeamCount>* pHostilityTable) {
+		pMainRegistry = pRegistry;
+		this->pHostilityTable = pHostilityTable;
 		WallIsThere.reset();
 		OccupyingUnitCount = std::vector<int>((WorldWidth / CellWidth) * (WorldHeight / CellWidth));
 		OccupyingWalls = std::vector<entt::entity>(WorldWidth * WorldHeight);
 		OccupyingUnits = std::vector<entt::entity>((WorldWidth / CellWidth) * (WorldHeight / CellWidth) * UnitCountPerCell);
 		OccupiedMap.reset();
-
+		DebugLogOutput("Collision system Initialization succeeded.");
 	}
 	inline void SetWall(int x, int y, entt::entity entity) {
 		int pos = y * WorldWidth + x;
@@ -47,7 +50,7 @@ public:
 		OccupyingUnits[pos * UnitCountPerCell + OccupyingUnitCount[pos]] = entity;
 		OccupiedMap[pos] = true;
 		OccupyingUnitCount[pos]++;
-
+		globalStringDraw.SimpleAppend("HB updated", 0, 0, 1, { (float)x,(float)y,0,1 }, 0.5, 1, StrDrawPos::AsCenter);
 	}
 	void DeleteUnit(int x, int y, entt::entity entity, Interface::HostilityTeam team);
 	// ボール→壁 ボール⇔ボール エフェクト→ボール エフェクト→壁の向きでダメージが与えられる可能性がある

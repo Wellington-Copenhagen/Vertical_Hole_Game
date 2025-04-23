@@ -15,30 +15,18 @@ struct GeneralVSOutput
 cbuffer ConstantBuffer : register(b0)
 {
     column_major float4x4 ViewProjection : MATRIX;
+    float4 BlackBox[2048] : BLACKBOX;
     //Ç±Ç±ÇÃï¿Ç—èáÇÕCPUë§Ç∆ìØÇ∂ÇÊÇ§Ç…èëÇ©Ç»Ç≠ÇƒÇÕÇ»ÇÁÇ»Ç¢
 };
 GeneralVSOutput main(LineVSInput input)
 {
     GeneralVSOutput output;
-    //output.Pos = input.Pos[input.vertexID];
-    switch (input.vertexID)
-    {
-        case 0:
-            output.Pos = input.Pos[0];
-            break;
-        case 1:
-            output.Pos = input.Pos[1];
-            break;
-        case 2:
-            output.Pos = input.Pos[2];
-            break;
-        case 3:
-            output.Pos = input.Pos[3];
-            break;   
-    }
-    output.Pos = mul(ViewProjection, output.Pos);
+    float2 uv = float2(input.UV.x * BlackBox[input.texIndex].x, input.UV.y * BlackBox[input.texIndex].y) + BlackBox[input.texIndex].zw;
+    float4 pos = (1 - uv.x) * (uv.y * input.Pos[0] + (1 - uv.y) * input.Pos[1]);
+    pos = pos + uv.x * (uv.y * input.Pos[2] + (1 - uv.y) * input.Pos[3]);
+    output.Pos = mul(ViewProjection, pos);
     
-    output.UV.xy = input.UV.xy;
+    output.UV.xy = uv;
     output.UV.z = input.texIndex;
     
     output.UV.w = output.Pos.z;

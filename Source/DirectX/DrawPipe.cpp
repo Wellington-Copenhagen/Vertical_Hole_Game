@@ -2,6 +2,8 @@
 #include "DirectX.h"
 #include "framework.h"
 #include "DrawPipe.h"
+#include "DebugAssist.h"
+extern DebugAssist debugAssist;
 
 int GraphicProcessSetter::Width;
 int GraphicProcessSetter::Height;
@@ -16,27 +18,22 @@ ComPtr<ID3D11RasterizerState> GraphicProcessSetter:: m_rasterizerState;
 
 ComPtr<ID3D11SamplerState> GraphicProcessSetter:: m_samplerState;
 
-VertexShaderAndInputLayout<Interface::BlockDrawCallType, Interface::BlockInstanceType> GraphicProcessSetter::mBlockVShaderLayout;
+VertexShaderAndInputLayout<Interface::BlockDCType, Interface::BlockIType> GraphicProcessSetter::mBlockVShaderLayout;
 ComPtr<ID3D11PixelShader> GraphicProcessSetter::mBlockPixelShader;
 
-
-VertexShaderAndInputLayout<Interface::BallDrawCallType, Interface::BallInstanceType> GraphicProcessSetter::mBallVShaderLayout;
-ComPtr<ID3D11PixelShader> GraphicProcessSetter::mBallPixelShader;
-
-VertexShaderAndInputLayout<Interface::BulletDrawCallType, Interface::BulletInstanceType> GraphicProcessSetter::mBulletVShaderLayout;
-ComPtr<ID3D11PixelShader> GraphicProcessSetter::mBulletPixelShader;
-
-VertexShaderAndInputLayout<Interface::EffectDrawCallType, Interface::EffectInstanceType> GraphicProcessSetter::mEffectVShaderLayout;
+VertexShaderAndInputLayout<Interface::EffectDCType, Interface::EffectIType> GraphicProcessSetter::mEffectVShaderLayout;
 ComPtr<ID3D11PixelShader> GraphicProcessSetter::mEffectPixelShader;
 
-VertexShaderAndInputLayout<Interface::CharDrawCallType, Interface::CharInstanceType> GraphicProcessSetter::mCharVShaderLayout;
+VertexShaderAndInputLayout<Interface::CharDCType, Interface::CharIType> GraphicProcessSetter::mCharVShaderLayout;
 ComPtr<ID3D11PixelShader> GraphicProcessSetter::mCharPixelShader;
 
-VertexShaderAndInputLayout<Interface::LineDrawCallType, Interface::LineInstanceType> GraphicProcessSetter::mLineVShaderLayout;
-VertexShaderAndInputLayout<Interface::FreeShapeDrawCallType, Interface::FreeShapeInstanceType> GraphicProcessSetter::mFreeShapeVShaderLayout;
-VertexShaderAndInputLayout<Interface::GeneralDrawCallType, Interface::GeneralInstanceType> GraphicProcessSetter::mGeneralVShaderLayout;
+VertexShaderAndInputLayout<Interface::LineDCType, Interface::LineIType> GraphicProcessSetter::mLineVShaderLayout;
+VertexShaderAndInputLayout<Interface::FreeShapeDCType, Interface::FreeShapeIType> GraphicProcessSetter::mFreeShapeVShaderLayout;
+VertexShaderAndInputLayout<Interface::GeneralDCType, Interface::GeneralIType> GraphicProcessSetter::mGeneralVShaderLayout;
 ComPtr<ID3D11PixelShader> GraphicProcessSetter::mGeneralPixelShader;
 
+VertexShaderAndInputLayout < Interface::GeneralDCType, Interface::GeneralIType > GraphicProcessSetter::mBulletVShaderLayout;
+ComPtr<ID3D11PixelShader> GraphicProcessSetter::mBulletPixelShader;
 
 
 
@@ -52,7 +49,8 @@ GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 		D3D11_DEPTH_STENCIL_DESC dsDesc = {};
 		dsDesc.DepthEnable = true;
 		dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		dsDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+		// 同じ深さなら失敗にした方がピクセルシェーダーで計算する回数が減る
+		dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
 
 		dsDesc.StencilEnable = false;
@@ -170,6 +168,7 @@ GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 		mBlockVShaderLayout.Compile(L"Shader/BlockVertexShader.hlsl", layout);
 		CompilePixelShader(L"Shader/BlockPixelShader.hlsl", mBlockPixelShader.GetAddressOf());
 	}
+	/*
 	//ボール用の
 	{
 		std::vector<D3D11_INPUT_ELEMENT_DESC> layout = {
@@ -187,6 +186,7 @@ GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 		mBallVShaderLayout.Compile(L"Shader/BallVertexShader.hlsl", layout);
 		CompilePixelShader(L"Shader/BallPixelShader.hlsl", mBallPixelShader.GetAddressOf());
 	}
+	*/
 	//エフェクト用の
 	{
 		std::vector<D3D11_INPUT_ELEMENT_DESC> layout = {
@@ -287,6 +287,7 @@ GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 			throw("サンプラの生成に失敗");
 		}
 	}
+	DebugLogOutput("Graphic Process Setter Initialization succeeded.");
 }
 void GraphicProcessSetter::SetAsBlock() {
 	D3D.m_deviceContext->OMSetDepthStencilState(m_depthStencilStateDisable.Get(), 0);
@@ -310,6 +311,7 @@ void GraphicProcessSetter::SetAsBlock() {
 	D3D.m_deviceContext->OMSetRenderTargets(1, D3D.m_backBufferView.GetAddressOf(), D3D.m_depthStencilView.Get());
 
 }
+/*
 void GraphicProcessSetter::SetAsBall() {
 	D3D.m_deviceContext->OMSetDepthStencilState(m_depthStencilStateEnable.Get(), 0);
 	float blendFactor[4]{ D3D11_BLEND_ZERO,D3D11_BLEND_ZERO, D3D11_BLEND_ZERO, D3D11_BLEND_ZERO };
@@ -332,6 +334,7 @@ void GraphicProcessSetter::SetAsBall() {
 	D3D.m_deviceContext->OMSetRenderTargets(1, D3D.m_backBufferView.GetAddressOf(), D3D.m_depthStencilView.Get());
 
 }
+*/
 void GraphicProcessSetter::SetAsEffect() {
 	D3D.m_deviceContext->OMSetDepthStencilState(m_depthStencilStateDisable.Get(), 0);
 	float blendFactor[4]{ D3D11_BLEND_ZERO,D3D11_BLEND_ZERO, D3D11_BLEND_ZERO, D3D11_BLEND_ZERO };

@@ -25,10 +25,11 @@ extern SameFormatTextureArray BlockTextureArray;
 extern SameFormatTextureArray BallTextureArray;
 extern SameFormatTextureArray BulletTextureArray;
 extern SameFormatTextureArray EffectTextureArray;
+extern SameFormatTextureArray VariableTextureArray;
+extern SameFormatTextureArray ConstantTextureArray;
 class GameSystem
 {
 public :
-
 
 	AllSystem mAllSystem;
 	Entities mEntities;
@@ -40,29 +41,26 @@ public :
 	// 頂点バッファと頂点のデータを記録するAppearance
 
 	//マップ最大サイズに床と壁全部配置した場合の大きさ
-	VertexBuffer<Interface::BlockDrawCallType> mFloorDrawCallBuffer;
-	VertexBuffer<Interface::BlockDrawCallType> mWallDrawCallBuffer;
-	EntityBindAppearances<Interface::BlockDrawCallType, Interface::BlockInstanceType,Component::BlockAppearance, 1> mFloorAppearances;
-	VertexBuffer<Interface::BlockInstanceType> mFloorInstanceBuffer;
-	VertexBuffer<Interface::BlockInstanceType> mWallInstanceBuffer;
-	EntityBindAppearances<Interface::BlockDrawCallType, Interface::BlockInstanceType, Component::BlockAppearance, 1> mWallAppearances;
+	VertexBuffer<Interface::BlockDCType> mFloorDCBuffer;
+	VertexBuffer<Interface::BlockDCType> mWallDCBuffer;
+	EntityBindAppearances<Interface::BlockDCType, Interface::BlockIType,Component::BlockAppearance, 1> mFloorAppearances;
+	VertexBuffer<Interface::BlockIType> mFloorIBuffer;
+	VertexBuffer<Interface::BlockIType> mWallIBuffer;
+	EntityBindAppearances<Interface::BlockDCType, Interface::BlockIType, Component::BlockAppearance, 1> mWallAppearances;
+
+	VertexBuffer<Interface::GeneralDCType> mConstantDCBuffer;
+	VertexBuffer<Interface::GeneralIType> mConstantIBuffer;
+	EntityBindAppearances<Interface::GeneralDCType, Interface::GeneralIType, Component::ConstantAppearance, 1> mConstantAppearances;
 
 
-	//影、本体、模様
-	VertexBuffer<Interface::BallDrawCallType> mBallDrawCallBuffer[3];
-	VertexBuffer<Interface::BallInstanceType> mBallInstanceBuffer[3];
-	EntityBindAppearances<Interface::BallDrawCallType, Interface::BallInstanceType, Component::BallAppearance, 3> mBallAppearances;
+	VertexBuffer<Interface::EffectDCType> mVariableDCBuffer;
+	VertexBuffer<Interface::EffectIType> mVariableIBuffer;
+	EntityBindAppearances<Interface::EffectDCType, Interface::EffectIType, Component::VariableAppearance, 1> mVariableAppearances;
 
-
-
-	VertexBuffer<Interface::BulletDrawCallType> mBulletDrawCallBuffer;
-	VertexBuffer<Interface::BulletInstanceType> mBulletInstanceBuffer;
-	EntityBindAppearances<Interface::BulletDrawCallType, Interface::BulletInstanceType,Component::BulletAppearance, 1> mBulletAppearances;
-
-	VertexBuffer<Interface::EffectDrawCallType> mEffectDrawCallBuffer;
-	VertexBuffer<Interface::EffectInstanceType> mEffectInstanceBuffer;
-	EntityBindAppearances<Interface::EffectDrawCallType, Interface::EffectInstanceType,Component::EffectAppearance, 1> mEffectAppearances;
-
+	VertexBuffer<Interface::GeneralDCType> mShadowDCBuffer;
+	VertexBuffer<Interface::GeneralIType> mShadowIBuffer;
+	EntityBindAppearances<Interface::GeneralDCType, Interface::GeneralIType, Component::ShadowAppearance, 1> mConstantShadowAppearances;
+	EntityBindAppearances<Interface::GeneralDCType, Interface::GeneralIType, Component::ShadowAppearance, 1> mVariableShadowAppearances;
 
 
 	int DrawCallUsed;
@@ -79,10 +77,12 @@ public :
 
 	// このゲーム世界の時間を進める(処理を実行する)
 	void Execute(HWND hWnd);
+	void Execute(HWND hWnd,int o);
 
 
 	void ApplyInput();
 
+	void SetUnitThumbnail();
 	// その他、ゲーム用のデータなどをココに書く
 
 	/*

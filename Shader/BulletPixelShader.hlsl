@@ -26,7 +26,6 @@ PSOutput main(BulletVSOutput input)
 {
     PSOutput output;
     output.Color = textures.Sample(g_sampler, input.UVM.xyz);
-    
     output.Depth = input.UVM.w;
     return output;
 }

@@ -28,6 +28,21 @@ BallVSOutput main(BallVSInput input)
 {
     BallVSOutput output;
     output.Pos = mul(input.World, input.Pos);
+    switch (input.vertexID)
+    {
+        case (0):
+            output.Pos = float4(0, 0, 0.5, 1);
+            break;
+        case (1):
+            output.Pos = float4(0, 1, 0.5, 1);
+            break;
+        case (2):
+            output.Pos = float4(1, 0, 0.5, 1);
+            break;
+        case (3):
+            output.Pos = float4(1, 1, 0.5, 1);
+            break;
+    }
     output.Pos = mul(ViewProjection, output.Pos);
     output.UVM.xy = input.UV.xy;
     output.UVM.z = input.texIndex;

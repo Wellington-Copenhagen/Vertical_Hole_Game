@@ -19,10 +19,13 @@ struct CharVSOutput
 cbuffer ConstantBuffer : register(b0)
 {
     column_major float4x4 ViewProjection : MATRIX;
+    float4 BlackBox[2048] : BLACKBOX;
     //Ç±Ç±ÇÃï¿Ç—èáÇÕCPUë§Ç∆ìØÇ∂ÇÊÇ§Ç…èëÇ©Ç»Ç≠ÇƒÇÕÇ»ÇÁÇ»Ç¢
 };
 CharVSOutput main(CharVSInput input)
 {
+    float2 uv = float2(input.UV.x * BlackBox[input.texIndex].x, input.UV.y * BlackBox[input.texIndex].y) + BlackBox[input.texIndex].zw;
+    float4 pos = float4(uv.x - 0.5, -1 * uv.y - 0.5, 0, 1);
     CharVSOutput output;
     output.Pos = mul(input.World, input.Pos);
     output.Pos = mul(ViewProjection, output.Pos);

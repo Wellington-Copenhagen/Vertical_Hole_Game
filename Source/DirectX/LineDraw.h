@@ -37,9 +37,9 @@ inline FourPoints GetFourVFromTwoV(DirectX::XMVECTOR vertex1, DirectX::XMVECTOR 
 class LineDraw {
 public:
 	// ドローコールの情報
-	TimeBindAppearances<Interface::LineDrawCallType, Interface::LineInstanceType, 1> mAppearances;
-	VertexBuffer<Interface::LineDrawCallType> mDrawCallBuffer;
-	VertexBuffer<Interface::LineInstanceType> mInstanceBuffer;
+	TimeBindAppearances<Interface::LineDCType, Interface::LineIType, 1> mAppearances;
+	VertexBuffer<Interface::LineDCType> mDrawCallBuffer;
+	VertexBuffer<Interface::LineIType> mInstanceBuffer;
 
 	// 行の高さを1とする
 	// テクスチャ全般の情報
@@ -48,36 +48,37 @@ public:
 	LineDraw() {
 	}
 	LineDraw(int maxInstanceCount,int maxTextureCount) {
-		mAppearances = TimeBindAppearances<Interface::LineDrawCallType, Interface::LineInstanceType, 1>(maxInstanceCount);
+		mAppearances = TimeBindAppearances<Interface::LineDCType, Interface::LineIType, 1>(maxInstanceCount);
 		Interface::InitDrawCallUV(mAppearances.DrawCall, 0);
 		Interface::InitDrawCallPos(mAppearances.DrawCall, 0);
-		mDrawCallBuffer = VertexBuffer < Interface::LineDrawCallType>(mAppearances.GetDrawCallPointer(0), 4, 0);
-		mInstanceBuffer = VertexBuffer<Interface::LineInstanceType>(mAppearances.GetInstancePointer(0), maxInstanceCount, 1);
+		mDrawCallBuffer = VertexBuffer < Interface::LineDCType>(mAppearances.GetDrawCallPointer(0), 4, 0);
+		mInstanceBuffer = VertexBuffer<Interface::LineIType>(mAppearances.GetInstancePointer(0), maxInstanceCount, 1);
 		mTextureArray = SameFormatTextureArray(maxTextureCount, true, 64);
 	}
 	void Update() {
 		mAppearances.EraseExpired();
 	}
-	void Draw() {
+	void Draw(ConstantBuffer* pCBuffer) {
 		// 描画処理
 		mTextureArray.SetToGraphicPipeLine();
+		pCBuffer->UpdateAndSet(nullptr, &mTextureArray.BlackboxMatrices);
 		GraphicProcessSetter::SetAsLine();
 		mInstanceBuffer.UpdateAndSet(mAppearances.GetInstancePointer(0), 0, mAppearances.InstanceCount);
 		mDrawCallBuffer.UpdateAndSet(mAppearances.GetDrawCallPointer(0), 0, 4);
 		D3D.m_deviceContext->DrawInstanced(4, mAppearances.InstanceCount, 0, 0);
 	}
 	void Append(float red,float green,float blue,DirectX::XMVECTOR left,DirectX::XMVECTOR right,float width,int tickToDelete,bool isEternal=false) {
-		Interface::LineInstanceType* newInstance;
+		Interface::LineIType* newInstance;
 		mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance);
 		newInstance->Set(left, right, width, mTextureArray.AppendOneColorTexture(red, green, blue, 1));
 	}
 	void Append(float red, float green, float blue, float alpha, DirectX::XMVECTOR left, DirectX::XMVECTOR right, float width, int tickToDelete, bool isEternal = false) {
-		Interface::LineInstanceType* newInstance;
+		Interface::LineIType* newInstance;
 		mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance);
 		newInstance->Set(left, right, width, mTextureArray.AppendOneColorTexture(red, green, blue, alpha));
 	}
 	void Append(std::string texPath, DirectX::XMVECTOR left, DirectX::XMVECTOR right, float width, int tickToDelete, bool isEternal = false) {
-		Interface::LineInstanceType* newInstance;
+		Interface::LineIType* newInstance;
 		mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance);
 		newInstance->Set(left, right, width, mTextureArray.AppendFromFileName(texPath));
 	}
@@ -85,9 +86,9 @@ public:
 class FreeShapeDraw {
 public:
 	// ドローコールの情報
-	TimeBindAppearances<Interface::FreeShapeDrawCallType, Interface::FreeShapeInstanceType, 1> mAppearances;
-	VertexBuffer<Interface::FreeShapeDrawCallType> mDrawCallBuffer;
-	VertexBuffer<Interface::FreeShapeInstanceType> mInstanceBuffer;
+	TimeBindAppearances<Interface::FreeShapeDCType, Interface::FreeShapeIType, 1> mAppearances;
+	VertexBuffer<Interface::FreeShapeDCType> mDrawCallBuffer;
+	VertexBuffer<Interface::FreeShapeIType> mInstanceBuffer;
 
 	// 行の高さを1とする
 	// テクスチャ全般の情報
@@ -96,35 +97,36 @@ public:
 	FreeShapeDraw() {
 	}
 	FreeShapeDraw(int maxInstanceCount, int maxTextureCount) {
-		mAppearances = TimeBindAppearances<Interface::FreeShapeDrawCallType, Interface::FreeShapeInstanceType, 1>(maxInstanceCount);
+		mAppearances = TimeBindAppearances<Interface::FreeShapeDCType, Interface::FreeShapeIType, 1>(maxInstanceCount);
 		Interface::InitDrawCallUV(mAppearances.DrawCall, 0);
-		mDrawCallBuffer = VertexBuffer < Interface::FreeShapeDrawCallType>(mAppearances.GetDrawCallPointer(0), 4, 0);
-		mInstanceBuffer = VertexBuffer<Interface::FreeShapeInstanceType>(mAppearances.GetInstancePointer(0), maxInstanceCount, 1);
+		mDrawCallBuffer = VertexBuffer < Interface::FreeShapeDCType>(mAppearances.GetDrawCallPointer(0), 4, 0);
+		mInstanceBuffer = VertexBuffer<Interface::FreeShapeIType>(mAppearances.GetInstancePointer(0), maxInstanceCount, 1);
 		mTextureArray = SameFormatTextureArray(maxTextureCount, true, 64);
 	}
 	void Update() {
 		mAppearances.EraseExpired();
 	}
-	void Draw() {
+	void Draw(ConstantBuffer* pCBuffer) {
 		// 描画処理
 		mTextureArray.SetToGraphicPipeLine();
+		pCBuffer->UpdateAndSet(nullptr, &mTextureArray.BlackboxMatrices);
 		GraphicProcessSetter::SetAsFreeShape();
 		mInstanceBuffer.UpdateAndSet(mAppearances.GetInstancePointer(0), 0, mAppearances.InstanceCount);
 		mDrawCallBuffer.UpdateAndSet(mAppearances.GetDrawCallPointer(0), 0, 4);
 		D3D.m_deviceContext->DrawInstanced(4, mAppearances.InstanceCount, 0, 0);
 	}
 	void Append(float red, float green, float blue, FourPoints shape, int tickToDelete, float alpha = 1, bool isEternal = false) {
-		Interface::FreeShapeInstanceType* newInstance;
+		Interface::FreeShapeIType* newInstance;
 		mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance);
 		newInstance->Set(&shape.Pos1, &shape.Pos2, &shape.Pos3, &shape.Pos4, mTextureArray.AppendOneColorTexture(red, green, blue, alpha));
 	}
 	void Append(std::string texPath, FourPoints shape, int tickToDelete, bool isEternal = false) {
-		Interface::FreeShapeInstanceType* newInstance;
+		Interface::FreeShapeIType* newInstance;
 		mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance);
 		newInstance->Set(&shape.Pos1, &shape.Pos2, &shape.Pos3, &shape.Pos4, mTextureArray.AppendFromFileName(texPath));
 	}
 	void AppendRectEdge(float red, float green, float blue, FourPoints shape, float width, int tickToDelete, float alpha = 1, bool isEternal = false) {
-		Interface::FreeShapeInstanceType* newInstance;
+		Interface::FreeShapeIType* newInstance;
 		DirectX::XMVECTOR horizontalGap = DirectX::XMVECTOR{ width, 0, 0, 0 };
 		DirectX::XMVECTOR virticalGap = DirectX::XMVECTOR{ 0, width, 0, 0 };
 		// 左

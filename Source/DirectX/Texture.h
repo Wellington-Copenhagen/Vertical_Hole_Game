@@ -3,10 +3,10 @@
 #include "DirectX.h"
 #include "Direct3D.h"
 #include "Interfaces.h"
+#include "PathBindJsonValue.h"
 
 //高くにあるもの、不透明なもの優先がよい
 //壁床キャラクターエフェクトみたいな
-
 //描画パイプラインにおけるテクスチャの設定
 class Texture
 {
@@ -39,6 +39,7 @@ public:
 	ComPtr<ID3D11Texture2D> m_texture;
 	std::unordered_map<std::string, int> FilePathIndexTable;
 	std::unordered_map<int, int> ColorIndexTable;
+	std::vector<DirectX::XMFLOAT4> BlackboxMatrices;
 	int FloorShadowIndex;
 	int WallShadowIndex;
 
@@ -87,12 +88,9 @@ public:
 		if (FAILED(D3D.m_device->CreateShaderResourceView(m_texture.Get(), &Tex2DArraydesc, m_srv.GetAddressOf()))) {
 			throw("");
 		}
+		BlackboxMatrices = std::vector<DirectX::XMFLOAT4>(arraySize);
 	}
-	int AppendFromFileName(std::string filePath) {
-		auto itr = FilePathIndexTable.find(filePath);
-		if (itr!=FilePathIndexTable.end()) {
-			return itr->second;
-		}
+	static std::unique_ptr<DirectX::ScratchImage> LoadFromFile(std::string filePath) {
 		setlocale(LC_CTYPE, "jpn");
 		wchar_t wFilename[256];
 		size_t ret;
@@ -102,10 +100,167 @@ public:
 		if (FAILED(DirectX::LoadFromWICFile(wFilename, DirectX::WIC_FLAGS_ALL_FRAMES, &m_info, *image)))
 		{
 			m_info = {};
+			throw("ファイル名：" + filePath + "というテクスチャファイルはありません。");
+		}
+		return image;
+	}
+	static std::unique_ptr<DirectX::ScratchImage> MakeImageFromColorVector(std::vector<byte> colors, int width, int height,int bytePerPixel,int pageCount) {
+		if (width * height * bytePerPixel * pageCount != sizeof(byte) * colors.size()) {
 			throw("");
 		}
+		DirectX::Image img;
+		img.pixels = (uint8_t*)(&colors[0]);
+		img.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		img.width = width;
+		img.height = height;
+		img.rowPitch = width * bytePerPixel;
+		img.slicePitch = width * height * bytePerPixel;
+		std::unique_ptr<DirectX::ScratchImage> pScratchImage = std::make_unique<DirectX::ScratchImage>(DirectX::ScratchImage());
+		pScratchImage->InitializeArrayFromImages(&img, pageCount);
+		return pScratchImage;
+	}
+	// バックバッファの方を読んでるので画面をスワップしなくても良い
+	static std::unique_ptr<DirectX::ScratchImage> MakeImageFromRTV(int top,int left,int width,int height) {
+		ID3D11Texture2D* pRTVbuffer;
+		if (FAILED(D3D.m_swapChain->GetBuffer(0, IID_PPV_ARGS(&pRTVbuffer))))
+		{
+			throw("");
+		}
+
+		ID3D11Texture2D* pTexture;
+		D3D11_TEXTURE2D_DESC desc;
+		desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc.BindFlags = 0;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		desc.MipLevels = 1;
+		desc.Width = width;
+		desc.Height = height;
+		desc.ArraySize = 1;
+		desc.Usage = D3D11_USAGE_STAGING;
+		desc.MiscFlags = 0;
+		desc.SampleDesc.Count = 1;
+		desc.SampleDesc.Quality = 0;
+		if (FAILED(D3D.m_device->CreateTexture2D(&desc, nullptr, &pTexture))) {
+			throw("");
+		}
+		D3D11_BOX box;
+		box.left = left;
+		box.right = left + width;
+		box.top = top;
+		box.bottom = top + height;
+		box.front = 0;
+		box.back = 1;
+		D3D11_TEXTURE2D_DESC t2Desc = {};
+		ZeroMemory(&t2Desc, sizeof(t2Desc));
+		pRTVbuffer->GetDesc(&t2Desc);
+		D3D.m_deviceContext->CopySubresourceRegion(pTexture, 0, 0, 0, 0, pRTVbuffer, 0, &box);
+		D3D11_MAPPED_SUBRESOURCE mapped;
+		if (FAILED(D3D.m_deviceContext->Map(pTexture, 0, D3D11_MAP_READ, 0, &mapped))) {
+			throw("");
+		}
+		std::vector<byte> vData = std::vector<byte>(width * height * 4);
+		if (memcpy_s((void*)(&vData[0]), width * height * 4, mapped.pData, width * height * 4)) {
+			throw("");
+		}
+		for (int i = 0; i < vData.size() / 4; i++) {
+			vData[i * 4 + 3] = 255;
+		}
+		D3D.m_deviceContext->Unmap(pTexture, 0);
+		pTexture->Release();
+		return MakeImageFromColorVector(vData, width, height, 4, 1);
+	}
+	static std::unique_ptr<DirectX::ScratchImage> GetTransparentFromOpaque(std::unique_ptr<DirectX::ScratchImage> blackBack, std::unique_ptr<DirectX::ScratchImage> whiteBack) {
+		DirectX::Image black = blackBack->GetImages()[0];
+		DirectX::Image white = whiteBack->GetImages()[0];
+		if (black.width != white.width || black.height != white.height) {
+			throw("");
+		}
+		std::vector<byte> transparent(black.width * black.height * 4);
+		for (int i = 0; i < black.width * black.height; i++) {
+			// 黒背景でも白背景でも色が同じなら完全に不透明
+			transparent[i * 4 + 3] = 255 - (white.pixels[i * 4] - black.pixels[i * 4]);
+			for (int j = 0; j < 3; j++) {
+				transparent[i * 4 + j] = (byte)roundf(255 * black.pixels[i * 4 + j] / (float)(black.pixels[i * 4 + j] + (255 - white.pixels[i * 4 + j])));
+			}
+		}
+		return MakeImageFromColorVector(transparent, black.width, black.height, 4, 1);
+	}
+	int AppendImage(std::unique_ptr<DirectX::ScratchImage> image) {
+		DirectX::TexMetadata m_info = image->GetMetadata();
 		if (m_info.width != Width || m_info.height != Width) {
 			throw("");
+		}
+		if (TexCount + image->GetImageCount() > BlackboxMatrices.size()) {
+			throw("");
+		}
+		// テクスチャの外側のエリアを求める
+		// この辺のデータは完成版ではメタデータに書き出せると良い(ロードが早くなる)
+		for (int i = 0; i < image->GetImageCount();i++) {
+			uint8_t* pixels= image->GetImages()[i].pixels;
+			float bbTop = 0;
+			float bbBottom = Width;
+			float bbLeft = 0;
+			float bbRight = Width;
+			bool found = false;
+			for (int u = 0; u < Width; u++) {
+				for (int v = 0; v < Width; v++) {
+					if (pixels[4 * (Width * v + u) + 3] > 0) {
+						bbLeft = u;
+						found = true;
+						break;
+					}
+				}
+				if (found)break;
+			}
+			if (bbLeft == Width - 1) {
+				bbLeft = 0;
+				bbRight = 0;
+				bbTop = 0;
+				bbBottom == 0;
+			}
+			else {
+				found = false;
+				for (int u = Width - 1; u >= 0; u--) {
+					for (int v = 0; v < Width; v++) {
+						if (pixels[4 * (Width * v + u) + 3] > 0) {
+							bbRight = u + 1;
+							found = true;
+							break;
+						}
+					}
+					if (found)break;
+				}
+				found = false;
+				for (int v = 0; v < Width; v++) {
+					for (int u = 0; u < Width; u++) {
+						if (pixels[4 * (Width * v + u) + 3] > 0) {
+							bbTop = v;
+							found = true;
+							break;
+						}
+					}
+					if (found)break;
+				}
+				found = false;
+				for (int v = Width - 1; v >= 0; v--) {
+					for (int u = 0; u < Width; u++) {
+						if (pixels[4 * (Width * v + u) + 3] > 0) {
+							bbBottom = v + 1;
+							found = true;
+							break;
+						}
+					}
+					if (found)break;
+				}
+			}
+			bbTop = bbTop / Width;
+			bbBottom = bbBottom / Width;
+			bbLeft = bbLeft / Width;
+			bbRight = bbRight / Width;
+			DirectX::XMVECTOR blackBox{
+				bbRight - bbLeft,bbBottom - bbTop,bbLeft,bbTop
+			};
+			DirectX::XMStoreFloat4(&BlackboxMatrices[TexCount + i], blackBox);
 		}
 		if (m_info.mipLevels == 1)
 		{
@@ -126,39 +281,35 @@ public:
 			}
 			TexCount++;
 		}
+		return headIndex;
+	}
+	static void SaveImage(std::unique_ptr<DirectX::ScratchImage> pScratchImage,std::string filePath) {
+		wchar_t* wPath = new wchar_t[256];
+		if (FAILED(mbstowcs_s(nullptr, wPath, 256, filePath.c_str(), 256))) {
+			throw("");
+		}
+		if (FAILED(DirectX::SaveToWICFile(pScratchImage->GetImages(), pScratchImage->GetMetadata().arraySize, DirectX::WIC_FLAGS_ALL_FRAMES, DirectX::GetWICCodec(DirectX::WIC_CODEC_TIFF), wPath))) {
+			throw("");
+		}
+	}
+	int AppendFromFileName(std::string filePath) {
+		auto itr = FilePathIndexTable.find(filePath);
+		if (itr!=FilePathIndexTable.end()) {
+			return itr->second;
+		}
+		int headIndex = AppendImage(LoadFromFile(filePath));
 		FilePathIndexTable.emplace(filePath, headIndex);
 		return headIndex;
 	}
-	int Append(void* pData,int sliceLength,int sliceWidth) {
-		DirectX::Image img;
-		img.pixels = (uint8_t*)pData;
-		img.format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		img.width = Width;
-		img.height = Width;
-		img.rowPitch = sliceWidth;
-		img.slicePitch = sliceLength;
-		DirectX::ScratchImage mippedImage;
-		if (FAILED(DirectX::GenerateMipMaps(img, DirectX::TEX_FILTER_DEFAULT, MipLevel, mippedImage))) {
-			throw("");
+	int Append(PathBindJsonValue textureJson) {
+		if (Interface::SameString(textureJson.get("kind").asString(), "file")) {
+			return AppendFromFileName(textureJson.get("filePath").asString());
 		}
-
-		ComPtr<ID3D11Resource> tempTexture = nullptr;
-		DirectX::CreateTexture(D3D.m_device.Get(), mippedImage.GetImages(), mippedImage.GetImageCount(), mippedImage.GetMetadata(), &tempTexture);
-		for (int j = 0; j < MipLevel; j++) {
-			D3D.m_deviceContext->CopySubresourceRegion(m_texture.Get(), TexCount * MipLevel + j, 0, 0, 0, tempTexture.Get(), j, nullptr);
-		}
-		TexCount++;
-		return TexCount - 1;
-	}
-	int Append(Json::Value textureJson) {
-		if (Interface::SameString(textureJson.get("kind", "").asString(), "file")) {
-			return AppendFromFileName(textureJson.get("filePath", "").asString());
-		}
-		else if (Interface::SameString(textureJson.get("kind", "").asString(), "oneColor")) {
-			float red = textureJson.get("color", "")[0].asFloat();
-			float green = textureJson.get("color", "")[1].asFloat();
-			float blue = textureJson.get("color", "")[2].asFloat();
-			float alpha = textureJson.get("color", "")[3].asFloat();
+		else if (Interface::SameString(textureJson.get("kind").asString(), "oneColor")) {
+			float red = textureJson.get("color")[0].asFloat();
+			float green = textureJson.get("color")[1].asFloat();
+			float blue = textureJson.get("color")[2].asFloat();
+			float alpha = textureJson.get("color")[3].asFloat();
 			return AppendOneColorTexture(red, green, blue, alpha);
 		}
 		else {
@@ -186,16 +337,14 @@ public:
 			pInit[i * 4 + 2] = iBlue;
 			pInit[i * 4 + 3] = iAlpha;
 		}
-		int headIndex = Append((void*)&pInit[0], Width * Width * 4, Width * 4);
+		int headIndex = AppendImage(MakeImageFromColorVector(pInit, Width, Width, 4, 1));
 		ColorIndexTable.emplace(color, headIndex);
 		return headIndex;
 	}
 	static void SaveShadowTexture(int width, std::string filePath, int topShadowWidth, int bottomShadowWidth, int leftShadowWidth, int rightShadowWidth) {
 		int imgCount = pow(2, 8);
-		DirectX::Image* imgs = new DirectX::Image[imgCount];
+		std::vector<byte> data = std::vector<byte>();
 		for (int i = 0; i < imgCount; i++) {
-			byte* pInit = new byte[width * width * 4];
-			int offset = 0;
 			for (int y = 0; y < width; y++) {
 				for (int x = 0; x < width; x++) {
 					byte iBase = 255;
@@ -251,48 +400,20 @@ public:
 						// 左上
 						iShadow = max(iShadow, min(fromLeft, fromTop));
 					}
-					pInit[offset] = iBase;
-					offset++;
-					pInit[offset] = iGreen;
-					offset++;
-					pInit[offset] = iShadow;
-					offset++;
-					pInit[offset] = iAlpha;
-					offset++;
-					//OutputDebugStringA(std::to_string(iShadow).c_str());
-					//OutputDebugStringA(",");
+					data.push_back(iBase);
+					data.push_back(iGreen);
+					data.push_back(iShadow);
+					data.push_back(iAlpha);
 				}
 			}
-			DirectX::Image img;
-			img.format = DXGI_FORMAT_R8G8B8A8_UNORM;
-			img.width = width;
-			img.height = width;
-			img.rowPitch = width * 4;
-			img.slicePitch = width * width * 4;
-			img.pixels = pInit;
-			imgs[i] = img;
-			//OutputDebugStringA("\n");
 		}
-		DirectX::ScratchImage scratchImg;
-		scratchImg.InitializeArrayFromImages(imgs,pow(2,8));
-		wchar_t* wPath = new wchar_t[256];
-		if (FAILED(mbstowcs_s(nullptr, wPath, 256, filePath.c_str(), 256))) {
-			throw("");
-		}
-		
-		if (FAILED(DirectX::SaveToWICFile(imgs, imgCount, DirectX::WIC_FLAGS_ALL_FRAMES, DirectX::GetWICCodec(DirectX::WIC_CODEC_TIFF), wPath))) {
-			throw("");
-		}
-		delete[] imgs;
-		delete[] wPath;
+		SaveImage(MakeImageFromColorVector(data, width, width, 4, imgCount),filePath);
 	}
 
 	static void SaveWallMask(int width, std::string filePath) {
 		int imgCount = pow(2, 8);
-		DirectX::Image* imgs = new DirectX::Image[imgCount];
+		std::vector<byte> data = std::vector<byte>();
 		for (int i = 0; i < imgCount; i++) {
-			byte* pInit = new byte[width * width * 4];
-			int offset = 0;
 			for (int y = 0; y < width; y++) {
 				for (int x = 0; x < width; x++) {
 					byte iBase = 255;
@@ -320,47 +441,19 @@ public:
 					if (up && upLeft && left && x < width / 2 && y < width / 2) {
 						iBase = max(0, min(255, (-4 * (pow(abs(x / (float)width - 0.5) * 2, 1.5) + pow(abs(y / (float)width - 0.5) * 2, 1.5)) + 5) * 255));
 					}
-					pInit[offset] = iBase;
-					offset++;
-					pInit[offset] = iGreen;
-					offset++;
-					pInit[offset] = iShadow;
-					offset++;
-					pInit[offset] = iAlpha;
-					offset++;
-					//OutputDebugStringA(std::to_string(iShadow).c_str());
-					//OutputDebugStringA(",");
+					data.push_back(iBase);
+					data.push_back(iGreen);
+					data.push_back(iShadow);
+					data.push_back(iAlpha);
 				}
 			}
-			DirectX::Image img;
-			img.format = DXGI_FORMAT_R8G8B8A8_UNORM;
-			img.width = width;
-			img.height = width;
-			img.rowPitch = width * 4;
-			img.slicePitch = width * width * 4;
-			img.pixels = pInit;
-			imgs[i] = img;
-			//OutputDebugStringA("\n");
 		}
-		DirectX::ScratchImage scratchImg;
-		scratchImg.InitializeArrayFromImages(imgs, pow(2, 8));
-		wchar_t* wPath = new wchar_t[256];
-		if (FAILED(mbstowcs_s(nullptr, wPath, 256, filePath.c_str(), 256))) {
-			throw("");
-		}
-
-		if (FAILED(DirectX::SaveToWICFile(imgs, imgCount, DirectX::WIC_FLAGS_ALL_FRAMES, DirectX::GetWICCodec(DirectX::WIC_CODEC_TIFF), wPath))) {
-			throw("");
-		}
-		delete[] imgs;
-		delete[] wPath;
+		SaveImage(MakeImageFromColorVector(data, width, width, 4, imgCount), filePath);
 	}
 	static void SaveLensMask(int width, std::string filePath) {
 		int imgCount = 1;
-		DirectX::Image* imgs = new DirectX::Image[imgCount];
+		std::vector<byte> data = std::vector<byte>();
 		for (int i = 0; i < imgCount; i++) {
-			byte* pInit = new byte[width * width * 4];
-			int offset = 0;
 			for (int y = 0; y < width; y++) {
 				for (int x = 0; x < width; x++) {
 					byte iBase = 0;
@@ -369,39 +462,13 @@ public:
 					byte iAlpha = 0;
 					iAlpha = max(0, min(255, (-4 * (pow(abs(x / (float)width - 0.5) * 2, 4) + pow(abs(y / (float)width - 0.5) * 2, 4)) + 5) * 255));
 					iAlpha = 255 - iAlpha;
-					pInit[offset] = iBase;
-					offset++;
-					pInit[offset] = iGreen;
-					offset++;
-					pInit[offset] = iShadow;
-					offset++;
-					pInit[offset] = iAlpha;
-					offset++;
-					//OutputDebugStringA(std::to_string(iShadow).c_str());
-					//OutputDebugStringA(",");
+					data.push_back(iBase);
+					data.push_back(iGreen);
+					data.push_back(iShadow);
+					data.push_back(iAlpha);
 				}
 			}
-			DirectX::Image img;
-			img.format = DXGI_FORMAT_R8G8B8A8_UNORM;
-			img.width = width;
-			img.height = width;
-			img.rowPitch = width * 4;
-			img.slicePitch = width * width * 4;
-			img.pixels = pInit;
-			imgs[i] = img;
-			//OutputDebugStringA("\n");
 		}
-		DirectX::ScratchImage scratchImg;
-		scratchImg.InitializeArrayFromImages(imgs, pow(2, 8));
-		wchar_t* wPath = new wchar_t[256];
-		if (FAILED(mbstowcs_s(nullptr, wPath, 256, filePath.c_str(), 256))) {
-			throw("");
-		}
-
-		if (FAILED(DirectX::SaveToWICFile(imgs, imgCount, DirectX::WIC_FLAGS_ALL_FRAMES, DirectX::GetWICCodec(DirectX::WIC_CODEC_TIFF), wPath))) {
-			throw("");
-		}
-		delete[] imgs;
-		delete[] wPath;
+		SaveImage(MakeImageFromColorVector(data, width, width, 4, imgCount), filePath);
 	}
 };

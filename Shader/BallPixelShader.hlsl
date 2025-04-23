@@ -26,5 +26,6 @@ PSOutput main(BallVSOutput input)
     output.Color = output.Color * (1 - mask.b * input.Color2.a) + input.Color2 * mask.b * input.Color2.a;
     
     output.Depth = input.UVM.w;
+    output.Color = float4(0, 0, 0, 1);
     return output;
 }

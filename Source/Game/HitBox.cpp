@@ -31,9 +31,9 @@ bool Hurtboxes::CheckCircleCollid(entt::entity subjectEntity)
 	bool isUnit = sUnitData != nullptr;
 	Component::BulletData* sBulletData = pMainRegistry->try_get<Component::BulletData>(subjectEntity);
 	bool isBullet = sBulletData != nullptr;
-	DirectX::XMVECTOR sCenter = pMainRegistry->get<Component::WorldPosition>(subjectEntity).NextTickWorldPos.Parallel;
-	DirectX::XMVECTOR sPrevCenter = pMainRegistry->get<Component::WorldPosition>(subjectEntity).WorldPos.Parallel;
-	float sRadius = pMainRegistry->get<Component::WorldPosition>(subjectEntity).NextTickWorldPos.Ratio * 0.5;
+	DirectX::XMVECTOR sCenter = pMainRegistry->get<Component::WorldPosition>(subjectEntity).NextTickWorldPos.r[3];
+	DirectX::XMVECTOR sPrevCenter = pMainRegistry->get<Component::WorldPosition>(subjectEntity).WorldPos.r[3];
+	float sRadius = Interface::ScaleOfMatrix(&pMainRegistry->get<Component::WorldPosition>(subjectEntity).NextTickWorldPos) * 0.5;
 	Interface::Damage* sGiveDamage = &pMainRegistry->try_get<Component::GiveDamage>(subjectEntity)->Damage;
 	bool hasDamage = sGiveDamage != nullptr;
 	//”»’è‘ÎÛ‚ªŠÜ‚ŞƒGƒŠƒA
@@ -41,7 +41,6 @@ bool Hurtboxes::CheckCircleCollid(entt::entity subjectEntity)
 	int right = max(0, min(WorldWidth, (int)roundf(sCenter.m128_f32[0] + sRadius * 0.5)));
 	int top = max(0, min(WorldHeight, (int)roundf(sCenter.m128_f32[1] + sRadius * 0.5)));
 	int bottom = max(0, min(WorldHeight, (int)roundf(sCenter.m128_f32[1] - sRadius * 0.5)));
-	//Õ“Ë‚µ‚½‚©‚Ç‚¤‚©‚Ì•Ï”
 	for (int x = left; x <= right; x++) {
 		for (int y = bottom; y <= top; y++) {
 			int pos = y * WorldWidth + x;
@@ -82,27 +81,28 @@ bool Hurtboxes::CheckCircleCollid(entt::entity subjectEntity)
 					continue;
 				}
 				DirectX::XMVECTOR relativeVector = DirectX::XMVectorSubtract(
-					sPrevCenter, pMainRegistry->get<Component::WorldPosition>(core).WorldPos.Parallel);
+					sPrevCenter, pMainRegistry->get<Component::WorldPosition>(core).WorldPos.r[3]);
 				float coreToSubject = atan2(relativeVector.m128_f32[1], relativeVector.m128_f32[0]);
-				int ballIndex = (int)std::floorf((coreToSubject - pMainRegistry->get<Component::WorldPosition>(core).WorldPos.Rotate) / (PI / 3)) % 6 + 1;
+				int ballIndex = (int)std::floorf((coreToSubject - Interface::RotationOfMatrix(&pMainRegistry->get<Component::WorldPosition>(core).WorldPos)) / (PI / 3)) % 6 + 1;
 				if (ballIndex < 1) {
 					ballIndex += 6;
 				}
 				entt::entity ball = pMainRegistry->get<Component::UnitData>(core).BallIds[ballIndex];
+				globalStringDraw.SimpleAppend(std::to_string(sRadius), 1, 0, 0, sCenter, 0.5, 1, StrDrawPos::AsCenter);
 				// ‚±‚êˆÈ~ƒ_ƒ[ƒW‚Ìó‚¯“n‚µ
 				if (isUnit) {
 					//“G–¡•û‚Ì”»’è
-					bool hostiling = Interface::HostilityTable[sUnitData->Team * TeamCount + pMainRegistry->get<Component::UnitData>(core).Team];
+					bool hostiling = (*pHostilityTable)[sUnitData->Team * TeamCount + pMainRegistry->get<Component::UnitData>(core).Team];
 					//“G‘Î‚µ‚Ä‚¢‚é‚È‚ç
 					if (hostiling) {
 						//‹——£‚ÌZo
 						float length = DirectX::XMVector2Length(DirectX::XMVectorSubtract(sCenter,
 							pMainRegistry->get<Component::WorldPosition>(ball)
-							.NextTickWorldPos.Parallel)).m128_f32[0];
+							.NextTickWorldPos.r[3])).m128_f32[0];
 						if (length < sRadius / 2 + pMainRegistry->get<Component::BallHurtbox>(ball).DiameterCoef *
-							pMainRegistry->get<Component::WorldPosition>(core).WorldPos.Ratio / 2) {
+							Interface::ScaleOfMatrix(&pMainRegistry->get<Component::WorldPosition>(core).WorldPos) / 2) {
 							//Õ“Ë‚µ‚Ä‚¢‚Ä‚È‚¨‚©‚Â“G‘Î‚µ‚Ä‚¢‚é‚È‚çƒ_ƒ[ƒW‚ğ—^‚¦‚é
-							int sBallIndex = (int)std::floorf((coreToSubject + PI - pMainRegistry->get<Component::WorldPosition>(subjectEntity).WorldPos.Rotate) / (PI / 3)) % 6 + 1;
+							int sBallIndex = (int)std::floorf((coreToSubject + PI - Interface::RotationOfMatrix(&pMainRegistry->get<Component::WorldPosition>(subjectEntity).WorldPos)) / (PI / 3)) % 6 + 1;
 							if (sBallIndex < 1)
 								sBallIndex += 6;
 							entt::entity sBall = sUnitData->BallIds[sBallIndex];
@@ -116,15 +116,15 @@ bool Hurtboxes::CheckCircleCollid(entt::entity subjectEntity)
 				}
 				if(isBullet) {
 					//“G–¡•û‚Ì”»’è
-					bool hostiling = Interface::HostilityTable[sBulletData->Team * TeamCount + pMainRegistry->get<Component::UnitData>(core).Team];
+					bool hostiling = (*pHostilityTable)[sBulletData->Team * TeamCount + pMainRegistry->get<Component::UnitData>(core).Team];
 					//“G‘Î‚µ‚Ä‚¢‚é‚È‚ç
 					if (hostiling) {
 						//‹——£‚ÌZo
 						float length = DirectX::XMVector2Length(DirectX::XMVectorSubtract(sCenter,
 							pMainRegistry->get<Component::WorldPosition>(ball)
-							.NextTickWorldPos.Parallel)).m128_f32[0];
+							.NextTickWorldPos.r[3])).m128_f32[0];
 						if (length < sRadius / 2 + pMainRegistry->get<Component::BallHurtbox>(ball).DiameterCoef *
-							pMainRegistry->get<Component::WorldPosition>(core).WorldPos.Ratio / 2) {
+							Interface::ScaleOfMatrix(&pMainRegistry->get<Component::WorldPosition>(core).WorldPos) / 2) {
 							//Õ“Ë‚µ‚Ä‚¢‚Ä‚È‚¨‚©‚Â“G‘Î‚µ‚Ä‚¢‚é‚È‚çƒ_ƒ[ƒW‚ğ—^‚¦‚é
 							pMainRegistry->get<Component::DamagePool>(ball).AddDamage(sGiveDamage);
 							return true;
@@ -138,8 +138,8 @@ bool Hurtboxes::CheckCircleCollid(entt::entity subjectEntity)
 }
 bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 	//”»’è‘ÎÛ‚ªŠÜ‚ŞƒGƒŠƒA
-	DirectX::XMVECTOR center = pMainRegistry->get<Component::WorldPosition>(thisUnitEntity).NextTickWorldPos.Parallel;
-	float radius = pMainRegistry->get<Component::WorldPosition>(thisUnitEntity).NextTickWorldPos.Ratio * 0.5;
+	DirectX::XMVECTOR center = pMainRegistry->get<Component::WorldPosition>(thisUnitEntity).NextTickWorldPos.r[3];
+	float radius = Interface::ScaleOfMatrix(&pMainRegistry->get<Component::WorldPosition>(thisUnitEntity).NextTickWorldPos) * 0.5;
 	int left = max(0, min(WorldWidth, (int)roundf(center.m128_f32[0] - radius)));
 	int right = max(0, min(WorldWidth, (int)roundf(center.m128_f32[0] + radius)));
 	int top = max(0, min(WorldHeight, (int)roundf(center.m128_f32[1] + radius)));
@@ -160,10 +160,10 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 				else {
 					thisToOther = { 0.5f + radius - (x - center.m128_f32[0]),0,0,0 };
 				}
-				pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel,
+				pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.r[3] = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.r[3],
 					DirectX::XMVectorScale(thisToOther, -1.2));
 				collided = true;
-				if (DirectX::XMVector2Length(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel).m128_f32[0] > 2) {
+				if (DirectX::XMVector2Length(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.r[3]).m128_f32[0] > 2) {
 					throw("");
 				}
 				break;
@@ -179,10 +179,10 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 				else {
 					thisToOther = { 0,0.5f + radius - (y - center.m128_f32[1]),0,0 };
 				}
-				pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel,
+				pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.r[3] = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.r[3],
 					DirectX::XMVectorScale(thisToOther, -1.2));
 				collided = true;
-				if (DirectX::XMVector2Length(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel).m128_f32[0] > 2) {
+				if (DirectX::XMVector2Length(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.r[3]).m128_f32[0] > 2) {
 					throw("");
 				}
 				break;
@@ -204,7 +204,7 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 							else {
 								thisToOther = { 0,0.5f + radius - (y - center.m128_f32[1]),0,0 };
 							}
-							pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel,
+							pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.r[3] = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.r[3],
 								DirectX::XMVectorScale(thisToOther, -0.3));
 						}
 						{
@@ -215,10 +215,10 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 							else {
 								thisToOther = { 0.5f + radius - (x - center.m128_f32[0]),0,0,0 };
 							}
-							pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel,
+							pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.r[3] = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.r[3],
 								DirectX::XMVectorScale(thisToOther, -0.3));
 						}
-						if (DirectX::XMVector2Length(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel).m128_f32[0] > 2) {
+						if (DirectX::XMVector2Length(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.r[3]).m128_f32[0] > 2) {
 							throw("");
 						}
 						collided = true;
@@ -258,19 +258,19 @@ bool Hurtboxes::CheckCircleInterfare(entt::entity thisUnitEntity) {
 					}
 					//‹——£‚ÌZo
 					float length = DirectX::XMVector2Length(DirectX::XMVectorSubtract(center,
-						pMainRegistry->get<Component::WorldPosition>(core).NextTickWorldPos.Parallel)).m128_f32[0];
-					float minimumDist = radius + pMainRegistry->get<Component::WorldPosition>(core).WorldPos.Ratio * 0.5;
+						pMainRegistry->get<Component::WorldPosition>(core).NextTickWorldPos.r[3])).m128_f32[0];
+					float minimumDist = radius + Interface::ScaleOfMatrix(&pMainRegistry->get<Component::WorldPosition>(core).WorldPos) * 0.5;
 					float overlapRate = 1 * (minimumDist-length) / minimumDist;
 					if (overlapRate>0) {
 						//d‚È‚Á‚Ä‚éê‡
-						DirectX::XMVECTOR thisToOther = DirectX::XMVectorSubtract(pMainRegistry->get<Component::WorldPosition>(core).NextTickWorldPos.Parallel,
-							pMainRegistry->get<Component::WorldPosition>(thisUnitEntity).NextTickWorldPos.Parallel);
-						pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel,
+						DirectX::XMVECTOR thisToOther = DirectX::XMVectorSubtract(pMainRegistry->get<Component::WorldPosition>(core).NextTickWorldPos.r[3],
+							pMainRegistry->get<Component::WorldPosition>(thisUnitEntity).NextTickWorldPos.r[3]);
+						pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.r[3] = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.r[3],
 							DirectX::XMVectorScale(thisToOther, -0.1 * overlapRate));
-						pMainRegistry->get<Component::Motion>(core).WorldDelta.Parallel = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(core).WorldDelta.Parallel,
+						pMainRegistry->get<Component::Motion>(core).WorldDelta.r[3] = DirectX::XMVectorAdd(pMainRegistry->get<Component::Motion>(core).WorldDelta.r[3],
 							DirectX::XMVectorScale(thisToOther, 0.1 * overlapRate));
 						collided = true;
-						if (DirectX::XMVector2Length(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.Parallel).m128_f32[0] > 2) {
+						if (DirectX::XMVector2Length(pMainRegistry->get<Component::Motion>(thisUnitEntity).WorldDelta.r[3]).m128_f32[0] > 2) {
 							throw("");
 						}
 					}
@@ -291,10 +291,10 @@ bool Hurtboxes::LimitateInOneBlock(DirectX::XMVECTOR* center, DirectX::XMVECTOR*
 		Interface::EntityPointer wallPointer = pAllEntities->INtoIndex[OccupyingWalls[pos]];
 		DirectX::XMVECTOR E_S = DirectX::XMVectorSubtract(*moveTo, *center);
 		DirectX::XMVECTOR Clow_S = DirectX::XMVectorSubtract(
-			DirectX::XMVectorAdd(pAllEntities->EntityArraies[wallPointer.Archetype].WorldPosition.Components[wallPointer.Index].WorldPos.Parallel,
+			DirectX::XMVectorAdd(pAllEntities->EntityArraies[wallPointer.Archetype].WorldPosition.Components[wallPointer.Index].WorldPos.r[3],
 				{ -1 * (radius + 0.5f),-1 * (radius + 0.5f) ,0.0f,0.0f }), *center);
 		DirectX::XMVECTOR Chigh_S = DirectX::XMVectorSubtract(
-			DirectX::XMVectorAdd(pAllEntities->EntityArraies[wallPointer.Archetype].WorldPosition.Components[wallPointer.Index].WorldPos.Parallel,
+			DirectX::XMVectorAdd(pAllEntities->EntityArraies[wallPointer.Archetype].WorldPosition.Components[wallPointer.Index].WorldPos.r[3],
 				{ radius + 0.5f, radius + 0.5f, 0.0f, 0.0f }), *center);
 		float tLowX = Clow_S.m128_f32[0] / E_S.m128_f32[0];
 		float tHighX = Chigh_S.m128_f32[0] / E_S.m128_f32[0];

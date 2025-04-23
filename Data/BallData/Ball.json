@@ -1,0 +1,14 @@
+{
+    "ballLeader":{
+        "entities":[{
+            "entityName":"ballRegenerate"
+        }
+        ]
+    },
+    "ballMember":{
+        "entities":[{
+            "entityName":"ballGuard"
+        }
+        ]
+    }
+}

@@ -37,6 +37,12 @@ void Camera::Update() {
 		0.0f,2.0f*cosf(Theta)/(ZoomRate*sinf(Theta)),-1.0f / (ZoomRate * sinf(Theta)),0.0f,
 		-1 * CenterCoord.m128_f32[0] * 2.0f / (ZoomRate * Aspect),-1 * CenterCoord.m128_f32[1] * 2.0f / (ZoomRate),1.0f,1.0f,
 	};
+	CameraMatrix = DirectX::XMMATRIX{
+		2.0f / (ZoomRate * Aspect),0.0f,0.0f,0.0f,
+		0.0f,2.0f / ZoomRate,0.0f,0.0f,
+		0.0f,0.0f,-1.0f / ZoomRate,0.0f,
+		-1 * CenterCoord.m128_f32[0] * 2.0f / (ZoomRate * Aspect),-1 * CenterCoord.m128_f32[1] * 2.0f / (ZoomRate),0.9f,1.0f,
+	};
 	//CameraMatrix.r[3] = DirectX::XMVectorSubtract(CameraMatrix.r[3], DirectX::XMVectorScale(CenterCoord,1/ZoomRate));
 	CameraMatrix.r[3].m128_f32[3] = 1.0f;
 	//[3][2]Ç…Ç†ÇÈï™ÇÕçÇÇ¢Ç∆Ç±ÇÎÇ…Ç†ÇÈÇ‡ÇÃÇ™âúÇ…çsÇ≠ÇÊÇ§Ç…Ç∑ÇÈÇΩÇﬂÇÃÇ‡ÇÃ

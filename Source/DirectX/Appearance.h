@@ -77,6 +77,9 @@ public:
 				// 移動させたエンティティに新しい情報を与える
 				CompType* replacedComp = pRegistry->try_get<CompType>(InstanceEntities[i]);
 				if (replacedComp!=nullptr) {
+					if (replacedComp->BufferDataIndex > InstanceCount) {
+						//throw("");
+					}
 					replacedComp->SetInstanceId(i);
 				}
 				//カウントを減らす
@@ -124,11 +127,31 @@ public:
 	}
 	void EraseExpired() {
 		for (int i = 0; i < InstanceCount; i++) {
-			if (std::get<0>(TickToDelete[i])<Tick && !std::get<1>(TickToDelete[i])) {
+			if (std::get<0>(TickToDelete[i])<=Tick && !std::get<1>(TickToDelete[i])) {
 				//頂点データの移動
 				for (int j = 0; j < InstancePerEntity; j++) {
 					Instances[i * InstancePerEntity + j] = Instances[(InstanceCount - 1) * InstancePerEntity + j];
 					ZeroMemory(&Instances[(InstanceCount - 1) * InstancePerEntity + j], sizeof(IType));
+				}
+				//EntIdの移動
+				TickToDelete[i] = TickToDelete[InstanceCount - 1];
+				//カウントを減らす
+				InstanceCount--;
+				i--;
+			}
+		}
+	}
+	template<typename IAType>
+	void EraseExpired(std::vector<IAType>* pInstanceAuxiliaries) {
+		for (int i = 0; i < InstanceCount; i++) {
+			if (std::get<0>(TickToDelete[i]) <= Tick && !std::get<1>(TickToDelete[i])) {
+				//頂点データの移動
+				for (int j = 0; j < InstancePerEntity; j++) {
+					Instances[i * InstancePerEntity + j] = Instances[(InstanceCount - 1) * InstancePerEntity + j];
+					ZeroMemory(&Instances[(InstanceCount - 1) * InstancePerEntity + j], sizeof(IType));
+				}
+				if (pInstanceAuxiliaries != nullptr) {
+					(*pInstanceAuxiliaries)[i] = (*pInstanceAuxiliaries)[InstanceCount - 1];
 				}
 				//EntIdの移動
 				TickToDelete[i] = TickToDelete[InstanceCount - 1];

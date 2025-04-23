@@ -30,7 +30,6 @@ PSOutput main(BulletVSOutput input)
     float4 mask = textures.Sample(g_sampler, input.UVM.xyz);
     output.Color = input.Color0 * mask.r;
     output.Color = output.Color * (1 - mask.g) + input.Color1 * mask.g;
-    
     output.Depth = input.UVM.w;
     return output;
 }

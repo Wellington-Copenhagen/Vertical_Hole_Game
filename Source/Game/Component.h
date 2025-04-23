@@ -1,6 +1,8 @@
 #pragma once
+#include "Resource.h"
 #include "../../Interfaces.h"
 #include "../../Source/DirectX/Texture.h"
+#include "PathBindJsonValue.h"
 
 
 //Initに入れるのは各インスタンスが生成されるときに変更したいこと
@@ -12,9 +14,8 @@
 // これは同時に生成したり消したいので
 // コンポーネントのデータ型、と簡単な管理を行う関数
 extern SameFormatTextureArray BlockTextureArray;
-extern SameFormatTextureArray BallTextureArray;
-extern SameFormatTextureArray BulletTextureArray;
-extern SameFormatTextureArray LineTextureArray;
+extern SameFormatTextureArray ConstantTextureArray;
+extern SameFormatTextureArray VariableTextureArray;
 namespace Component {
 	struct KillFlag {
 		bool KillOnThisTick;
@@ -64,6 +65,7 @@ namespace Component {
 			IsHit = false;
 		}
 	};
+	/*
 	struct PositionReference {
 	public:
 		entt::entity ReferenceTo;
@@ -76,6 +78,7 @@ namespace Component {
 
 		}
 	};
+	*/
 
 	// A0*C0=AC   0
 	// B1 D1 BC+E 1
@@ -84,78 +87,229 @@ namespace Component {
 	//運動に関する性質
 	//描画や衝突判定にも使用
 	struct WorldPosition {
-		// 相似拡縮、z軸を中心とした回転、x,y,z方向の平行移動を記録できる
-		// 1,1,3の変数で表現できるのでいちいち行列を使うよりもその方がよさそうな気もする
-		// 倍率を求めるには2x2成分取り出して行列式に通すとか必要だし
-		// 一方で共通のインターフェイスとして行列も欲しい
-		// 状況次第では拡縮と平行移動の影響だけを受けた座標が欲しい場合もあるし
-		// DirectX::XMMATRIX1つが64kBで256*256*3個用意すると12MBとなる
 	public:
-		DirectX::XMMATRIX WorldMatrix;
-		Interface::RelationOfCoord LocalReferenceToCore;
-		Interface::RelationOfCoord WorldPos;
-		Interface::RelationOfCoord NextTickWorldPos;
-		bool NeedUpdate;
+		DirectX::XMMATRIX LocalReferenceToCore;
+		DirectX::XMMATRIX WorldPos;
+		DirectX::XMMATRIX NextTickWorldPos;
+		bool Updated;
+		bool PositionalRoot;
+		bool FreeToRorate;
+		entt::entity Parent;
 		void Init(Interface::EntityInitData* pInitData) {
 			if (pInitData->IsCore) {
 				WorldPos = LocalReferenceToCore * pInitData->Pos;
-				WorldMatrix = WorldPos.GetMatrix();
+				NextTickWorldPos = WorldPos;
+				PositionalRoot = true;
+				Parent = pInitData->thisEntities;
 			}
 			else {
-				LocalReferenceToCore = pInitData->Pos;
+				LocalReferenceToCore = pInitData->Pos * LocalReferenceToCore;
+				WorldPos = DirectX::XMMatrixIdentity();
+				NextTickWorldPos = WorldPos;
+				PositionalRoot = false;
+				Parent = pInitData->CoreId;
+			}
+			if (WorldPos.r[3].m128_f32[3] > 1.9) {
+				throw("");
 			}
 		}
-		WorldPosition(Json::Value fromLoad) {
-			LocalReferenceToCore.Parallel = Interface::GetVectorFromJson(fromLoad.get("parallel", ""));
-			LocalReferenceToCore.Ratio = fromLoad.get("width", "").asFloat();
-			LocalReferenceToCore.Rotate = 0;
-			NeedUpdate = true;
+		WorldPosition(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			float width = fromLoad.tryGetAsFloat("width", 1);
+			LocalReferenceToCore = DirectX::XMMATRIX{
+				width,0.0f,0.0f,0.0f,
+				0.0f,width,0.0f,0.0f,
+				0.0f,0.0f,1.0f,0.0f,
+				0.0f,0.0f,0.0f,1.0f,
+			};
+			LocalReferenceToCore.r[3] = fromLoad.tryGetAsVector("parallel", { 0,0,0,1 });
+			if (WorldPos.r[3].m128_f32[3] > 1.9) {
+				throw("");
+			}
+			Updated = false;
+		}
+
+		void Update(DirectX::XMMATRIX* pParentWorldPos) {
+			if (FreeToRorate) {
+				float rotate = Interface::RotationOfMatrix(&WorldPos);
+				WorldPos = LocalReferenceToCore * (*pParentWorldPos);
+				WorldPos = Interface::SetRotation(&WorldPos, rotate);
+			}
+			else {
+				WorldPos = LocalReferenceToCore * (*pParentWorldPos);
+			}
+			if (WorldPos.r[3].m128_f32[3] > 1.9) {
+				throw("");
+			}
+			Updated = true;
+		}
+		bool UpdateAndGet(entt::registry* pRegistry, DirectX::XMMATRIX* pWorldPos) {
+			if (PositionalRoot || Updated) {
+				*pWorldPos = WorldPos;
+				return true;
+			}
+			else {
+				if (pRegistry->valid(Parent)) {
+					DirectX::XMMATRIX parentWorldPos;
+					if (pRegistry->get<WorldPosition>(Parent).UpdateAndGet(pRegistry, &parentWorldPos)) {
+						Update(&parentWorldPos);
+						*pWorldPos = WorldPos;
+						return true;
+					}
+					else {
+						pRegistry->get<KillFlag>(Parent).KillOnThisTick = true;
+						return false;
+					}
+				}
+				else {
+					return false;
+				}
+			}
+		}
+
+		void UpdateNext(DirectX::XMMATRIX* pParentNextTickWorldPos) {
+			if (FreeToRorate) {
+				float rotate = Interface::RotationOfMatrix(&NextTickWorldPos);
+				NextTickWorldPos = LocalReferenceToCore * (*pParentNextTickWorldPos);
+				NextTickWorldPos = Interface::SetRotation(&NextTickWorldPos, rotate);
+			}
+			else {
+				NextTickWorldPos = LocalReferenceToCore * (*pParentNextTickWorldPos);
+			}
+			Updated = true;
+		}
+		bool UpdateAndGetNext(entt::registry* pRegistry, DirectX::XMMATRIX* pNextTickWorldPos) {
+			if (PositionalRoot || Updated) {
+				*pNextTickWorldPos = NextTickWorldPos;
+				return true;
+			}
+			else {
+				if (pRegistry->valid(Parent)) {
+					DirectX::XMMATRIX parentNextTickWorldPos;
+					if (pRegistry->get<WorldPosition>(Parent).UpdateAndGetNext(pRegistry, &parentNextTickWorldPos)) {
+						UpdateNext(&parentNextTickWorldPos);
+						*pNextTickWorldPos = NextTickWorldPos;
+						return true;
+					}
+					else {
+						pRegistry->get<KillFlag>(Parent).KillOnThisTick = true;
+						return false;
+					}
+				}
+				else {
+					return false;
+				}
+			}
+		}
+	};
+	struct LineMotion {
+		entt::entity Left;
+		entt::entity Right;
+		float Width; // 太さ方向の幅(直径)
+		float Margin; // 長さ方向でどれだけはみ出すか
+		void Init(Interface::EntityInitData* pInitData) {
+
+		}
+		LineMotion(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			Width = fromLoad.get("width").asFloat();
+			Margin = fromLoad.tryGetAsFloat("margin", 0);
 		}
 	};
  	// TODO 運動に関しては整理したい
 	struct LinearAcceralation {
 	public:
-		Interface::RelationOfCoord World;
+		DirectX::XMMATRIX World;
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		LinearAcceralation(Json::Value fromLoad) {
-			World.Parallel = Interface::GetVectorFromJson(fromLoad.get("parallel", ""));
-			World.Ratio = fromLoad.get("zoom", "").asFloat();
-			World.Rotate = fromLoad.get("rotate", "").asFloat();
+		LinearAcceralation(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			World = Interface::GetMatrix(fromLoad.get("parallel").asVector(),
+				fromLoad.tryGetAsFloat("zoom",0),
+				fromLoad.tryGetAsFloat("rotate",0)
+			);
 		}
 	};
 	struct Motion {
 	public:
-		Interface::RelationOfCoord WorldDelta;
+		DirectX::XMMATRIX WorldDelta;
 		//コアの回転や拡縮はこのパーツの大きさや傾きに影響を与えているので同様に変化の方向、長さを変えないとおかしくなる
 		void Init(Interface::EntityInitData* pInitData) {
-			WorldDelta.Parallel = DirectX::XMVector4Transform(
-					DirectX::XMVectorScale(WorldDelta.Parallel, pInitData->Pos.Ratio),
-					DirectX::XMMatrixRotationZ(pInitData->Pos.Rotate));
+			DirectX::XMMATRIX temp = pInitData->Pos;
+			temp.r[3] = { 0,0,0,1 };
+			WorldDelta.r[3] = DirectX::XMVector4Transform(WorldDelta.r[3], temp);
 		}
-		Motion(Json::Value fromLoad) {
-			if (fromLoad.isMember("parallel")) {
-				WorldDelta.Parallel = Interface::GetVectorFromJson(fromLoad.get("parallel", ""));
+		Motion(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			DirectX::XMVECTOR parallel = fromLoad.tryGetAsVector("parallel", { 0,0,0,0 });
+			parallel.m128_f32[3] = 0;
+			float rotate = fromLoad.tryGetAsFloat("rotate", 0);
+			float scale = fromLoad.tryGetAsFloat("zoom", 1);
+			WorldDelta = Interface::GetMatrix(&parallel, rotate, scale);
+		}
+		void Headfor(float target,DirectX::XMMATRIX* worldPos,float maxAngulerSpeed) {
+			float headingDist = target - Interface::RotationOfMatrix(worldPos);
+			if (headingDist > PI) {
+				headingDist -= 2 * PI;
 			}
-			else {
-				WorldDelta.Parallel = { 0.0f,0.0f, 0.0f, 0.0f };
+			if (headingDist < -1 * PI) {
+				headingDist += 2 * PI;
 			}
-			if (fromLoad.isMember("rotate")) {
-				WorldDelta.Ratio = fromLoad.get("zoom", "").asFloat();
+			float rotate = 0;
+			if (headingDist > 0) {//q
+				rotate = min(maxAngulerSpeed, headingDist);
 			}
-			else {
-				WorldDelta.Ratio = 1.0f;
+			if (headingDist < 0) {//e
+				rotate = max(headingDist, -1 * maxAngulerSpeed);
 			}
-			if (fromLoad.isMember("ratate")) {
-				WorldDelta.Rotate = fromLoad.get("rotate", "").asFloat();
-			}
-			else {
-				WorldDelta.Rotate = 0.0f;
-			}
+			WorldDelta = Interface::SetRotation(&WorldDelta, rotate);
 		}
 	};
 	//見た目に関する性質
+	struct Texture {
+		float TexOffset;
+		void Init(Interface::EntityInitData* pInitData) {
+		}
+		Texture(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			TexOffset = 0;
+		}
+	};
+	struct ConstantAppearance {
+		Interface::RectAppId BufferDataIndex;
+		float TexHeadIndex;
+		void Init(Interface::EntityInitData* pInitData) {
+		}
+		ConstantAppearance(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			TexHeadIndex = (float)ConstantTextureArray.Append(fromLoad.get("texture"));
+		}
+		void SetInstanceId(Interface::RectAppId newId) {
+			BufferDataIndex = newId;
+		}
+
+	};
+	struct VariableAppearance {
+		Interface::RectAppId BufferDataIndex;
+		DirectX::XMVECTOR Color1;
+		DirectX::XMVECTOR Color2;
+		float TexHeadIndex;
+		void Init(Interface::EntityInitData* pInitData) {
+		}
+		VariableAppearance(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			Color1 = fromLoad.get("color1").asVector();
+			Color2 = fromLoad.get("color2").asVector();
+			TexHeadIndex = (float)VariableTextureArray.Append(fromLoad.get("texture"));
+		}
+		void SetInstanceId(Interface::RectAppId newId) {
+			BufferDataIndex = newId;
+		}
+	};
+	struct ShadowAppearance {
+		Interface::RectAppId BufferDataIndex;
+		void Init(Interface::EntityInitData* pInitData) {
+		}
+		ShadowAppearance(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+		}
+		void SetInstanceId(Interface::RectAppId newId) {
+			BufferDataIndex = newId;
+		}
+	};
 	struct BlockAppearance {
 	public:
 		Interface::RectAppId BufferDataIndex;
@@ -165,25 +319,27 @@ namespace Component {
 		DirectX::XMVECTOR Stain;
 		void Init(Interface::EntityInitData* pInitData) {
 		}
-		BlockAppearance(Json::Value fromLoad) {
+		BlockAppearance(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
 			TexHeadIndex = DirectX::XMVECTOR
 			{
-				(float)BlockTextureArray.Append(fromLoad.get("tex1", "")),
-				(float)BlockTextureArray.Append(fromLoad.get("tex2", "")),
-				(float)BlockTextureArray.Append(fromLoad.get("tex3", "")),
-				(float)BlockTextureArray.Append(fromLoad.get("mask", ""))
+				(float)BlockTextureArray.Append(fromLoad.get("tex1")),
+				(float)BlockTextureArray.Append(fromLoad.get("tex2")),
+				(float)BlockTextureArray.Append(fromLoad.get("tex3")),
+				(float)BlockTextureArray.Append(fromLoad.get("mask"))
 			};
 			TexIndex = TexHeadIndex;
 			Stain = { 0,0,0,0 };
 		}
-		void CopyToBuffer(Interface::BlockInstanceType* pDst,
+		void CopyToBuffer(Interface::BlockIType* pDst,
 			Component::WorldPosition& worldPosition) {
-			pDst->Set(&worldPosition.WorldMatrix, &TexIndex);
+			pDst->Set(&worldPosition.WorldPos, &TexIndex);
 		}
 		void SetInstanceId(Interface::RectAppId newId) {
 			BufferDataIndex = newId;
 		}
 	};
+	/*
+
 	struct BallAppearance {
 	public:
 		// 足元(落ち影)、本体色・陰、模様・ハイライト
@@ -198,14 +354,14 @@ namespace Component {
 			Color0[1] = pInitData->BaseColor0;
 			Color1[1] = pInitData->BaseColor1;
 		}
-		void Load(Json::Value fromLoad,std::string layerName,int index) {
-			TexHeadIndex[index] = (float)BallTextureArray.Append(fromLoad.get(layerName, "").get("texture", ""));
+		void Load(PathBindJsonValue fromLoad,std::string layerName,int index) {
+			TexHeadIndex[index] = (float)BallTextureArray.Append(fromLoad.get(layerName).get("texture"));
 			TexIndex[index] = TexHeadIndex[index];
-			Color0[index] = Interface::GetVectorFromJson(fromLoad.get(layerName, "").get("color0", ""));
-			Color1[index] = Interface::GetVectorFromJson(fromLoad.get(layerName, "").get("color1", ""));
-			Color2[index] = Interface::GetVectorFromJson(fromLoad.get(layerName, "").get("color2", ""));
+			Color0[index] = Interface::GetVectorFromJson(fromLoad.get(layerName).get("color0"));
+			Color1[index] = Interface::GetVectorFromJson(fromLoad.get(layerName).get("color1"));
+			Color2[index] = Interface::GetVectorFromJson(fromLoad.get(layerName).get("color2"));
 		}
-		BallAppearance(Json::Value fromLoad) {
+		BallAppearance(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
 			Load(fromLoad, "shadow", 0);
 			Load(fromLoad, "base", 1);
 			Load(fromLoad, "pattern", 2);
@@ -213,12 +369,7 @@ namespace Component {
 		void CopyToBuffer(Interface::BallInstanceType* pDst[3],
 			Component::WorldPosition& worldPosition) {
 			//影
-			DirectX::XMMATRIX shadowWorld{
-				{worldPosition.WorldPos.Ratio, 0.0f, 0.0f, 0.0f},
-				{0.0f, worldPosition.WorldPos.Ratio, 0.0f, 0.0f},
-				{0.0f, 0.0f, 0.0f, 0.0f},
-				DirectX::XMVectorAdd({0.0f, worldPosition.WorldPos.Ratio * -0.1f, 0.0f, 0.0f},worldPosition.WorldPos.Parallel)
-			};
+			DirectX::XMMATRIX shadowWorld = worldPosition.WorldPos;
 			pDst[0]->Set(&shadowWorld,
 				TexIndex[0],
 				&Color0[0],
@@ -227,12 +378,7 @@ namespace Component {
 
 
 			//本体
-			DirectX::XMMATRIX baseWorld{
-				{worldPosition.WorldPos.Ratio, 0.0f, 0.0f, 0.0f },
-				{0.0f, worldPosition.WorldPos.Ratio, 0.0f, 0.0f},
-				{0.0f, 0.0f, 0.0f, 0.0f},
-				worldPosition.WorldPos.Parallel
-			};
+			DirectX::XMMATRIX baseWorld = worldPosition.WorldPos;
 			pDst[1]->Set(&baseWorld,
 				TexIndex[1],
 				&Color0[1],
@@ -241,13 +387,7 @@ namespace Component {
 
 			//模様
 			//上にあるものが奥に見えるのの再現
-			DirectX::XMMATRIX patternWorld{
-				0.0f, 0.0f, 0.0f, 0.0f,
-					0.0f, 0.0f, 0.0f, 0.0f,
-					0.0f, 0.0f, 0.0f, 0.0f,
-					0.0f, worldPosition.WorldPos.Ratio * 0.2f, 0.0f, 0.0f
-			};
-			patternWorld = patternWorld + worldPosition.WorldMatrix;
+			DirectX::XMMATRIX patternWorld = worldPosition.WorldPos;
 			pDst[2]->Set(&patternWorld,
 				TexIndex[2],
 				&Color0[2],
@@ -266,13 +406,13 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		BulletAppearance(Json::Value fromLoad) {
-			TexHeadIndex = (float)BulletTextureArray.Append(fromLoad.get("texture", ""));
+		BulletAppearance(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			TexHeadIndex = (float)BulletTextureArray.Append(fromLoad.get("texture"));
 			TexIndex = TexHeadIndex;
 		}
 		void CopyToBuffer(Interface::BulletInstanceType* pDst,
 			Component::WorldPosition& worldPosition) {
-			pDst->Set(&worldPosition.WorldMatrix,TexIndex);
+			pDst->Set(&worldPosition.WorldPos,TexIndex);
 		}
 		void SetInstanceId(Interface::RectAppId newId) {
 			BufferDataIndex = newId;
@@ -288,15 +428,15 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		EffectAppearance(Json::Value fromLoad) {
-			TexHeadIndex = (float)BulletTextureArray.Append(fromLoad.get("texture", ""));
+		EffectAppearance(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			TexHeadIndex = (float)BulletTextureArray.Append(fromLoad.get("texture"));
 			TexIndex = TexHeadIndex;
-			Color0 = Interface::GetVectorFromJson(fromLoad.get("baseColor0", ""));
-			Color1 = Interface::GetVectorFromJson(fromLoad.get("baseColor1", ""));
+			Color0 = Interface::GetVectorFromJson(fromLoad.get("baseColor0"));
+			Color1 = Interface::GetVectorFromJson(fromLoad.get("baseColor1"));
 		}
 		void CopyToBuffer(Interface::EffectInstanceType* pDst,
 			Component::WorldPosition& worldPosition) {
-			pDst->Set(&worldPosition.WorldMatrix,
+			pDst->Set(&worldPosition.WorldPos,
 				TexIndex,
 				&Color0,
 				&Color1);
@@ -305,6 +445,7 @@ namespace Component {
 			BufferDataIndex = newId;
 		}
 	};
+	*/
 	//当たり判定に関する性質
 	struct CircleHitbox {
 	public:
@@ -316,9 +457,9 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		CircleHitbox(Json::Value fromLoad) {
-			DiameterCoef = fromLoad.get("diameterCoef","").asFloat();
-			RelativeCenter = Interface::GetVectorFromJson(fromLoad.get("relativeCenter", ""));
+		CircleHitbox(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			DiameterCoef = fromLoad.tryGetAsFloat("diameterCoef", 1);
+			RelativeCenter = fromLoad.tryGetAsVector("relativeCenter",{0,0,0,1});
 		}
 	};
 	// 各ボールに付随する当たり判定/喰らい判定に関する性質
@@ -329,8 +470,8 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		BallHurtbox(Json::Value fromLoad) {
-			DiameterCoef = fromLoad.get("diameterCoef", "").asFloat();
+		BallHurtbox(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			DiameterCoef = fromLoad.get("diameterCoef").asFloat();
 		}
 	};
 	// コアに付随する占有に関する性質
@@ -345,7 +486,7 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		UnitOccupationbox(Json::Value fromLoad) {
+		UnitOccupationbox(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
 			AlredayChecked = false;
 		}
 	};
@@ -355,7 +496,7 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		WallHurtbox(Json::Value fromLoad) {
+		WallHurtbox(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
 			RefleshOccupation = true;
 		}
 	};
@@ -387,7 +528,7 @@ namespace Component {
 			Team = pInitData->Team;
 			LeaderUnit = pInitData->thisEntities;
 		}
-		CorpsData(Json::Value fromLoad) {
+		CorpsData(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
 
 		}
 	};
@@ -434,7 +575,7 @@ namespace Component {
 		// 定点位置、方向で停止する
 
 		// 攻撃系の命令
-		float AttackAt;
+		DirectX::XMVECTOR AttackAt;
 		bool Fire;
 
 
@@ -449,13 +590,13 @@ namespace Component {
 			Weight = pInitData->Weight;
 			RadianPerTick = pInitData->RadianPerTick;
 			MoveTilePerTick = pInitData->MoveTilePerTick;
-			MoveTilePerTick = 0.06;
+			MoveTilePerTick = 0.04;
 			SpeedBuff = pInitData->SpeedMultiply;
 			BallCount = 0;
 			DistanceThresholdMax = 0;
 			DistanceThresholdMin = 0;
-			FinalTarget.Pos = pInitData->Pos.Parallel;
-			AreaBorderTarget.Pos = pInitData->Pos.Parallel;
+			FinalTarget.Pos = pInitData->Pos.r[3];
+			AreaBorderTarget.Pos = pInitData->Pos.r[3];
 			PreviousTickArea = -1;
 			PreviousTargetPos = {0,0,0,1};
 			Heading = { 0,0,0,0 };
@@ -464,7 +605,7 @@ namespace Component {
 
 			MaxHP = MaxHP * pInitData->HealthMultiply;
 		}
-		UnitData(Json::Value fromLoad) {
+		UnitData(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
 			AttackRange = 20;
 			MaxHP = 100;
 		}
@@ -480,13 +621,13 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		Attack(Json::Value fromLoad) {
-			CoolTime = fromLoad.get("coolTime", "").asInt();
+		Attack(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			CoolTime = fromLoad.get("coolTime").asInt();
 			NextAbleTick = 0;
-			Bullet = Interface::EntNameHash[fromLoad.get("bullet", "").asString()];
-			Count = fromLoad.get("count", "").asInt();
-			headingError = fromLoad.get("headingError", "").asFloat();
-			headingFork = fromLoad.get("headingFork", "").asFloat();
+			Bullet = (*pEntNameHash)[fromLoad.get("bullet").asString()];
+			Count = fromLoad.get("count").asInt();
+			headingError = fromLoad.get("headingError").asFloat();
+			headingFork = fromLoad.get("headingFork").asFloat();
 		}
 	};
 	struct BallData {
@@ -500,16 +641,16 @@ namespace Component {
 		float Weight;
 
 		void Init(Interface::EntityInitData* pInitData){
-			AngleFromCore = atan2f(pInitData->Pos.Parallel.m128_f32[1], pInitData->Pos.Parallel.m128_f32[0]);
-			OnCenter = pInitData->Pos.Parallel.m128_f32[0] == 0 && pInitData->Pos.Parallel.m128_f32[1] == 0;
+			AngleFromCore = atan2f(pInitData->Pos.r[3].m128_f32[1], pInitData->Pos.r[3].m128_f32[0]);
+			OnCenter = pInitData->Pos.r[3].m128_f32[0] == 0 && pInitData->Pos.r[3].m128_f32[1] == 0;
 			Attack = Attack * pInitData->DamageMultiply;
 			CoreId = pInitData->CoreId;
 		}
-		BallData(Json::Value fromLoad) {
-			Attack = fromLoad.get("attack", "").asFloat();
-			MovePower = fromLoad.get("movePower", "").asFloat();
-			RotatePower = fromLoad.get("rotatePower", "").asFloat();
-			Weight = fromLoad.get("weight", "").asFloat();
+		BallData(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			Attack = fromLoad.get("attack").asFloat();
+			MovePower = fromLoad.get("movePower").asFloat();
+			RotatePower = fromLoad.get("rotatePower").asFloat();
+			Weight = fromLoad.get("weight").asFloat();
 		}
 	};
 	struct BulletData {
@@ -519,9 +660,9 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 			Team = pInitData->Team;
 		}
-		BulletData(Json::Value fromLoad) {
-			InterfareToWall = fromLoad.get("interfareToWall", "").asBool();
-			InterfareToBall = fromLoad.get("interfareToBall", "").asBool();
+		BulletData(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			InterfareToWall = fromLoad.tryGetAsBool("interfareToWall",true);
+			InterfareToBall = fromLoad.tryGetAsBool("interfareToBall",true);
 		}
 	};
 	struct BlockData {
@@ -534,7 +675,7 @@ namespace Component {
 			Breakable = pInitData->Breakable;
 			DamageObserveEntity = pInitData->DamageObserveEntity;
 		}
-		BlockData(Json::Value fromLoad) {
+		BlockData(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
 
 		}
 	};
@@ -544,7 +685,7 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		GiveDamage(Json::Value fromLoad) {
+		GiveDamage(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
 			Damage = Interface::Damage(fromLoad);
 		}
 	};
@@ -554,7 +695,7 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		DamagePool(Json::Value fromLoad) {
+		DamagePool(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
 			Damage = Interface::Damage(fromLoad);
 		}
 		// 防御とかダメージカットを加味してダメージを加算する
@@ -573,11 +714,11 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		HitEffect(Json::Value fromLoad) {
-			PrototypeEntity = Interface::EntNameHash[fromLoad.get("effectName", "").asString()];
-			LeftRadian = fromLoad.get("leftRadian", "").asFloat();
-			RightRadian = fromLoad.get("rightRadian", "").asFloat();
-			EjectCount = fromLoad.get("count", "").asInt();
+		HitEffect(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			PrototypeEntity = (*pEntNameHash)[fromLoad.get("effectName").asString()];
+			LeftRadian = fromLoad.get("leftRadian").asFloat();
+			RightRadian = fromLoad.get("rightRadian").asFloat();
+			EjectCount = fromLoad.get("count").asInt();
 		}
 	};
 	struct Trajectory {
@@ -592,14 +733,14 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		Trajectory(Json::Value fromLoad) {
-			PrototypeEntity = Interface::EntNameHash[fromLoad.get("effectName", "").asString()];
-			LeftRadian = fromLoad.get("leftRadian", "").asFloat();
-			RightRadian = fromLoad.get("rightRadian", "").asFloat();
-			EjectCount = fromLoad.get("count", "").asInt();
-			EjectStartTick = fromLoad.get("ejectStartTick", "").asInt();
-			EjectEndTick = fromLoad.get("ejectEndTick", "").asInt();
-			EjectInterval = fromLoad.get("ejectInterval", "").asInt();
+		Trajectory(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			PrototypeEntity = (*pEntNameHash)[fromLoad.get("effectName").asString()];
+			LeftRadian = fromLoad.get("leftRadian").asFloat();
+			RightRadian = fromLoad.get("rightRadian").asFloat();
+			EjectCount = fromLoad.get("count").asInt();
+			EjectStartTick = fromLoad.get("ejectStartTick").asInt();
+			EjectEndTick = fromLoad.get("ejectEndTick").asInt();
+			EjectInterval = fromLoad.get("ejectInterval").asInt();
 		}
 	};
 
@@ -612,11 +753,11 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		InvationObservance(Json::Value fromLoad) {
-			Left = fromLoad.get("observeArea", "").get("left", "").asInt();
-			Right = fromLoad.get("observeArea", "").get("right", "").asInt();
-			Bottom = fromLoad.get("observeArea", "").get("bottom", "").asInt();
-			Top = fromLoad.get("observeArea", "").get("top", "").asInt();
+		InvationObservance(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			Left = fromLoad.get("observeArea").get("left").asInt();
+			Right = fromLoad.get("observeArea").get("right").asInt();
+			Bottom = fromLoad.get("observeArea").get("bottom").asInt();
+			Top = fromLoad.get("observeArea").get("top").asInt();
 		}
 	};
 	struct UnitCountObservance {
@@ -625,9 +766,9 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		UnitCountObservance(Json::Value fromLoad) {
-			Border = fromLoad.get("borderCount", "").asInt();
-			Team = fromLoad.get("team", "").asInt();
+		UnitCountObservance(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			Border = fromLoad.get("borderCount").asInt();
+			Team = fromLoad.get("team").asInt();
 		}
 	};
 	struct Spawn {
@@ -644,17 +785,17 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		Spawn(Json::Value fromLoad) {
-			Leader = Interface::UnitNameHash[fromLoad.get("leaderUnit", "").asString()];
-			Member = Interface::UnitNameHash[fromLoad.get("memberUnit", "").asString()];
-			CoreData = Interface::EntityInitData(fromLoad.get("initData", ""));
-			CountLeft = fromLoad.get("count", "").asInt();
-			TimeGapSince = fromLoad.get("timeGap", "").asInt();
+		Spawn(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
+			Leader = (*pUnitNameHash)[fromLoad.get("leaderUnit").asString()];
+			Member = (*pUnitNameHash)[fromLoad.get("memberUnit").asString()];
+			CoreData = Interface::EntityInitData(fromLoad.get("initData"));
+			CountLeft = fromLoad.get("count").asInt();
+			TimeGapSince = fromLoad.get("timeGap").asInt();
 			SpawnFlag = false;
-			SpawnAreaLeft = fromLoad.get("spawnArea", "").get("left", "").asInt();
-			SpawnAreaRight = fromLoad.get("spawnArea", "").get("right", "").asInt();
-			SpawnAreaTop = fromLoad.get("spawnArea", "").get("top", "").asInt();
-			SpawnAreaBottom = fromLoad.get("spawnArea", "").get("bottom", "").asInt();
+			SpawnAreaLeft = fromLoad.get("spawnArea").get("left").asInt();
+			SpawnAreaRight = fromLoad.get("spawnArea").get("right").asInt();
+			SpawnAreaTop = fromLoad.get("spawnArea").get("top").asInt();
+			SpawnAreaBottom = fromLoad.get("spawnArea").get("bottom").asInt();
 		}
 	};
 
@@ -666,7 +807,7 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		Test1(Json::Value fromLoad) {
+		Test1(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
 
 		}
 	};
@@ -678,7 +819,7 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		Test2(Json::Value fromLoad) {
+		Test2(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
 
 		}
 	};
@@ -694,7 +835,7 @@ namespace Component {
 		Test3() {
 
 		}
-		Test3(Json::Value fromLoad) {
+		Test3(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
 
 		}
 	};
@@ -712,7 +853,7 @@ namespace Component {
 		void Init(Interface::EntityInitData* pInitData) {
 
 		}
-		TestResult(Json::Value fromLoad) {
+		TestResult(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
 			UpdatedByTestA = false;
 			UpdatedByTestB = false;
 			UpdatedByTestC = false;

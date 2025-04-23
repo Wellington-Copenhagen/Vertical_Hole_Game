@@ -19,6 +19,5 @@ PSOutput main(GeneralVSOutput input)
     PSOutput output;
     output.Color = textures.Sample(g_sampler, input.UV.xyz);
     output.Depth = input.UV.w;
-    output.Depth = 0.5;
     return output;
 }

@@ -90,29 +90,25 @@ public:
 
 	static ComPtr<ID3D11SamplerState> m_samplerState;
 
-	static VertexShaderAndInputLayout<Interface::BlockDrawCallType, Interface::BlockInstanceType> mBlockVShaderLayout;
+	static VertexShaderAndInputLayout<Interface::BlockDCType, Interface::BlockIType> mBlockVShaderLayout;
 	static ComPtr<ID3D11PixelShader> mBlockPixelShader;
 
-
-	static VertexShaderAndInputLayout<Interface::BallDrawCallType, Interface::BallInstanceType> mBallVShaderLayout;
-	static ComPtr<ID3D11PixelShader> mBallPixelShader;
-
-	static VertexShaderAndInputLayout<Interface::BulletDrawCallType, Interface::BulletInstanceType> mBulletVShaderLayout;
-	static ComPtr<ID3D11PixelShader> mBulletPixelShader;
-
-	static VertexShaderAndInputLayout<Interface::EffectDrawCallType, Interface::EffectInstanceType> mEffectVShaderLayout;
+	static VertexShaderAndInputLayout<Interface::EffectDCType, Interface::EffectIType> mEffectVShaderLayout;
 	static ComPtr<ID3D11PixelShader> mEffectPixelShader;
 
-	static VertexShaderAndInputLayout<Interface::CharDrawCallType, Interface::CharInstanceType> mCharVShaderLayout;
+	static VertexShaderAndInputLayout < Interface::GeneralDCType, Interface::GeneralIType > mBulletVShaderLayout;
+	static ComPtr<ID3D11PixelShader> mBulletPixelShader;
+
+	static VertexShaderAndInputLayout<Interface::CharDCType, Interface::CharIType> mCharVShaderLayout;
 	static ComPtr<ID3D11PixelShader> mCharPixelShader;
 
-	static VertexShaderAndInputLayout<Interface::GeneralDrawCallType, Interface::GeneralInstanceType> mGeneralVShaderLayout;
-	static VertexShaderAndInputLayout<Interface::LineDrawCallType, Interface::LineInstanceType> mLineVShaderLayout;
-	static VertexShaderAndInputLayout<Interface::FreeShapeDrawCallType, Interface::FreeShapeInstanceType> mFreeShapeVShaderLayout;
+	static VertexShaderAndInputLayout<Interface::LineDCType, Interface::LineIType> mLineVShaderLayout;
+	static VertexShaderAndInputLayout<Interface::FreeShapeDCType, Interface::FreeShapeIType> mFreeShapeVShaderLayout;
+	static VertexShaderAndInputLayout<Interface::GeneralDCType, Interface::GeneralIType> mGeneralVShaderLayout;
 
 	static ComPtr<ID3D11PixelShader> mGeneralPixelShader;
 	static void SetAsBlock();
-	static void SetAsBall();
+	//static void SetAsBall();
 	static void SetAsBullet();
 	static void SetAsEffect();
 	static void SetAsCharacter();
@@ -122,4 +118,4 @@ public:
 	static void CompilePixelShader(LPCWSTR pixelShaderPath, ID3D11PixelShader** ppPixelShader);
 	GraphicProcessSetter(int width, int height);
 };
-#define DP GraphicProcessSetter::GetInstance()
+#define DP GraphicProcessSetter::GetI()

@@ -4,18 +4,14 @@ extern GraphicalStringDraw globalStringDraw;
 void Entities::LoadMap(std::string mapFileName)
 {
 	//マップデータの読み込み
-	Json::Value root;
-	std::ifstream file = std::ifstream(mapFileName);
-	file >> root;
-	file.close();
+	PathBindJsonValue root(mapFileName);
 
 	PlayerCorpsSpawnArea = {
-		root.get("playerCorpsSpawnArea","").get("left","").asInt(),
-		root.get("playerCorpsSpawnArea","").get("right","").asInt(),
-		root.get("playerCorpsSpawnArea","").get("bottom","").asInt(),
-		root.get("playerCorpsSpawnArea","").get("top","").asInt()
+		root.get("playerCorpsSpawnArea").get("left").asInt(),
+		root.get("playerCorpsSpawnArea").get("right").asInt(),
+		root.get("playerCorpsSpawnArea").get("bottom").asInt(),
+		root.get("playerCorpsSpawnArea").get("top").asInt()
 	};
-
 
 	mRouting.AreaIndexMap = std::vector<int>(WorldWidth * WorldHeight,-1);
 	mRouting.NearestWalkableArea = std::vector<std::tuple<int,int>>(WorldWidth * WorldHeight);
@@ -24,17 +20,22 @@ void Entities::LoadMap(std::string mapFileName)
 	// 各部屋に対応した壁と床の素材
 	std::vector<entt::entity> wallMaterial = std::vector<entt::entity>();
 	std::vector<entt::entity> floorMaterial = std::vector<entt::entity>();
+	std::vector<int> top = std::vector<int>();
+	std::vector<int> bottom = std::vector<int>();
+	std::vector<int> left = std::vector<int>();
+	std::vector<int> right = std::vector<int>();
 	int roomIndex = 0;
-	for (Json::Value area : root.get("areaList", "")) {
-		wallMaterial.push_back(Interface::EntNameHash[area.get("wallEntity", "").asString()]);
-		floorMaterial.push_back(Interface::EntNameHash[area.get("floorEntity", "").asString()]);
-		int top = area.get("top", "").asInt();
-		int bottom = area.get("bottom", "").asInt();
-		int left = area.get("left", "").asInt();
-		int right = area.get("right", "").asInt();
-		mRouting.AddArea(ConvexArea(bottom, top, left, right));
-		for (int x = left; x < right; x++) {
-			for (int y = bottom; y < top; y++) {
+	for (int i = 0;i < root.get("areaList").size();i++) {
+		PathBindJsonValue area = root.get("areaList")[i];
+		wallMaterial.push_back(EntNameHash[area.get("wallEntity").asString()]);
+		floorMaterial.push_back(EntNameHash[area.get("floorEntity").asString()]);
+		top.push_back(area.get("top").asInt());
+		bottom.push_back(area.get("bottom").asInt());
+		left.push_back(area.get("left").asInt());
+		right.push_back(area.get("right").asInt());
+		mRouting.AddArea(ConvexArea(bottom.back(), top.back(), left.back(), right.back()));
+		for (int x = left.back(); x < right.back(); x++) {
+			for (int y = bottom.back(); y < top.back(); y++) {
 				mRouting.AreaIndexMap[y * WorldWidth + x] = roomIndex;
 			}
 		}
@@ -46,8 +47,9 @@ void Entities::LoadMap(std::string mapFileName)
 			if (mRouting.AreaIndexMap[y * WorldWidth + x] != -1) {
 				//エリア内の場合
 				Interface::EntityInitData init;
-				init.Pos.Identity();
-				init.Pos.Parallel = { (float)x,(float)y,0.0f,1.0f };
+				init.IsCore = true;
+				init.Pos = DirectX::XMMatrixIdentity();
+				init.Pos.r[3] = {(float)x,(float)y,0.0f,1.0f};
 				init.OnTop = false;
 				init.Prototype = floorMaterial[mRouting.AreaIndexMap[y * WorldWidth + x]];
 				EmplaceFromPrototypeEntity<false>(&init);
@@ -77,34 +79,30 @@ void Entities::LoadMap(std::string mapFileName)
 				// エリア外にはみ出した時の誘導に使いたい
 				std::tuple<int,int> nearest;
 				float nearestDistance = 10000000;
-				for (Json::Value area : root.get("areaList", "")) {
-					int top = area.get("top", "").asInt();
-					int bottom = area.get("bottom", "").asInt();
-					int left = area.get("left", "").asInt();
-					int right = area.get("right", "").asInt();
+				for (int i = 0; i < root.get("areaList").size();i++) {
 					float distance = 0;
 					std::tuple<int, int> pos;
-					if (bottom <= y && y < top) {
+					if (bottom[i] <= y && y < top[i]) {
 						std::get<1>(pos) = y;
 					}
-					else if(y<bottom){
-						distance += powf(bottom - y, 2);
-						std::get<1>(pos) = bottom;
+					else if(y<bottom[i]){
+						distance += powf(bottom[i] - y, 2);
+						std::get<1>(pos) = bottom[i];
 					}
 					else {
-						distance += powf(y - (top - 1), 2);
-						std::get<1>(pos) = top - 1;
+						distance += powf(y - (top[i] - 1), 2);
+						std::get<1>(pos) = top[i] - 1;
 					}
-					if (left <= x && x < right) {
+					if (left[i] <= x && x < right[i]) {
 						std::get<0>(pos) = x;
 					}
-					else if (x < left) {
-						distance += powf(left - x, 2);
-						std::get<0>(pos) = left;
+					else if (x < left[i]) {
+						distance += powf(left[i] - x, 2);
+						std::get<0>(pos) = left[i];
 					}
 					else {
-						distance += powf(x - (right - 1), 2);
-						std::get<0>(pos) = right - 1;
+						distance += powf(x - (right[i] - 1), 2);
+						std::get<0>(pos) = right[i] - 1;
 					}
 					distance = sqrtf(distance);
 					if (distance < nearestDistance) {
@@ -116,8 +114,9 @@ void Entities::LoadMap(std::string mapFileName)
 				if (nearByArea != -1) {
 					IsWallMap[y * WorldWidth + x] = true;
 					Interface::EntityInitData init;
-					init.Pos.Identity();
-					init.Pos.Parallel = { (float)x,(float)y,0.0f,1.0f };
+					init.IsCore = true;
+					init.Pos = DirectX::XMMatrixIdentity();
+					init.Pos.r[3] = { (float)x,(float)y,0.0f,1.0f };
 					//床
 					init.OnTop = false;
 					init.Prototype = floorMaterial[nearByArea];
@@ -137,36 +136,29 @@ void Entities::LoadMap(std::string mapFileName)
 }
 void Entities::LoadEntities(std::vector<std::string> fileNames) {
 	for (std::string fileName : fileNames) {
-		Json::Value root;
-		std::ifstream file = std::ifstream(fileName);
-		file >> root;
-		file.close();
+		PathBindJsonValue root(fileName);
 		std::vector<std::string> entNames = root.getMemberNames();
 		for (std::string entName : entNames) {
-			Interface::EntNameHash[entName] = EmplaceFromJson<true>(root.get(entName, ""));
+			EntNameHash[entName] = EmplaceFromJson<true>(root.get(entName));
 		}
+		DebugLogOutput("Entities loading succeeded:{}", fileName);
 	}
 }
 void Entities::LoadPlayerCorps(std::string fileName) {
-	Json::Value root;
-	std::ifstream file = std::ifstream(fileName);
-	file >> root;
-	file.close();
-	int i = 0;
-	for (Json::Value oneCorps : root.get("corps", "")) {
+	PathBindJsonValue root(fileName);
+	for (int i = 0; i < root.get("corps").size();i++) {
+		PathBindJsonValue oneCorps = root.get("corps")[i];
 		float left = std::get<0>(PlayerCorpsSpawnArea);
 		float right = std::get<1>(PlayerCorpsSpawnArea);
 		float bottom = std::get<2>(PlayerCorpsSpawnArea);
 		float top = std::get<3>(PlayerCorpsSpawnArea);
 		// 部隊長のスポーン
-		Interface::UnitIndex leader = Interface::UnitNameHash[oneCorps.get("leaderUnit","").asString()];
+		Interface::UnitIndex leader = UnitNameHash[oneCorps.get("leaderUnit").asString()];
 		float Xpos = Interface::UniformRandInt(left, right);
 		float Ypos = Interface::UniformRandInt(bottom, top);
-		Interface::RelationOfCoord pos = Interface::RelationOfCoord();
-		pos.Parallel = {
-			(float)Xpos,(float)Ypos,0,1
-		};
-		pos.Parallel = mRouting.NearestWalkablePosition(pos.Parallel);
+		DirectX::XMMATRIX pos = DirectX::XMMatrixIdentity();
+		pos.r[3] = { (float)Xpos,(float)Ypos,0.0f,1.0f };
+		pos.r[3] = mRouting.NearestWalkablePosition(pos.r[3]);
 		Interface::EntityInitData initData;
 		initData.Team = 0;
 		initData.DamageMultiply = 1;
@@ -180,58 +172,64 @@ void Entities::LoadPlayerCorps(std::string fileName) {
 
 		// 部下のスポーン
 		initData.IsLeader = false;
-		Interface::UnitIndex member = Interface::UnitNameHash[oneCorps.get("memberUnit", "").asString()];
-		for (int i = 0; i < oneCorps.get("count", "").asInt();i++) {
+		Interface::UnitIndex member = UnitNameHash[oneCorps.get("memberUnit").asString()];
+		for (int i = 0; i < oneCorps.get("count").asInt();i++) {
 			Xpos = Interface::UniformRandInt(left, right);
 			Ypos = Interface::UniformRandInt(bottom, top);
-			Interface::RelationOfCoord pos = Interface::RelationOfCoord();
-			pos.Parallel = {
-				(float)Xpos,(float)Ypos,0,1
-			};
-			pos.Parallel = mRouting.NearestWalkablePosition(pos.Parallel);
+			DirectX::XMMATRIX pos = DirectX::XMMatrixIdentity();
+			pos.r[3] = { (float)Xpos,(float)Ypos,0.0f,1.0f };
+			pos.r[3] = mRouting.NearestWalkablePosition(pos.r[3]);
 			EmplaceUnitWithInitData(member, &initData, &pos);
 		}
-		i++;
 	}
 }
 void Entities::LoadUnits(std::vector<std::string> fileNames) {
 	for (std::string fileName : fileNames) {
-		Json::Value root;
-		std::ifstream file = std::ifstream(fileName);
-		file >> root;
-		file.close();
-		std::vector<std::string> entNames = root.getMemberNames();
-		for (std::string entName : entNames) {
-			UnitInfos.push_back(Interface::UnitInfo(root.get(entName, ""), &Registry));
-			Interface::UnitNameHash[entName] = UnitInfos.size() - 1;
+		PathBindJsonValue root(fileName);
+		std::vector<std::string> unitNames = root.getMemberNames();
+		for (std::string unitName : unitNames) {
+			UnitInfos.push_back(Interface::UnitInfo(root.get(unitName), &Registry, &EntNameHash, &BallNameHash));
+			UnitNameHash[unitName] = UnitInfos.size() - 1;
 		}
+		DebugLogOutput("Units loading succeeded:{}",fileName);
+	}
+}
+void Entities::LoadBalls(std::vector<std::string> fileNames) {
+	for (std::string fileName : fileNames) {
+		PathBindJsonValue root(fileName);
+		std::vector<std::string> ballNames = root.getMemberNames();
+		for (std::string ballName : ballNames) {
+			BallInfos.push_back(Interface::BallInfo(root.get(ballName), &Registry, &EntNameHash, &BallNameHash));
+			BallNameHash[ballName] = BallInfos.size() - 1;
+		}
+		DebugLogOutput("Balls loading succeeded:{}", fileName);
 	}
 }
 void Entities::LoadMission(std::string missionFileName) {
-	Json::Value root;
-	std::ifstream file = std::ifstream(missionFileName);
-	file >> root;
-	file.close();
-	LoadMap(root.get("mapFilePath", "").asString());
-	for (Json::Value spawnCondition : root.get("spawnCondition", "")) {
+	PathBindJsonValue root(missionFileName);
+	LoadMap(root.get("mapFilePath").asString());
+	for (int i = 0; i < root.get("spawnCondition").size();i++) {
+		PathBindJsonValue spawnCondition = root.get("spawnCondition")[i];
 		EmplaceFromJson<false>(spawnCondition);
 	}
-	for (Json::Value hostilityPair : root.get("hostility", "")) {
-		int other = hostilityPair.get("other", "").asInt();
-		int another = hostilityPair.get("another", "").asInt();
-		Interface::HostilityTable[other * TeamCount + another] = true;
-		Interface::HostilityTable[another * TeamCount + other] = true;
+	for (int i = 0; i < root.get("hostility").size();i++) {
+		PathBindJsonValue hostilityPair = root.get("hostility")[i];
+		int other = hostilityPair.get("other").asInt();
+		int another = hostilityPair.get("another").asInt();
+		HostilityTable[other * TeamCount + another] = true;
+		HostilityTable[another * TeamCount + other] = true;
 	}
+	DebugLogOutput("Mission loading succeeded:{}",missionFileName);
 }
 template<typename typeComp, bool asPrototype>
-void Entities::EmplaceEntityIfNeeded(entt::entity entity, Json::Value onePrototypeEntityData) {
+void Entities::EmplaceEntityIfNeeded(entt::entity entity, PathBindJsonValue onePrototypeEntityData) {
 	if (asPrototype) {
 		auto names = onePrototypeEntityData.getMemberNames();
 		for (auto name : names) {
 			std::string className = typeid(typeComp).name();
 			className = className.substr(18);
 			if (Interface::SameString(name, className)) {
-				PrototypeRegistry.emplace<typeComp>(entity, typeComp(onePrototypeEntityData.get(name, "")));
+				PrototypeRegistry.emplace<typeComp>(entity, typeComp(onePrototypeEntityData.get(name), &UnitNameHash, &EntNameHash));
 			}
 		}
 	}
@@ -241,7 +239,7 @@ void Entities::EmplaceEntityIfNeeded(entt::entity entity, Json::Value onePrototy
 			std::string className = typeid(typeComp).name();
 			className = className.substr(18);
 			if (Interface::SameString(name, className)) {
-				Registry.emplace<typeComp>(entity, typeComp(onePrototypeEntityData.get(name, "")));
+				Registry.emplace<typeComp>(entity, typeComp(onePrototypeEntityData.get(name), &UnitNameHash, &EntNameHash));
 			}
 		}
 	}
@@ -275,7 +273,7 @@ void Entities::EmplaceEntity(entt::entity entity, Interface::EntityInitData* pIn
 }
 using namespace Component;
 template<bool asPrototype>
-entt::entity Entities::EmplaceFromJson(Json::Value onePrototypeEntityData) {
+entt::entity Entities::EmplaceFromJson(PathBindJsonValue onePrototypeEntityData) {
 	entt::entity newEntity;
 	if (asPrototype) {
 		newEntity = PrototypeRegistry.create();
@@ -288,9 +286,10 @@ entt::entity Entities::EmplaceFromJson(Json::Value onePrototypeEntityData) {
 	EmplaceEntityIfNeeded<LinearAcceralation,asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<Motion,asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<BlockAppearance,asPrototype>(newEntity, onePrototypeEntityData);
-	EmplaceEntityIfNeeded<BallAppearance,asPrototype>(newEntity, onePrototypeEntityData);
-	EmplaceEntityIfNeeded<BulletAppearance,asPrototype>(newEntity, onePrototypeEntityData);
-	EmplaceEntityIfNeeded<EffectAppearance, asPrototype>(newEntity, onePrototypeEntityData);
+	EmplaceEntityIfNeeded<ConstantAppearance, asPrototype>(newEntity, onePrototypeEntityData);
+	EmplaceEntityIfNeeded<VariableAppearance, asPrototype>(newEntity, onePrototypeEntityData);
+	EmplaceEntityIfNeeded<ShadowAppearance, asPrototype>(newEntity, onePrototypeEntityData);
+	EmplaceEntityIfNeeded<Component::Texture, asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<CircleHitbox,asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<BallHurtbox,asPrototype>(newEntity, onePrototypeEntityData);
 	EmplaceEntityIfNeeded<UnitOccupationbox,asPrototype>(newEntity, onePrototypeEntityData);
@@ -327,16 +326,16 @@ entt::entity Entities::EmplaceFromPrototypeEntity(Interface::EntityInitData* pIn
 	EmplaceEntity<MoveFlag,asPrototype>(newEntity, pInitData);
 	EmplaceEntity<HitFlag,asPrototype>(newEntity, pInitData);
 	EmplaceEntity<AppearanceChanged,asPrototype>(newEntity, pInitData);
-	EmplaceEntity<PositionReference,asPrototype>(newEntity, pInitData);
 
 
 	EmplaceEntityIfNeeded<WorldPosition,asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<LinearAcceralation,asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<Motion,asPrototype>(newEntity, pInitData);
-	EmplaceEntityIfNeeded<BlockAppearance,asPrototype>(newEntity, pInitData);
-	EmplaceEntityIfNeeded<BallAppearance,asPrototype>(newEntity, pInitData);
-	EmplaceEntityIfNeeded<BulletAppearance,asPrototype>(newEntity, pInitData);
-	EmplaceEntityIfNeeded<EffectAppearance, asPrototype>(newEntity, pInitData);
+	EmplaceEntityIfNeeded<BlockAppearance, asPrototype>(newEntity, pInitData);
+	EmplaceEntityIfNeeded<ConstantAppearance, asPrototype>(newEntity, pInitData);
+	EmplaceEntityIfNeeded<VariableAppearance, asPrototype>(newEntity, pInitData);
+	EmplaceEntityIfNeeded<ShadowAppearance, asPrototype>(newEntity, pInitData);
+	EmplaceEntityIfNeeded<Component::Texture, asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<CircleHitbox,asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<BallHurtbox,asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<UnitOccupationbox,asPrototype>(newEntity, pInitData);
@@ -354,27 +353,59 @@ entt::entity Entities::EmplaceFromPrototypeEntity(Interface::EntityInitData* pIn
 	EmplaceEntityIfNeeded<InvationObservance,asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<UnitCountObservance,asPrototype>(newEntity, pInitData);
 	EmplaceEntityIfNeeded<Spawn,asPrototype>(newEntity, pInitData);
+	if (!pInitData->IsCore) {
+		WorldPosition* pWorldPosition = Registry.try_get<WorldPosition>(newEntity);
+		DirectX::XMMATRIX matrix;
+		if (pWorldPosition != nullptr) {
+			pWorldPosition->UpdateAndGet(&Registry,&matrix);
+		}
+	}
 	return newEntity;
 }
-entt::entity Entities::EmplaceUnitWithInitData(int unitIndex, Interface::EntityInitData* pInitData, Interface::RelationOfCoord* pCorePos) {
+entt::entity Entities::EmplaceUnitWithInitData(int unitIndex, Interface::EntityInitData* pInitData, DirectX::XMMATRIX* pCorePos) {
 	entt::entity core;
 	pInitData->Pos = *pCorePos;
 	pInitData->Prototype = UnitInfos[unitIndex].CorePrototype;
 
 	pInitData->IsCore = true;
-	// 初期のサイズの指定
-	pInitData->Ratio = UnitInfos[unitIndex].Ratio;
 
 	core = EmplaceFromPrototypeEntity<false>(pInitData);
 	pInitData->CoreId = core;
 	pInitData->IsCore = false;
-	//1つのユニットには7このボールを置く
-	for (int i = 0; i < 7; i++) {
-		pInitData->BaseColor0 = UnitInfos[unitIndex].BaseColor0[i];
-		pInitData->BaseColor1 = UnitInfos[unitIndex].BaseColor1[i];
-		pInitData->Pos = UnitInfos[unitIndex].RelativePosFromCore[i];
-		pInitData->Prototype = UnitInfos[unitIndex].Prototypes[i];
-		EmplaceFromPrototypeEntity<false>(pInitData);
+	// 1つのユニットには7このボールを置く
+	// 1つのボールはいくつかのエンティティで構成される
+	for (int ball = 0; ball < 7; ball++) {
+		Interface::BallInfo* pThisBallInfo = &BallInfos[UnitInfos[unitIndex].Ballindices[ball]];
+		std::vector<entt::entity> entityOnThisBall;
+		for (int entity = 0; entity < pThisBallInfo->Prototypes.size(); entity++) {
+			pInitData->Pos = pThisBallInfo->PosFrom[entity];
+			if (pThisBallInfo->Parent[entity] == -1) {
+				pInitData->CoreId = core;
+				pInitData->IsCore = false;
+				// コア基準のものを所定の位置に置く
+				if (ball == 0) {
+					pInitData->Pos = DirectX::XMMatrixIdentity();
+				}
+				else {
+					pInitData->Pos = {
+						1,0,0,0,
+						0,1,0,0,
+						0,0,1,0,
+						2.0f/3.0f,0,0,1
+					};
+					pInitData->Pos = pInitData->Pos * DirectX::XMMatrixRotationZ((ball - 1.0f) * PI / 3.0f);
+				}
+			}
+			else if (pThisBallInfo->Parent[entity] == entity) {
+				pInitData->IsCore = true;
+			}
+			else {
+				pInitData->CoreId = entityOnThisBall[pThisBallInfo->Parent[entity]];
+				pInitData->IsCore = false;
+			}
+			pInitData->Prototype = pThisBallInfo->Prototypes[entity];
+			entityOnThisBall.push_back(EmplaceFromPrototypeEntity<false>(pInitData));
+		}
 	}
 	return core;
 }
@@ -430,8 +461,8 @@ std::pair<entt::entity, float> Entities::GetNearestHostilingUnit(DirectX::XMVECT
 	for (auto [entity, unitData, worldPosition] : Registry.view<
 		Component::UnitData,
 		Component::WorldPosition>().each()) {
-		if (Interface::HostilityTable[TeamCount * team + unitData.Team]) {
-			float length = DirectX::XMVector4Length(DirectX::XMVectorSubtract(pos, worldPosition.WorldPos.Parallel)).m128_f32[0];
+		if (HostilityTable[TeamCount * team + unitData.Team]) {
+			float length = DirectX::XMVector4Length(DirectX::XMVectorSubtract(pos, worldPosition.WorldPos.r[3])).m128_f32[0];
 			if (length < nearestDistance) {
 				nearestDistance = length;
 				nearestEntity = entity;

@@ -74,7 +74,7 @@ bool Direct3D::Initialize(HWND hWnd, int width, int height)
 	scDesc.BufferCount = 2;									// バッファの数
 	scDesc.OutputWindow = hWnd;
 	scDesc.Windowed = TRUE;									// ウィンドウモード
-	scDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;//バックバッファが白紙に戻るということだろうか…
+	scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;//バックバッファが白紙に戻るということだろうか…
 	scDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;//andでいろいろ設定できる。今は全画面かどうかを切り替え可というだけ
 
 	// スワップチェインの作成

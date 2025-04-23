@@ -292,6 +292,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_DESTROY:
+        DebugAssist::Save();
         PostQuitMessage(0);
         break;
     default:

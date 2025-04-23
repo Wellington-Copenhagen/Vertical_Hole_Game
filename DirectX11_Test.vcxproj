@@ -139,9 +139,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="DebugAssist.h" />
     <ClInclude Include="DirectX11_Test.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Interfaces.h" />
+    <ClInclude Include="PathBindJsonValue.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Source\DirectX\Appearance.h" />
     <ClInclude Include="Source\DirectX\Buffers.h" />
@@ -164,6 +166,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DebugAssist.cpp" />
     <ClCompile Include="DirectX11_Test.cpp" />
     <ClCompile Include="Source\DirectX\Appearance.cpp" />
     <ClCompile Include="Source\DirectX\Buffers.cpp" />
@@ -269,6 +272,8 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <EnableDebuggingInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EnableDebuggingInformation>
+      <EnableDebuggingInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EnableDebuggingInformation>
     </FxCompile>
     <FxCompile Include="Shader\LineVertexShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>

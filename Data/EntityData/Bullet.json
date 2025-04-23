@@ -1,11 +1,18 @@
 {
     "bulletSpear":{
-        "BulletAppearance":{
+        "VariableAppearance":{
             "texture":{
                 "kind":"file",
-                "filePath":"Data/Textures/texBulletSpear.tif"
-            }
+                "filePath":"Data/Textures/texEdgedCircle.tif"
+            },
+            "color1":[
+                0,0.8,0.6,1
+            ],
+            "color2":[
+                1,0,0,1
+            ]
         },
+        "Texture":0,
         "Motion":{
             "parallel":[0.2,0,0,0]
         },
@@ -21,9 +28,9 @@
             "relativeCenter":[0.4,0,0,1]
         },
         "WorldPosition":{
-            "width":1,
+            "width":0.6,
             "parallel":[
-                0,0,0.5,1
+                0,0,0,1
             ]
         }
     }
