@@ -44,14 +44,14 @@
             "physical":0
         }
     },
-    "ballRegenerate":{
+    "ballShield":{
         "VariableAppearance":{
             "texture":{
                 "kind":"file",
-                "filePath":"Data/Textures/texBallShadowPlain.tif"
+                "filePath":"Data/Textures/texCircle.tif"
             },
             "color1":[
-                0,0.8,0.6,0.4
+                0,0,0,0.8
             ],
             "color2":[
                 1,0,0,1
@@ -66,6 +66,39 @@
         },
         "Motion":{
 
+        },
+        "HitFlag":0,
+        "BallData":{
+        },
+        "BallHurtbox":{
+            "diameterCoef":1
+        },
+        "DamagePool":{
+            "physical":0
+        },
+        "GiveDamage":{
+            "physical":0
+        }
+    },
+    "ballShoot":{
+        "VariableAppearance":{
+            "texture":{
+                "kind":"file",
+                "filePath":"Data/Textures/texCircle.tif"
+            },
+            "color1":[
+                0.6,0.6,0,0.4
+            ],
+            "color2":[
+                1,0,0,1
+            ]
+        },
+        "Texture":0,
+        "WorldPosition":{
+            "width":0.5,
+            "parallel":[
+                0,0,0,1
+            ]
         },
         "Attack":{
             "coolTime":20,
@@ -74,52 +107,12 @@
             "headingError":0.05,
             "headingFork":0.1
         },
-        "HitFlag":0,
-        "BallData":{
-            "attack":1,
-            "movePower":1,
-            "rotatePower":1,
-            "weight":10
-        },
-        "BallHurtbox":{
-            "diameterCoef":1
-        },
-        "DamagePool":{
-            "physical":0
-        },
-        "GiveDamage":{
-            "physical":0
-        }
-    },
-    "ballGuard":{
-        "VariableAppearance":{
-            "texture":{
-                "kind":"file",
-                "filePath":"Data/Textures/texBallShadowPlain.tif"
-            },
-            "color1":[
-                0,0,0.8,0.4
-            ],
-            "color2":[
-                1,0,0,1
-            ]
-        },
-        "Texture":0,
-        "WorldPosition":{
-            "width":0.5,
-            "parallel":[
-                0,0,0,1
-            ]
-        },
         "Motion":{
 
         },
         "HitFlag":0,
         "BallData":{
-            "attack":100,
-            "movePower":1,
-            "rotatePower":1,
-            "weight":10
+
         },
         "BallHurtbox":{
             "diameterCoef":1
@@ -131,14 +124,14 @@
             "physical":0
         }
     },
-    "ballSpiky":{
+    "ballMove":{
         "VariableAppearance":{
             "texture":{
                 "kind":"file",
-                "filePath":"Data/Textures/texBallBaseSpiky.tif"
+                "filePath":"Data/Textures/texCircle.tif"
             },
             "color1":[
-                0.8,0,0,0.4
+                0,0.8,0.8,0.4
             ],
             "color2":[
                 0.9,0.9,0.9,1
@@ -156,10 +149,44 @@
         },
         "HitFlag":0,
         "BallData":{
-            "attack":100,
-            "movePower":1,
-            "rotatePower":1,
-            "weight":10
+
+        },
+        "BallHurtbox":{
+            "diameterCoef":1
+        },
+        "DamagePool":{
+            "physical":0
+        },
+        "GiveDamage":{
+            "physical":0
+        }
+    },
+    "ballCommand":{
+        "VariableAppearance":{
+            "texture":{
+                "kind":"file",
+                "filePath":"Data/Textures/texCircle.tif"
+            },
+            "color1":[
+                1,0,0,0.4
+            ],
+            "color2":[
+                0.9,0.9,0.9,1
+            ]
+        },
+        "Texture":0,
+        "WorldPosition":{
+            "width":0.5,
+            "parallel":[
+                0,0,0,1
+            ]
+        },
+        "Motion":{
+
+        },
+        "HitFlag":0,
+        "BallData":{
+
         },
         "BallHurtbox":{
             "diameterCoef":1

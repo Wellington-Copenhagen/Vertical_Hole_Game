@@ -84,6 +84,11 @@ public:
 		mStringDraw = GraphicalStringDraw(hFont, 65536, 2048, 32);
 
 	}
+	void Shutdown() {
+		mFreeShapeDraw.Shutdown();
+		mLineDraw.Shutdown();
+		mStringDraw.Shutdown();
+	}
 	void UpdateWhileMission() {
 		float width = D3D.Width;
 		float height = D3D.Height;

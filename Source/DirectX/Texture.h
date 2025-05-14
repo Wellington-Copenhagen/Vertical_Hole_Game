@@ -8,6 +8,71 @@
 //高くにあるもの、不透明なもの優先がよい
 //壁床キャラクターエフェクトみたいな
 //描画パイプラインにおけるテクスチャの設定
+enum TextureType {
+	FromFile,
+	OneColor,
+	ColorChanged
+};
+struct TextureIdentifier {
+	TextureIdentifier() {
+		Type = FromFile;
+		Path = "";
+		Color1 = 0;
+		Color2 = 0;
+		Color3 = 0;
+	}
+	TextureIdentifier(std::string path) {
+		Type = FromFile;
+		Path = path;
+		Color1 = 0;
+		Color2 = 0;
+		Color3 = 0;
+	}
+	TextureIdentifier(DirectX::XMVECTOR color) {
+		Type = OneColor;
+		Path = "";
+		Color1 = getColorInt(color);
+		Color2 = 0;
+		Color3 = 0;
+	}
+	TextureIdentifier(std::string path,DirectX::XMVECTOR color1, DirectX::XMVECTOR color2, DirectX::XMVECTOR color3) {
+		Type = ColorChanged;
+		Path = path;
+		Color1 = getColorInt(color1);
+		Color2 = getColorInt(color2);
+		Color3 = getColorInt(color3);
+	}
+	int getColorInt(DirectX::XMVECTOR colorVec) {
+		byte iRed = min(255, max(0, (byte)(colorVec.m128_f32[0] * 255)));
+		byte iGreen = min(255, max(0, (byte)(colorVec.m128_f32[1] * 255)));
+		byte iBlue = min(255, max(0, (byte)(colorVec.m128_f32[2] * 255)));
+		byte iAlpha = min(255, max(0, (byte)(colorVec.m128_f32[3] * 255)));
+		return iRed + iGreen * 256 + iBlue * 256 * 256 + iAlpha * 256 * 256 * 256;
+	}
+	TextureType Type;
+	std::string Path;
+	int Color1;
+	int Color2;
+	int Color3;
+};
+static bool operator<(const TextureIdentifier& lhs, const TextureIdentifier& rhs) {
+	if (lhs.Type != rhs.Type) {
+		return lhs.Type < rhs.Type;
+	}
+	else if (lhs.Color1 != rhs.Color1) {
+		return lhs.Color1 < rhs.Color1;
+	}
+	else if (lhs.Color2 != rhs.Color2) {
+		return lhs.Color2 < rhs.Color2;
+	}
+	else if (lhs.Color3 != rhs.Color3) {
+		return lhs.Color3 < rhs.Color3;
+	}
+	else if (lhs.Path != rhs.Path) {
+		return std::hash<std::string>()(lhs.Path) < std::hash<std::string>()(rhs.Path);
+	}
+	return false;
+}
 class Texture
 {
 public:
@@ -37,8 +102,7 @@ class SameFormatTextureArray {
 public:
 	ComPtr<ID3D11ShaderResourceView> m_srv;
 	ComPtr<ID3D11Texture2D> m_texture;
-	std::unordered_map<std::string, int> FilePathIndexTable;
-	std::unordered_map<int, int> ColorIndexTable;
+	std::map<TextureIdentifier, int> IndexTable;
 	std::vector<DirectX::XMFLOAT4> BlackboxMatrices;
 	int FloorShadowIndex;
 	int WallShadowIndex;
@@ -60,8 +124,7 @@ public:
 			MipLevel = 1;
 		}
 		TexCount = 0;
-		FilePathIndexTable = std::unordered_map<std::string, int>();
-		ColorIndexTable = std::unordered_map<int, int>();
+		IndexTable = std::map<TextureIdentifier, int>();
 		D3D11_TEXTURE2D_DESC Tex2Ddesc;
 		Tex2Ddesc.Width = width;
 		Tex2Ddesc.Height = width;
@@ -126,7 +189,6 @@ public:
 		{
 			throw("");
 		}
-
 		ID3D11Texture2D* pTexture;
 		D3D11_TEXTURE2D_DESC desc;
 		desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -281,6 +343,7 @@ public:
 			}
 			TexCount++;
 		}
+		image.release();
 		return headIndex;
 	}
 	static void SaveImage(std::unique_ptr<DirectX::ScratchImage> pScratchImage,std::string filePath) {
@@ -291,14 +354,16 @@ public:
 		if (FAILED(DirectX::SaveToWICFile(pScratchImage->GetImages(), pScratchImage->GetMetadata().arraySize, DirectX::WIC_FLAGS_ALL_FRAMES, DirectX::GetWICCodec(DirectX::WIC_CODEC_TIFF), wPath))) {
 			throw("");
 		}
+		delete[] wPath;
+		pScratchImage.release();
 	}
 	int AppendFromFileName(std::string filePath) {
-		auto itr = FilePathIndexTable.find(filePath);
-		if (itr!=FilePathIndexTable.end()) {
+		auto itr = IndexTable.find(TextureIdentifier(filePath));
+		if (itr!=IndexTable.end()) {
 			return itr->second;
 		}
 		int headIndex = AppendImage(LoadFromFile(filePath));
-		FilePathIndexTable.emplace(filePath, headIndex);
+		IndexTable.emplace(TextureIdentifier(filePath), headIndex);
 		return headIndex;
 	}
 	int Append(PathBindJsonValue textureJson) {
@@ -306,11 +371,14 @@ public:
 			return AppendFromFileName(textureJson.get("filePath").asString());
 		}
 		else if (Interface::SameString(textureJson.get("kind").asString(), "oneColor")) {
-			float red = textureJson.get("color")[0].asFloat();
-			float green = textureJson.get("color")[1].asFloat();
-			float blue = textureJson.get("color")[2].asFloat();
-			float alpha = textureJson.get("color")[3].asFloat();
-			return AppendOneColorTexture(red, green, blue, alpha);
+			return AppendOneColorTexture(textureJson.get("color").asVector());
+		}
+		else if (Interface::SameString(textureJson.get("kind").asString(), "changeColor")) {
+			return AppendColorChangedTexture(
+				textureJson.get("filePath").asString(),
+				textureJson.get("color1").asVector(),
+				textureJson.get("color2").asVector(),
+				textureJson.get("color3").asVector());
 		}
 		else {
 			throw("");
@@ -320,16 +388,15 @@ public:
 		D3D.m_deviceContext->PSSetShaderResources(0, 1, m_srv.GetAddressOf());
 	}
 	// 入力は0~1
-	int AppendOneColorTexture(float red,float green,float blue,float alpha) {
-		byte iRed = min(255,max(0,(byte)(red * 255)));
-		byte iGreen = min(255, max(0, (byte)(green * 255)));
-		byte iBlue = min(255, max(0, (byte)(blue * 255)));
-		byte iAlpha = min(255, max(0, (byte)(alpha * 255)));
-		int color = iRed + iGreen * 256 + iBlue * 256 * 256 + iAlpha * 256 * 256 * 256;
-		auto itr = ColorIndexTable.find(color);
-		if (itr != ColorIndexTable.end()) {
+	int AppendOneColorTexture(DirectX::XMVECTOR color) {
+		auto itr = IndexTable.find(TextureIdentifier(color));
+		if (itr != IndexTable.end()) {
 			return itr->second;
 		}
+		byte iRed = min(255, max(0, (byte)(color.m128_f32[0] * 255)));
+		byte iGreen = min(255, max(0, (byte)(color.m128_f32[1] * 255)));
+		byte iBlue = min(255, max(0, (byte)(color.m128_f32[2] * 255)));
+		byte iAlpha = min(255, max(0, (byte)(color.m128_f32[3] * 255)));
 		std::vector<byte> pInit = std::vector<byte>(Width * Width * 4, 0);
 		for (int i = 0; i < Width * Width; i++) {
 			pInit[i * 4] = iRed;
@@ -338,7 +405,48 @@ public:
 			pInit[i * 4 + 3] = iAlpha;
 		}
 		int headIndex = AppendImage(MakeImageFromColorVector(pInit, Width, Width, 4, 1));
-		ColorIndexTable.emplace(color, headIndex);
+		IndexTable.emplace(TextureIdentifier(color), headIndex);
+		return headIndex;
+	}
+	static std::unique_ptr<DirectX::ScratchImage> ChangeColor(std::unique_ptr<DirectX::ScratchImage> scratchImage, DirectX::XMVECTOR color1, DirectX::XMVECTOR color2, DirectX::XMVECTOR color3) {
+		float colors[9];
+		colors[0] = color1.m128_f32[0];
+		colors[1] = color1.m128_f32[1];
+		colors[2] = color1.m128_f32[2];
+		colors[3] = color2.m128_f32[0];
+		colors[4] = color2.m128_f32[1];
+		colors[5] = color2.m128_f32[2];
+		colors[6] = color3.m128_f32[0];
+		colors[7] = color3.m128_f32[1];
+		colors[8] = color3.m128_f32[2];
+		int sliceLength = scratchImage->GetMetadata().height * scratchImage->GetMetadata().width;
+		for (int image = 0; image < scratchImage->GetImageCount(); image++) {
+			uint8_t* pixelsOfOneImage = scratchImage->GetImages()[image].pixels;
+			for (int pixel = 0; pixel < sliceLength; pixel++) {
+				float red = 0;
+				float green = 0;
+				float blue = 0;
+				for (int color = 0; color < 3; color++) {
+					red = red + pixelsOfOneImage[pixel * 4 + color] * colors[color * 3 + 0];
+					green = green + pixelsOfOneImage[pixel * 4 + color] * colors[color * 3 + 1];
+					blue = blue + pixelsOfOneImage[pixel * 4 + color] * colors[color * 3 + 2];
+				}
+				pixelsOfOneImage[pixel * 4 + 0] = min(255, red);
+				pixelsOfOneImage[pixel * 4 + 1] = min(255, green);
+				pixelsOfOneImage[pixel * 4 + 2] = min(255, blue);
+			}
+		}
+		return scratchImage;
+	}
+	int AppendColorChangedTexture(std::string filePath, DirectX::XMVECTOR color1, DirectX::XMVECTOR color2, DirectX::XMVECTOR color3) {
+		auto itr = IndexTable.find(TextureIdentifier(filePath,color1,color2,color3));
+		if (itr != IndexTable.end()) {
+			return itr->second;
+		}
+		std::unique_ptr<DirectX::ScratchImage> scratchImage = LoadFromFile(filePath);
+		scratchImage = ChangeColor(std::move(scratchImage), color1, color2, color3);
+		int headIndex = AppendImage(std::move(scratchImage));
+		IndexTable.emplace(TextureIdentifier(filePath, color1, color2, color3), headIndex);
 		return headIndex;
 	}
 	static void SaveShadowTexture(int width, std::string filePath, int topShadowWidth, int bottomShadowWidth, int leftShadowWidth, int rightShadowWidth) {
@@ -470,5 +578,13 @@ public:
 			}
 		}
 		SaveImage(MakeImageFromColorVector(data, width, width, 4, imgCount), filePath);
+	}
+	void Release() {
+		if (m_srv) {
+			m_srv.Reset();
+		}
+		if (m_texture) {
+			m_texture.Reset();
+		}
 	}
 };

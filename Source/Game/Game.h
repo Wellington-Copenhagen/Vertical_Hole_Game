@@ -22,9 +22,6 @@
 // ・このゲームの土台となるもの
 //=========================================
 extern SameFormatTextureArray BlockTextureArray;
-extern SameFormatTextureArray BallTextureArray;
-extern SameFormatTextureArray BulletTextureArray;
-extern SameFormatTextureArray EffectTextureArray;
 extern SameFormatTextureArray VariableTextureArray;
 extern SameFormatTextureArray ConstantTextureArray;
 class GameSystem
@@ -83,6 +80,8 @@ public :
 	void ApplyInput();
 
 	void SetUnitThumbnail();
+
+	void Shutdown();
 	// その他、ゲーム用のデータなどをココに書く
 
 	/*

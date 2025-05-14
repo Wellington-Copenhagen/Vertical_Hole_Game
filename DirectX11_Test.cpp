@@ -291,7 +291,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             EndPaint(hWnd, &ps);
         }
         break;
-    case WM_DESTROY:
+    case WM_DESTROY:// dxgidebug.hをインクルードしてください。
+
+        HRESULT hr;
+
+        ID3D11Debug* pD3dDebug;
+
+        // デバイス作成は割愛
+
+        // 作成
+        hr = D3D.m_device->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&pD3dDebug));
+        if (FAILED(hr))
+        {
+            throw("");
+        }
+        // 詳細表示
+        hr = pD3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+        PerformanceLog::Save();
         DebugAssist::Save();
         PostQuitMessage(0);
         break;

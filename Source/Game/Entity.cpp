@@ -3,6 +3,7 @@ extern GraphicalStringDraw globalStringDraw;
 //地面と壁は別オブジェクトとする
 void Entities::LoadMap(std::string mapFileName)
 {
+	PerformanceLog::start("LoadMap");
 	//マップデータの読み込み
 	PathBindJsonValue root(mapFileName);
 
@@ -133,8 +134,11 @@ void Entities::LoadMap(std::string mapFileName)
 			}
 		}
 	}
+	DebugLogOutput("Map loading succeeded:{}", mapFileName);
+	PerformanceLog::stop("LoadMap");
 }
 void Entities::LoadEntities(std::vector<std::string> fileNames) {
+	PerformanceLog::start("LoadEntities");
 	for (std::string fileName : fileNames) {
 		PathBindJsonValue root(fileName);
 		std::vector<std::string> entNames = root.getMemberNames();
@@ -143,6 +147,7 @@ void Entities::LoadEntities(std::vector<std::string> fileNames) {
 		}
 		DebugLogOutput("Entities loading succeeded:{}", fileName);
 	}
+	PerformanceLog::stop("LoadEntities");
 }
 void Entities::LoadPlayerCorps(std::string fileName) {
 	PathBindJsonValue root(fileName);
@@ -184,28 +189,33 @@ void Entities::LoadPlayerCorps(std::string fileName) {
 	}
 }
 void Entities::LoadUnits(std::vector<std::string> fileNames) {
+	PerformanceLog::start("LoadUnits");
 	for (std::string fileName : fileNames) {
 		PathBindJsonValue root(fileName);
 		std::vector<std::string> unitNames = root.getMemberNames();
 		for (std::string unitName : unitNames) {
-			UnitInfos.push_back(Interface::UnitInfo(root.get(unitName), &Registry, &EntNameHash, &BallNameHash));
+			UnitInfos.push_back(UnitInfo(root.get(unitName), &EntNameHash, &BallNameHash, &BallInfos));
 			UnitNameHash[unitName] = UnitInfos.size() - 1;
 		}
 		DebugLogOutput("Units loading succeeded:{}",fileName);
 	}
+	PerformanceLog::stop("LoadUnits");
 }
 void Entities::LoadBalls(std::vector<std::string> fileNames) {
+	PerformanceLog::start("LoadBalls");
 	for (std::string fileName : fileNames) {
 		PathBindJsonValue root(fileName);
 		std::vector<std::string> ballNames = root.getMemberNames();
 		for (std::string ballName : ballNames) {
-			BallInfos.push_back(Interface::BallInfo(root.get(ballName), &Registry, &EntNameHash, &BallNameHash));
+			BallInfos.push_back(BallInfo(root.get(ballName), &EntNameHash));
 			BallNameHash[ballName] = BallInfos.size() - 1;
 		}
 		DebugLogOutput("Balls loading succeeded:{}", fileName);
 	}
+	PerformanceLog::stop("LoadBalls");
 }
 void Entities::LoadMission(std::string missionFileName) {
+	PerformanceLog::start("LoadMission");
 	PathBindJsonValue root(missionFileName);
 	LoadMap(root.get("mapFilePath").asString());
 	for (int i = 0; i < root.get("spawnCondition").size();i++) {
@@ -220,6 +230,7 @@ void Entities::LoadMission(std::string missionFileName) {
 		HostilityTable[another * TeamCount + other] = true;
 	}
 	DebugLogOutput("Mission loading succeeded:{}",missionFileName);
+	PerformanceLog::stop("LoadMission");
 }
 template<typename typeComp, bool asPrototype>
 void Entities::EmplaceEntityIfNeeded(entt::entity entity, PathBindJsonValue onePrototypeEntityData) {
@@ -365,9 +376,13 @@ entt::entity Entities::EmplaceFromPrototypeEntity(Interface::EntityInitData* pIn
 entt::entity Entities::EmplaceUnitWithInitData(int unitIndex, Interface::EntityInitData* pInitData, DirectX::XMMATRIX* pCorePos) {
 	entt::entity core;
 	pInitData->Pos = *pCorePos;
-	pInitData->Prototype = UnitInfos[unitIndex].CorePrototype;
+	UnitInfo unitInfo = UnitInfos[unitIndex];
+	pInitData->Prototype = unitInfo.CorePrototype;
 
 	pInitData->IsCore = true;
+	pInitData->Weight = unitInfo.Weight;
+	pInitData->MoveTilePerTick = unitInfo.MovePower;
+	pInitData->RadianPerTick = unitInfo.RotatePower;
 
 	core = EmplaceFromPrototypeEntity<false>(pInitData);
 	pInitData->CoreId = core;
@@ -375,7 +390,7 @@ entt::entity Entities::EmplaceUnitWithInitData(int unitIndex, Interface::EntityI
 	// 1つのユニットには7このボールを置く
 	// 1つのボールはいくつかのエンティティで構成される
 	for (int ball = 0; ball < 7; ball++) {
-		Interface::BallInfo* pThisBallInfo = &BallInfos[UnitInfos[unitIndex].Ballindices[ball]];
+		BallInfo* pThisBallInfo = &BallInfos[unitInfo.Ballindices[ball]];
 		std::vector<entt::entity> entityOnThisBall;
 		for (int entity = 0; entity < pThisBallInfo->Prototypes.size(); entity++) {
 			pInitData->Pos = pThisBallInfo->PosFrom[entity];

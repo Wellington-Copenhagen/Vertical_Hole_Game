@@ -14,7 +14,7 @@
                 "team":1
             },
             "Spawn":{
-                "count":9,
+                "count":99,
                 "leaderUnit":"unitLeader",
                 "memberUnit":"unitMember",
                 "timeGap":60,

@@ -55,6 +55,11 @@ public:
 		mInstanceBuffer = VertexBuffer<Interface::LineIType>(mAppearances.GetInstancePointer(0), maxInstanceCount, 1);
 		mTextureArray = SameFormatTextureArray(maxTextureCount, true, 64);
 	}
+	void Shutdown() {
+		mTextureArray.Release();
+		mInstanceBuffer.Release();
+		mDrawCallBuffer.Release();
+	}
 	void Update() {
 		mAppearances.EraseExpired();
 	}
@@ -69,18 +74,21 @@ public:
 	}
 	void Append(float red,float green,float blue,DirectX::XMVECTOR left,DirectX::XMVECTOR right,float width,int tickToDelete,bool isEternal=false) {
 		Interface::LineIType* newInstance;
-		mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance);
-		newInstance->Set(left, right, width, mTextureArray.AppendOneColorTexture(red, green, blue, 1));
+		if (mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance)) {
+			newInstance->Set(left, right, width, mTextureArray.AppendOneColorTexture({ red, green, blue ,1 }));
+		}
 	}
 	void Append(float red, float green, float blue, float alpha, DirectX::XMVECTOR left, DirectX::XMVECTOR right, float width, int tickToDelete, bool isEternal = false) {
 		Interface::LineIType* newInstance;
-		mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance);
-		newInstance->Set(left, right, width, mTextureArray.AppendOneColorTexture(red, green, blue, alpha));
+		if (mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance)) {
+			newInstance->Set(left, right, width, mTextureArray.AppendOneColorTexture({ red, green, blue, alpha }));
+		}
 	}
 	void Append(std::string texPath, DirectX::XMVECTOR left, DirectX::XMVECTOR right, float width, int tickToDelete, bool isEternal = false) {
 		Interface::LineIType* newInstance;
-		mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance);
-		newInstance->Set(left, right, width, mTextureArray.AppendFromFileName(texPath));
+		if (mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance)) {
+			newInstance->Set(left, right, width, mTextureArray.AppendFromFileName(texPath));
+		}
 	}
 };
 class FreeShapeDraw {
@@ -103,6 +111,11 @@ public:
 		mInstanceBuffer = VertexBuffer<Interface::FreeShapeIType>(mAppearances.GetInstancePointer(0), maxInstanceCount, 1);
 		mTextureArray = SameFormatTextureArray(maxTextureCount, true, 64);
 	}
+	void Shutdown() {
+		mTextureArray.Release();
+		mInstanceBuffer.Release();
+		mDrawCallBuffer.Release();
+	}
 	void Update() {
 		mAppearances.EraseExpired();
 	}
@@ -117,13 +130,15 @@ public:
 	}
 	void Append(float red, float green, float blue, FourPoints shape, int tickToDelete, float alpha = 1, bool isEternal = false) {
 		Interface::FreeShapeIType* newInstance;
-		mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance);
-		newInstance->Set(&shape.Pos1, &shape.Pos2, &shape.Pos3, &shape.Pos4, mTextureArray.AppendOneColorTexture(red, green, blue, alpha));
+		if (mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance)) {
+			newInstance->Set(&shape.Pos1, &shape.Pos2, &shape.Pos3, &shape.Pos4, mTextureArray.AppendOneColorTexture({ red, green, blue, alpha }));
+		}
 	}
 	void Append(std::string texPath, FourPoints shape, int tickToDelete, bool isEternal = false) {
 		Interface::FreeShapeIType* newInstance;
-		mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance);
-		newInstance->Set(&shape.Pos1, &shape.Pos2, &shape.Pos3, &shape.Pos4, mTextureArray.AppendFromFileName(texPath));
+		if (mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance)) {
+			newInstance->Set(&shape.Pos1, &shape.Pos2, &shape.Pos3, &shape.Pos4, mTextureArray.AppendFromFileName(texPath));
+		}
 	}
 	void AppendRectEdge(float red, float green, float blue, FourPoints shape, float width, int tickToDelete, float alpha = 1, bool isEternal = false) {
 		Interface::FreeShapeIType* newInstance;
@@ -135,8 +150,10 @@ public:
 			DirectX::XMVECTOR pos2 = shape.Pos2;
 			DirectX::XMVECTOR pos3 = DirectX::XMVectorAdd(shape.Pos1, horizontalGap);
 			DirectX::XMVECTOR pos4 = DirectX::XMVectorAdd(shape.Pos2, horizontalGap);
-			mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance);
-			newInstance->Set(&pos1, &pos2, &pos3, &pos4, mTextureArray.AppendOneColorTexture(red, green, blue, 1));
+			if (mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance)) {
+				newInstance->Set(&pos1, &pos2, &pos3, &pos4, mTextureArray.AppendOneColorTexture({ red, green, blue, 1 }));
+			}
+			newInstance->Set(&pos1, &pos2, &pos3, &pos4, mTextureArray.AppendOneColorTexture({ red, green, blue, 1 }));
 		}
 		// ‰E
 		{
@@ -144,8 +161,9 @@ public:
 			DirectX::XMVECTOR pos2 = DirectX::XMVectorSubtract(shape.Pos4, horizontalGap);
 			DirectX::XMVECTOR pos3 = shape.Pos3;
 			DirectX::XMVECTOR pos4 = shape.Pos4;
-			mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance);
-			newInstance->Set(&pos1, &pos2, &pos3, &pos4, mTextureArray.AppendOneColorTexture(red, green, blue, 1));
+			if (mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance)) {
+				newInstance->Set(&pos1, &pos2, &pos3, &pos4, mTextureArray.AppendOneColorTexture({ red, green, blue, 1 }));
+			}
 		}
 		// ã
 		{
@@ -153,8 +171,9 @@ public:
 			DirectX::XMVECTOR pos2 = shape.Pos2;
 			DirectX::XMVECTOR pos3 = DirectX::XMVectorSubtract(shape.Pos4, virticalGap);
 			DirectX::XMVECTOR pos4 = shape.Pos4;
-			mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance);
-			newInstance->Set(&pos1, &pos2, &pos3, &pos4, mTextureArray.AppendOneColorTexture(red, green, blue, 1));
+			if (mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance)) {
+				newInstance->Set(&pos1, &pos2, &pos3, &pos4, mTextureArray.AppendOneColorTexture({ red, green, blue, 1 }));
+			}
 		}
 		// ‰º
 		{
@@ -162,8 +181,9 @@ public:
 			DirectX::XMVECTOR pos2 = DirectX::XMVectorAdd(shape.Pos1, virticalGap);
 			DirectX::XMVECTOR pos3 = shape.Pos3;
 			DirectX::XMVECTOR pos4 = DirectX::XMVectorAdd(shape.Pos4, virticalGap);
-			mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance);
-			newInstance->Set(&pos1, &pos2, &pos3, &pos4, mTextureArray.AppendOneColorTexture(red, green, blue, 1));
+			if (mAppearances.Add(Tick + tickToDelete, isEternal, &newInstance)) {
+				newInstance->Set(&pos1, &pos2, &pos3, &pos4, mTextureArray.AppendOneColorTexture({ red, green, blue, 1 }));
+			}
 		}
 	}
 };

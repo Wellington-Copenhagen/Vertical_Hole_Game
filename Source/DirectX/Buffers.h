@@ -90,6 +90,11 @@ public:
 		D3D.m_deviceContext->IASetVertexBuffers(Slot, 1, Buffer.GetAddressOf(), &stride, &uOffset);
 	}
 	ComPtr<ID3D11Buffer> Buffer;
+	void Release() {
+		if (Buffer) {
+			Buffer->Release();
+		}
+	}
 };
 /*
 class ColorVarRectDrawCallBuffer {
@@ -126,6 +131,11 @@ public:
 	void UpdateAndSet(DirectX::XMMATRIX* pViewProjection, std::vector<DirectX::XMFLOAT4>* pBlackBoxMatrices);
 	Interface::ConstantType Data;
 	ComPtr<ID3D11Buffer> Buffer;
+	void Release() {
+		if (Buffer) {
+			Buffer->Release();
+		}
+	}
 };
 /*
 struct LightBufferData {

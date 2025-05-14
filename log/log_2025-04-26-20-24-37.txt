@@ -1,0 +1,55 @@
+DirectX11_2DGame\DirectX11_Test\Source\Game\HitBox.h/line32,funcName:Hurtboxes,Tick:0,Collision system Initialization succeeded.
+DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp/line64,funcName:Initialize,Tick:0,Texture buffer Initialization succeeded.
+DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp/line139,funcName:Initialize,Tick:0,Drawing System Initialization succeeded.
+DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp/line182,funcName:Initialize,Tick:0,Generic Drawers Initialization succeeded.
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line148,funcName:LoadEntities,Tick:0,Entities loading succeeded:Data/EntityData/Block.json
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line148,funcName:LoadEntities,Tick:0,Entities loading succeeded:Data/EntityData/Effect.json
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line148,funcName:LoadEntities,Tick:0,Entities loading succeeded:Data/EntityData/Bullet.json
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line148,funcName:LoadEntities,Tick:0,Entities loading succeeded:Data/EntityData/Ball.json
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line213,funcName:LoadBalls,Tick:0,Balls loading succeeded:Data/BallData/Ball.json
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line200,funcName:LoadUnits,Tick:0,Units loading succeeded:Data/UnitData/Unit.json
+DirectX11_2DGame\DirectX11_Test\Source\Game\System.h/line1316,funcName:AllSystem,Tick:0,System initialization succeeded
+DirectX11_2DGame\DirectX11_Test\Source\DirectX\DrawPipe.cpp/line293,funcName:GraphicProcessSetter,Tick:0,Graphic Process Setter Initialization succeeded.
+DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp/line739,funcName:SetUnitThumbnail,Tick:0,Thumbnail generation succeeded
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line137,funcName:LoadMap,Tick:0,Map loading succeeded:Data/MapData/TestMap.json
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line232,funcName:LoadMission,Tick:0,Mission loading succeeded:Data/MissionData/Mission_Test.json
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,LoadEntitiesの処理に平均的にかかっていた時間(ms): 0.6138544
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::CheckBulletCollisionの処理に平均的にかかっていた時間(ms): 3.1694632
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::BindLeaderMemberの処理に平均的にかかっていた時間(ms): 0.045482345
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,GameSystem::Executeの処理に平均的にかかっていた時間(ms): 26.674313
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Shadow Drawの処理に平均的にかかっていた時間(ms): 0.014167648
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,LoadBallsの処理に平均的にかかっていた時間(ms): 0.0005661762
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::BindCoreBallの処理に平均的にかかっていた時間(ms): 0.30220595
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::UpdateWorldの処理に平均的にかかっていた時間(ms): 2.9935331
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Block Drawの処理に平均的にかかっていた時間(ms): 0.06221029
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,LoadUnitsの処理に平均的にかかっていた時間(ms): 0.00043529423
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,mAllSystem.Updateの処理に平均的にかかっていた時間(ms): 23.749767
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,EraseDeletedEntitiesの処理に平均的にかかっていた時間(ms): 0.52463377
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,LoadMapの処理に平均的にかかっていた時間(ms): 6.302453
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Variable Drawの処理に平均的にかかっていた時間(ms): 0.029416176
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,LoadMissionの処理に平均的にかかっていた時間(ms): 6.3039103
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,ClearRenderTargetの処理に平均的にかかっていた時間(ms): 0.037048534
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::GenerateTrajectoryの処理に平均的にかかっていた時間(ms): 0.0021867647
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::InvationObserveの処理に平均的にかかっていた時間(ms): 0.003013236
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::UnitCountObserveの処理に平均的にかかっていた時間(ms): 0.0038323528
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::Spawnの処理に平均的にかかっていた時間(ms): 0.01355735
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::CalculateNextTickWorldの処理に平均的にかかっていた時間(ms): 1.9848397
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::DamageUpdateの処理に平均的にかかっていた時間(ms): 0.58371323
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::CorpsActionの処理に平均的にかかっていた時間(ms): 0.043879397
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::UnitActionの処理に平均的にかかっていた時間(ms): 1.7744015
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::DrawShadowの処理に平均的にかかっていた時間(ms): 0.005832354
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::CoreApplyLinearAcceralationの処理に平均的にかかっていた時間(ms): 0.0029029408
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::KillGenerateの処理に平均的にかかっていた時間(ms): 0.76195043
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::BallActionの処理に平均的にかかっていた時間(ms): 0.22376765
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::GenerateHitEffectの処理に平均的にかかっていた時間(ms): 0.0027397058
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::DrawConstantの処理に平均的にかかっていた時間(ms): 0.0038602941
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::ControlUnitCountの処理に平均的にかかっていた時間(ms): 0.059454434
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::DrawBlockAppearanceの処理に平均的にかかっていた時間(ms): 0.0075926455
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::DrawVariableの処理に平均的にかかっていた時間(ms): 1.866125
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::WallHurtboxの処理に平均的にかかっていた時間(ms): 0.25702074
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::BallHurtboxの処理に平均的にかかっていた時間(ms): 0.14319858
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Systems::CheckUnitCollisionの処理に平均的にかかっていた時間(ms): 0.21461324
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Constant Drawの処理に平均的にかかっていた時間(ms): 0.010429409
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,General Drawの処理に平均的にかかっていた時間(ms): 1.0433443
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,UIの処理に平均的にかかっていた時間(ms): 0.05857355
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:680,Presentの処理に平均的にかかっていた時間(ms): 0.09492207

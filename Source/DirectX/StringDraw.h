@@ -37,7 +37,7 @@ public:
 class GraphicalStringDraw {
 public:
 	// 文字とTextureArray上でのインデックス
-	std::unordered_map<UINT, int> TextureIndexDict;
+	std::vector<short> TextureIndex;
 
 	TimeBindAppearances<Interface::EffectDCType, Interface::EffectIType, 1> mAppearances;
 	VertexBuffer<Interface::EffectIType> mInstanceBuffer;
@@ -60,7 +60,8 @@ public:
 	GraphicalStringDraw(){}
 	GraphicalStringDraw(HFONT hFont, int maxCharCount, int maxCharKind, int texHeight) {
 		TexHeight = texHeight;
-		TextureIndexDict = std::unordered_map<UINT, int>();
+		// codeが256*256種類ありうる
+		TextureIndex = std::vector<short>(256 * 256, -1);
 		mAppearances = TimeBindAppearances<Interface::EffectDCType, Interface::EffectIType, 1>(maxCharCount);
 		Interface::InitDrawCallUV(mAppearances.DrawCall, 0);
 		Interface::InitDrawCallPos(mAppearances.DrawCall, 0);
@@ -83,6 +84,11 @@ public:
 		BlackBoxHeights = std::vector<float>();
 
 
+	}
+	void Shutdown() {
+		mTextureArray.Release();
+		mInstanceBuffer.Release();
+		mDrawCallBuffer.Release();
 	}
 	void Update() {
 		//時間経過での消滅
@@ -113,7 +119,7 @@ public:
 			else {
 				code = content[i];
 			}
-			if (!TextureIndexDict.contains(code)) {
+			if (TextureIndex[code] == -1) {
 				// まだテクスチャにない文字
 				HDC hdc = GetDC(nullptr);
 				SelectObject(hdc, mhFont);
@@ -144,7 +150,7 @@ public:
 				}
 				int texIndex = mTextureArray.AppendImage(SameFormatTextureArray::MakeImageFromColorVector(pInit, TexHeight, TexHeight, 4, 1));
 
-				TextureIndexDict.emplace(code, texIndex);
+				TextureIndex[code] = texIndex;
 				// 左下基準
 				Offsets.push_back({
 					glyphMatrix.gmptGlyphOrigin.x / (float)tmHeight,
@@ -156,23 +162,28 @@ public:
 				BlackBoxWidths.push_back((float)glyphMatrix.gmBlackBoxX / (float)tmHeight);
 				BlackBoxHeights.push_back((float)glyphMatrix.gmBlackBoxY / (float)tmHeight);
 			}
-			totalWidth = totalWidth + CellWidths[TextureIndexDict[code]] * height;
+			totalWidth = totalWidth + CellWidths[TextureIndex[code]] * height;
 		}
 		// 1文字目の左下の位置を得る
-		DirectX::XMVECTOR leftBottom;
+		float left;
+		float bottom;
 		switch (drawPos)
 		{
 		case AsCenter:
-			leftBottom = DirectX::XMVectorAdd(*pPos, { totalWidth / -2.0f,height / -2.0f,0.0f,0.0f });
+			left = pPos->m128_f32[0] - totalWidth / 2.0f;
+			bottom = pPos->m128_f32[1] - height / 2.0f;
 			break;
 		case AsTopLeftCorner:
-			leftBottom = DirectX::XMVectorAdd(*pPos, { 0.0f,height * -1.0f,0.0f,0.0f });
+			left = pPos->m128_f32[0];
+			bottom = pPos->m128_f32[1] - height;
 			break;
 		case AsBottomLeftCorner:
-			leftBottom = *pPos;
+			left = pPos->m128_f32[0];
+			bottom = pPos->m128_f32[1];
 			break;
 		default:
-			leftBottom = *pPos;
+			left = pPos->m128_f32[0];
+			bottom = pPos->m128_f32[1];
 			break;
 		}
 		for (int i = 0; i < content.size(); i++) {
@@ -185,17 +196,18 @@ public:
 			else {
 				code = content[i];
 			}
-			int charIndex = TextureIndexDict[code];
+			int charIndex = TextureIndex[code];
 			Interface::EffectIType* pNewInstance;
-			mAppearances.Add(tickToDelete, isEternal, &pNewInstance);
-			DirectX::XMMATRIX world = {
-				{height,0,0,0},
-				{0,height,0,0},
-				{0,0,1,0},
-				DirectX::XMVectorAdd(leftBottom,{height / 2.0f,height / 2.0f,0,0})
-			};
-			pNewInstance->Set(&world, charIndex, pColor, pColor);
-			leftBottom = DirectX::XMVectorAdd(leftBottom, { CellWidths[charIndex] * height,0,0,0 });
+			if (mAppearances.Add(tickToDelete, isEternal, &pNewInstance)) {
+				DirectX::XMMATRIX world = {
+					{height,0,0,0},
+					{0,height,0,0},
+					{0,0,1,0},
+					{left + height / 2.0f,bottom + height / 2.0f,0,0}
+				};
+				pNewInstance->Set(&world, charIndex, pColor, pColor);
+			}
+			left += CellWidths[charIndex] * height;
 		}
 	}
 };

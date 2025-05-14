@@ -1,13 +1,37 @@
 {
-    "ballLeader":{
+    "ballCommand":{
+        "weight":1,
+        "movePower":0,
+        "rotatePower":0,
         "entities":[{
-            "entityName":"ballRegenerate"
+            "entityName":"ballCommand"
         }
         ]
     },
-    "ballMember":{
+    "ballMove":{
+        "weight":1,
+        "movePower":0.2,
+        "rotatePower":0.2,
         "entities":[{
-            "entityName":"ballGuard"
+            "entityName":"ballMove"
+        }
+        ]
+    },
+    "ballShoot":{
+        "weight":1,
+        "movePower":0,
+        "rotatePower":0,
+        "entities":[{
+            "entityName":"ballShoot"
+        }
+        ]
+    },
+    "ballShield":{
+        "weight":2,
+        "movePower":0,
+        "rotatePower":0,
+        "entities":[{
+            "entityName":"ballShield"
         }
         ]
     }

@@ -3,26 +3,26 @@
         "ratio":1,
         "coreName":"coreLeader",
         "ballNames":[
-            "ballLeader",
-            "ballLeader",
-            "ballLeader",
-            "ballLeader",
-            "ballLeader",
-            "ballLeader",
-            "ballLeader"
+            "ballCommand",
+            "ballShield",
+            "ballShoot",
+            "ballMove",
+            "ballMove",
+            "ballMove",
+            "ballShoot"
         ]
     },
     "unitMember":{
         "ratio":1,
         "coreName":"coreGeneral",
         "ballNames":[
-            "ballMember",
-            "ballMember",
-            "ballMember",
-            "ballMember",
-            "ballMember",
-            "ballMember",
-            "ballMember"
+            "ballShield",
+            "ballShoot",
+            "ballShield",
+            "ballMove",
+            "ballMove",
+            "ballMove",
+            "ballShield"
         ]
     }
 }

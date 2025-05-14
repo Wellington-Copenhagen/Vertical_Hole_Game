@@ -862,7 +862,7 @@ namespace Systems {
 	public:
 		DrawBlockAppearance(GameSystem* pGameSystem) : System(pGameSystem) {}
 		void Update() override {
-			if (Tick % 60 == 0) {
+			if (Tick == 0) {
 				for (auto [entity, worldPosition, appearance, blockData, generateFlag, moveFlag, appearanceChanged, killFlag] : pEntities->Registry.view<
 					Component::WorldPosition,
 					Component::BlockAppearance,
@@ -1259,112 +1259,71 @@ namespace Systems {
 	};
 	*/
 }
-// 現ティックの状態を描画した後、次ティックの位置を予想して衝突にかかわる情報の受け渡しと移動だけを行う
-// データの処理は次ティック
-// 処理→当たり判定や見た目の繁栄→削除追加→衝突・移動→描画
+#define SetSystem(name) SystemArray.push_back(new name(pGameSystem)); SystemNames.push_back(#name)
 class AllSystem {
 public:
 	std::vector<System*> SystemArray;
-	std::vector<int> ProcessTime;
+	std::vector<std::string> SystemNames;
 	AllSystem() {
 		SystemArray = std::vector<System*>();
 	}
 	AllSystem(GameSystem* pGameSystem) {
 		SystemArray = std::vector<System*>();
 		//位置の更新
-
-		SystemArray.push_back(new Systems::UpdateWorld(pGameSystem));
+		SetSystem(Systems::UpdateWorld);
 
 		//ミッション進行
-		SystemArray.push_back(new Systems::InvationObserve(pGameSystem));
-		SystemArray.push_back(new Systems::UnitCountObserve(pGameSystem));
-		SystemArray.push_back(new Systems::Spawn(pGameSystem));
+		SetSystem(Systems::InvationObserve);
+		SetSystem(Systems::UnitCountObserve);
+		SetSystem(Systems::Spawn);
 		//運動、意思決定
-		SystemArray.push_back(new Systems::DamageUpdate(pGameSystem));
-		SystemArray.push_back(new Systems::CorpsAction(pGameSystem));
-		SystemArray.push_back(new Systems::UnitAction(pGameSystem));
-		SystemArray.push_back(new Systems::CoreApplyLinearAcceralation(pGameSystem));
+		SetSystem(Systems::DamageUpdate);
+		SetSystem(Systems::CorpsAction);
+		SetSystem(Systems::UnitAction);
+		SetSystem(Systems::CoreApplyLinearAcceralation);
 
 		//エフェクトの生成
-		SystemArray.push_back(new Systems::BallAction(pGameSystem));
-		SystemArray.push_back(new Systems::GenerateHitEffect(pGameSystem));
-		SystemArray.push_back(new Systems::GenerateTrajectory(pGameSystem));
+		SetSystem(Systems::BallAction);
+		SetSystem(Systems::GenerateHitEffect);
+		SetSystem(Systems::GenerateTrajectory);
 
 		// これ以前の処理でこのティックの削除と追加の決定はすべて行われる必要がある
 
 		// ここより下に削除と追加にかかわる処理はする必要がある
 
-		SystemArray.push_back(new Systems::ControlUnitCount(pGameSystem));
-		SystemArray.push_back(new Systems::BindCoreBall(pGameSystem));
-		SystemArray.push_back(new Systems::BindLeaderMember(pGameSystem));
+		SetSystem(Systems::ControlUnitCount);
+		SetSystem(Systems::BindCoreBall);
+		SetSystem(Systems::BindLeaderMember);
 		//描画
-		SystemArray.push_back(new Systems::DrawBlockAppearance(pGameSystem));
-		SystemArray.push_back(new Systems::DrawConstant(pGameSystem));
-		SystemArray.push_back(new Systems::DrawVariable(pGameSystem));
-		SystemArray.push_back(new Systems::DrawShadow(pGameSystem));
+		SetSystem(Systems::DrawBlockAppearance);
+		SetSystem(Systems::DrawConstant);
+		SetSystem(Systems::DrawVariable);
+		SetSystem(Systems::DrawShadow);
 
 		//衝突マップに設定する
-		SystemArray.push_back(new Systems::WallHurtbox(pGameSystem));
-		SystemArray.push_back(new Systems::BallHurtbox(pGameSystem));
+		SetSystem(Systems::WallHurtbox);
+		SetSystem(Systems::BallHurtbox);
 
 		// ここまでに削除と追加にかかわる処理は終わっている必要がある
 
 		//削除追加
-		SystemArray.push_back(new Systems::KillGenerate(pGameSystem));
-
-		SystemArray.push_back(new Systems::CalculateNextTickWorld(pGameSystem));
+		SetSystem(Systems::KillGenerate);
+		SetSystem(Systems::CalculateNextTickWorld);
 
 		//衝突判定
-		SystemArray.push_back(new Systems::CheckBulletCollision(pGameSystem));
-		SystemArray.push_back(new Systems::CheckUnitCollision(pGameSystem));
-		ProcessTime = std::vector<int>(SystemArray.size(), 0);
+		SetSystem(Systems::CheckBulletCollision);
+		SetSystem(Systems::CheckUnitCollision);
+		DebugLogOutput("System initialization succeeded");
 	}
 	// BlockAppearance,CalcurateGeneratedWorldみたいなエンティティ生成以後の処理はほとんどない奴も結構時間食ってるからenttのentityの検索にかなり時間がかかってる可能性がある
 	// GeneratedFlag,KillFlagは生成したとき/死が決定したときにエンティティに追加する方が良いのかも
 	// Releaseビルドにしたら解決した
 	void Update() {
 		int size = SystemArray.size();
-		OutputDebugStringA("Tick Start\n");
 		for (int i = 0; i < size; i++) {
-			auto start = std::chrono::system_clock::now();
+			PerformanceLog::start(SystemNames[i]);
 			SystemArray[i]->Update();
-			auto end = std::chrono::system_clock::now();
-			ProcessTime[i] = ProcessTime[i] + std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-
-			//Interface::fDebugOutput("Process:%d finished\n", i);
-			for (auto [entity, worldPosition] : SystemArray[0]->pEntities->Registry.view<
-				Component::WorldPosition>().each()) {
-				if (worldPosition.NextTickWorldPos.r[2].m128_f32[2] > 1.9f && worldPosition.NextTickWorldPos.r[2].m128_f32[2] < 2.1f) {
-					throw("");
-				}
-				if (worldPosition.WorldPos.r[3].m128_f32[0] < -1 || worldPosition.WorldPos.r[3].m128_f32[0] > 1000||
-					worldPosition.WorldPos.r[3].m128_f32[1] < -1 || worldPosition.WorldPos.r[3].m128_f32[1] > 1000||
-					worldPosition.WorldPos.r[3].m128_f32[2] < -10 || worldPosition.WorldPos.r[3].m128_f32[2] > 10) {
-					throw("");
-				}
-				if (Interface::ScaleOfMatrix(&worldPosition.WorldPos) > 4) {
-					throw("");
-				}
-			}
-			for (auto [entity, appearance] : SystemArray[0]->pEntities->Registry.view<
-				Component::ConstantAppearance>().each()) {
-				//Interface::fDebugOutput("const index:%d\n", appearance.BufferDataIndex);
-			}
-			int count = 0;
-			for (auto [entity, unitData] : SystemArray[0]->pEntities->Registry.view<
-				Component::UnitData>().each()) {
-				if (unitData.Team == 1) {
-					count++;
-				}
-			}
-			//Interface::fDebugOutput("team 1 count:%d\n", count);
-		}
-		OutputDebugStringA("Tick End\n");
-		if (Tick % 60 == 0) {
-			for (int i = 0; i < size; i++) {
-				Interface::fDebugOutput("System:%d's Average process time(ms/tick):%f\n", i, ProcessTime[i] / (60.0f * 1000.0f));
-				ProcessTime[i] = 0;
-			}
+			PerformanceLog::stop(SystemNames[i]);
 		}
 	}
 };

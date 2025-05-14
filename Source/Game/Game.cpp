@@ -28,21 +28,26 @@ DirectX::XMMATRIX rotation;
 GraphicalStringDraw globalStringDraw;
 LineDraw globalLineDraw;
 int Tick;
+extern SameFormatTextureArray BlockTextureArray;
+extern SameFormatTextureArray VariableTextureArray;
+extern SameFormatTextureArray ConstantTextureArray;
 // ゲームの初期設定を行う
 GameSystem::GameSystem() {
 }
 void terminateHandle() {
+	PerformanceLog::Save();
 	DebugAssist::Save();
 	std::abort();
 }
 void GameSystem::Initialize(HWND hWnd)
 {
-	DebugAssist::Init();
-	//SameFormatTextureArray::SaveShadowTexture(64, "texWallShadow.tif", 0, 16, 8, 8);
-	//SameFormatTextureArray::SaveShadowTexture(64, "texFloorShadow.tif", 8, 8, 8, 8);
-	//SameFormatTextureArray::SaveWallMask(64, "texWallShadow.tif");
-	//SameFormatTextureArray::SaveLensMask(64, "texLensMask.tif");
-	std::set_terminate(terminateHandle);
+	try {
+		DebugAssist::Init();
+		//SameFormatTextureArray::SaveShadowTexture(64, "texWallShadow.tif", 0, 16, 8, 8);
+		//SameFormatTextureArray::SaveShadowTexture(64, "texFloorShadow.tif", 8, 8, 8, 8);
+		//SameFormatTextureArray::SaveWallMask(64, "texWallShadow.tif");
+		//SameFormatTextureArray::SaveLensMask(64, "texLensMask.tif");
+		std::set_terminate(terminateHandle);
 
 
 
@@ -53,210 +58,214 @@ void GameSystem::Initialize(HWND hWnd)
 
 
 
-	Tick = 0;
-	mHurtboxes = Hurtboxes(&mEntities.Registry,&mEntities.HostilityTable);
-	// テクスチャの初期化
-	BlockTextureArray = SameFormatTextureArray(2048, true, 64);
-	VariableTextureArray = SameFormatTextureArray(2048, true, 64);
-	ConstantTextureArray = SameFormatTextureArray(2048, true, 64);
-	DebugLogOutput("Texture buffer Initialization succeeded.");
+		Tick = 0;
+		mHurtboxes = Hurtboxes(&mEntities.Registry, &mEntities.HostilityTable);
+		// テクスチャの初期化
+		BlockTextureArray = SameFormatTextureArray(2048, true, 64);
+		VariableTextureArray = SameFormatTextureArray(2048, true, 64);
+		ConstantTextureArray = SameFormatTextureArray(2048, true, 64);
+		DebugLogOutput("Texture buffer Initialization succeeded.");
 
-	// 頂点バッファ、頂点データの初期化
-	mFloorAppearances = EntityBindAppearances
-		<Interface::BlockDCType, Interface::BlockIType,Component::BlockAppearance, 1>(WorldWidth * WorldHeight);
-	Interface::InitDrawCallUV(mFloorAppearances.DrawCall, 0);
-	Interface::InitDrawCallPos(mFloorAppearances.DrawCall, 0);
-	mWallAppearances = EntityBindAppearances
-		<Interface::BlockDCType, Interface::BlockIType, Component::BlockAppearance, 1>(WorldWidth * WorldHeight);
-	Interface::InitDrawCallUV(mWallAppearances.DrawCall, 0);
-	Interface::InitDrawCallPos(mWallAppearances.DrawCall, 0);
-	mFloorDCBuffer = VertexBuffer<Interface::BlockDCType>(mFloorAppearances.GetDrawCallPointer(0), 4, 0);
-	mFloorIBuffer = VertexBuffer<Interface::BlockIType>(mFloorAppearances.GetInstancePointer(0), WorldWidth * WorldHeight, 1);
-	mWallDCBuffer = VertexBuffer<Interface::BlockDCType>(mWallAppearances.GetDrawCallPointer(0), 4, 0);
-	mWallIBuffer = VertexBuffer<Interface::BlockIType>(mWallAppearances.GetInstancePointer(0), WorldWidth * WorldHeight, 1);
+		// 頂点バッファ、頂点データの初期化
+		mFloorAppearances = EntityBindAppearances
+			<Interface::BlockDCType, Interface::BlockIType, Component::BlockAppearance, 1>(WorldWidth * WorldHeight);
+		Interface::InitDrawCallUV(mFloorAppearances.DrawCall, 0);
+		Interface::InitDrawCallPos(mFloorAppearances.DrawCall, 0);
+		mWallAppearances = EntityBindAppearances
+			<Interface::BlockDCType, Interface::BlockIType, Component::BlockAppearance, 1>(WorldWidth * WorldHeight);
+		Interface::InitDrawCallUV(mWallAppearances.DrawCall, 0);
+		Interface::InitDrawCallPos(mWallAppearances.DrawCall, 0);
+		mFloorDCBuffer = VertexBuffer<Interface::BlockDCType>(mFloorAppearances.GetDrawCallPointer(0), 4, 0);
+		mFloorIBuffer = VertexBuffer<Interface::BlockIType>(mFloorAppearances.GetInstancePointer(0), WorldWidth * WorldHeight, 1);
+		mWallDCBuffer = VertexBuffer<Interface::BlockDCType>(mWallAppearances.GetDrawCallPointer(0), 4, 0);
+		mWallIBuffer = VertexBuffer<Interface::BlockIType>(mWallAppearances.GetInstancePointer(0), WorldWidth * WorldHeight, 1);
 
-	/*
-	mBallAppearances = EntityBindAppearances
-		<Interface::BallDCType, Interface::BallIType,Component::BallAppearance, 3>(MaxBallCount);
-	Interface::InitDrawCallUV(mBallAppearances.DrawCall, 0);
-	Interface::InitDrawCallPos(mBallAppearances.DrawCall, 0, 0.4, 0.4, 0.4, -0.01);
-	Interface::InitDrawCallUV(mBallAppearances.DrawCall, 1);
-	Interface::InitDrawCallPos(mBallAppearances.DrawCall, 1, 0.5, 0.5, 0.5, 0);
-	Interface::InitDrawCallUV(mBallAppearances.DrawCall, 2);
-	Interface::InitDrawCallPos(mBallAppearances.DrawCall, 2, 0.2, 0.2, 0.2, -0.1);
+		/*
+		mBallAppearances = EntityBindAppearances
+			<Interface::BallDCType, Interface::BallIType,Component::BallAppearance, 3>(MaxBallCount);
+		Interface::InitDrawCallUV(mBallAppearances.DrawCall, 0);
+		Interface::InitDrawCallPos(mBallAppearances.DrawCall, 0, 0.4, 0.4, 0.4, -0.01);
+		Interface::InitDrawCallUV(mBallAppearances.DrawCall, 1);
+		Interface::InitDrawCallPos(mBallAppearances.DrawCall, 1, 0.5, 0.5, 0.5, 0);
+		Interface::InitDrawCallUV(mBallAppearances.DrawCall, 2);
+		Interface::InitDrawCallPos(mBallAppearances.DrawCall, 2, 0.2, 0.2, 0.2, -0.1);
 
-	mBallDCBuffer = VertexBuffer<Interface::BallDCType>(mBallAppearances.GetDrawCallPointer(0), 4, 0);
-	mBallIBuffer = VertexBuffer<Interface::BallIType>(mBallAppearances.GetInstancePointer(0), MaxBallCount, 1);
+		mBallDCBuffer = VertexBuffer<Interface::BallDCType>(mBallAppearances.GetDrawCallPointer(0), 4, 0);
+		mBallIBuffer = VertexBuffer<Interface::BallIType>(mBallAppearances.GetInstancePointer(0), MaxBallCount, 1);
 
-	mBulletAppearances = EntityBindAppearances
-		<Interface::BulletDCType, Interface::BulletIType, Component::BulletAppearance, 1>(MaxBulletCount);
-	Interface::InitDrawCallUV(mBulletAppearances.DrawCall, 0);
-	Interface::InitDrawCallPos(mBulletAppearances.DrawCall, 0);
-	mBulletDCBuffer = VertexBuffer<Interface::BulletDCType>(mBulletAppearances.GetDrawCallPointer(0), 4, 0);
-	mBulletIBuffer = VertexBuffer<Interface::BulletIType>(mBulletAppearances.GetInstancePointer(0), MaxBulletCount, 1);
+		mBulletAppearances = EntityBindAppearances
+			<Interface::BulletDCType, Interface::BulletIType, Component::BulletAppearance, 1>(MaxBulletCount);
+		Interface::InitDrawCallUV(mBulletAppearances.DrawCall, 0);
+		Interface::InitDrawCallPos(mBulletAppearances.DrawCall, 0);
+		mBulletDCBuffer = VertexBuffer<Interface::BulletDCType>(mBulletAppearances.GetDrawCallPointer(0), 4, 0);
+		mBulletIBuffer = VertexBuffer<Interface::BulletIType>(mBulletAppearances.GetInstancePointer(0), MaxBulletCount, 1);
 
-	mEffectAppearances = EntityBindAppearances
-		<Interface::EffectDCType, Interface::EffectIType, Component::EffectAppearance, 1>(MaxEffectCount);
-	Interface::InitDrawCallUV(mEffectAppearances.DrawCall, 0);
-	Interface::InitDrawCallPos(mEffectAppearances.DrawCall, 0);
-	mEffectDCBuffer = VertexBuffer<Interface::EffectDCType>(mEffectAppearances.GetDrawCallPointer(0), 4, 0);
-	mEffectIBuffer = VertexBuffer<Interface::EffectIType>(mEffectAppearances.GetInstancePointer(0), MaxEffectCount, 1);
-	//mLineAppearances = Appearances
-		//<Interface::LineDCType, Interface::LineIType, 1, MaxLineCount>(4);
-	//mLineDCBuffer = VertexBuffer<Interface::LineDCType, 4, 0>(mLineAppearances.DrawCall);
-	//mLineIBuffer = VertexBuffer<Interface::LineIType, MaxLineCount, 1>(mLineAppearances.Instances);
+		mEffectAppearances = EntityBindAppearances
+			<Interface::EffectDCType, Interface::EffectIType, Component::EffectAppearance, 1>(MaxEffectCount);
+		Interface::InitDrawCallUV(mEffectAppearances.DrawCall, 0);
+		Interface::InitDrawCallPos(mEffectAppearances.DrawCall, 0);
+		mEffectDCBuffer = VertexBuffer<Interface::EffectDCType>(mEffectAppearances.GetDrawCallPointer(0), 4, 0);
+		mEffectIBuffer = VertexBuffer<Interface::EffectIType>(mEffectAppearances.GetInstancePointer(0), MaxEffectCount, 1);
+		//mLineAppearances = Appearances
+			//<Interface::LineDCType, Interface::LineIType, 1, MaxLineCount>(4);
+		//mLineDCBuffer = VertexBuffer<Interface::LineDCType, 4, 0>(mLineAppearances.DrawCall);
+		//mLineIBuffer = VertexBuffer<Interface::LineIType, MaxLineCount, 1>(mLineAppearances.Instances);
 
-	*/
+		*/
 
-	int appCount = 65536;
-	mVariableAppearances = EntityBindAppearances
-		<Interface::EffectDCType, Interface::EffectIType, Component::VariableAppearance, 1>(appCount);
-	Interface::InitDrawCallUV(mVariableAppearances.DrawCall, 0);
-	Interface::InitDrawCallPos(mVariableAppearances.DrawCall, 0);
-	mConstantAppearances = EntityBindAppearances
-		<Interface::GeneralDCType, Interface::GeneralIType, Component::ConstantAppearance, 1>(appCount);
-	Interface::InitDrawCallUV(mConstantAppearances.DrawCall, 0);
-	Interface::InitDrawCallPos(mConstantAppearances.DrawCall, 0);
-	mVariableDCBuffer = VertexBuffer<Interface::EffectDCType>(mVariableAppearances.GetDrawCallPointer(0), 4, 0);
-	mVariableIBuffer = VertexBuffer<Interface::EffectIType>(mVariableAppearances.GetInstancePointer(0), appCount, 1);
-	mConstantDCBuffer = VertexBuffer < Interface::GeneralDCType > (mConstantAppearances.GetDrawCallPointer(0), 4, 0);
-	mConstantIBuffer = VertexBuffer<Interface::GeneralIType>(mConstantAppearances.GetInstancePointer(0), appCount, 1);
-
-
-	mVariableShadowAppearances = EntityBindAppearances
-		<Interface::GeneralDCType, Interface::GeneralIType, Component::ShadowAppearance, 1>(appCount);
-	Interface::InitDrawCallUV(mVariableAppearances.DrawCall, 0);
-	Interface::InitDrawCallPos(mVariableAppearances.DrawCall, 0);
-	mConstantShadowAppearances = EntityBindAppearances
-		<Interface::GeneralDCType, Interface::GeneralIType, Component::ShadowAppearance, 1>(appCount);
-	Interface::InitDrawCallUV(mConstantAppearances.DrawCall, 0);
-	Interface::InitDrawCallPos(mConstantAppearances.DrawCall, 0);
-	mShadowDCBuffer = VertexBuffer<Interface::GeneralDCType>(mVariableShadowAppearances.GetDrawCallPointer(0), 4, 0);
-	mShadowIBuffer = VertexBuffer<Interface::GeneralIType>(mVariableShadowAppearances.GetInstancePointer(0), appCount, 1);
-
-	DebugLogOutput("Drawing System Initialization succeeded.");
+		int appCount = 65536;
+		mVariableAppearances = EntityBindAppearances
+			<Interface::EffectDCType, Interface::EffectIType, Component::VariableAppearance, 1>(appCount);
+		Interface::InitDrawCallUV(mVariableAppearances.DrawCall, 0);
+		Interface::InitDrawCallPos(mVariableAppearances.DrawCall, 0);
+		mConstantAppearances = EntityBindAppearances
+			<Interface::GeneralDCType, Interface::GeneralIType, Component::ConstantAppearance, 1>(appCount);
+		Interface::InitDrawCallUV(mConstantAppearances.DrawCall, 0);
+		Interface::InitDrawCallPos(mConstantAppearances.DrawCall, 0);
+		mVariableDCBuffer = VertexBuffer<Interface::EffectDCType>(mVariableAppearances.GetDrawCallPointer(0), 4, 0);
+		mVariableIBuffer = VertexBuffer<Interface::EffectIType>(mVariableAppearances.GetInstancePointer(0), appCount, 1);
+		mConstantDCBuffer = VertexBuffer < Interface::GeneralDCType >(mConstantAppearances.GetDrawCallPointer(0), 4, 0);
+		mConstantIBuffer = VertexBuffer<Interface::GeneralIType>(mConstantAppearances.GetInstancePointer(0), appCount, 1);
 
 
+		mVariableShadowAppearances = EntityBindAppearances
+			<Interface::GeneralDCType, Interface::GeneralIType, Component::ShadowAppearance, 1>(appCount);
+		Interface::InitDrawCallUV(mVariableAppearances.DrawCall, 0);
+		Interface::InitDrawCallPos(mVariableAppearances.DrawCall, 0);
+		mConstantShadowAppearances = EntityBindAppearances
+			<Interface::GeneralDCType, Interface::GeneralIType, Component::ShadowAppearance, 1>(appCount);
+		Interface::InitDrawCallUV(mConstantAppearances.DrawCall, 0);
+		Interface::InitDrawCallPos(mConstantAppearances.DrawCall, 0);
+		mShadowDCBuffer = VertexBuffer<Interface::GeneralDCType>(mVariableShadowAppearances.GetDrawCallPointer(0), 4, 0);
+		mShadowIBuffer = VertexBuffer<Interface::GeneralIType>(mVariableShadowAppearances.GetInstancePointer(0), appCount, 1);
+
+		DebugLogOutput("Drawing System Initialization succeeded.");
 
 
 
-	int w = D3D.Width;
-	int h = D3D.Height;
-	mCamera = Camera();
-
-	mCBuffer = ConstantBuffer();
 
 
-	HFONT hFont = CreateFontW(28,//文字の高さ
-		0,//文字の幅、0だと高さに合わせて調整される？
-		0,//文の傾き？
-		0,//文字の傾き？
-		1000,//太さ　大きいほど太い
-		FALSE,// 斜体
-		FALSE,// 下線
-		FALSE,// 取り消し線
-		SHIFTJIS_CHARSET,//文字セット SHIFT_JISもある
-		OUT_TT_ONLY_PRECIS,//精度　よくわからん
-		CLIP_DEFAULT_PRECIS,
-		ANTIALIASED_QUALITY,//品質 とりあえずアンチエイリアスは使う
-		DEFAULT_PITCH || FF_MODERN,//見た目のグループ？
-		L"ＭＳ 明朝"//フォントの名前
-	);
-	StringDrawTest = GraphicalStringDraw(hFont, 65536, 2048, 32);
-	globalStringDraw = GraphicalStringDraw(hFont, 65536, 2048, 32);
-	for (int x = 0; x < 256; x = x + 8) {
-		for (int y = 0; y < 256; y = y + 8) {
-			Interface::VisibleStringInfo toAppend = Interface::VisibleStringInfo();
-			std::string content = "(" + std::to_string(x) + "," + std::to_string(y) + ")";
-			DirectX::XMVECTOR pos = { (float)x,(float)y,0,1 };
-			DirectX::XMVECTOR color = { 0,0,0,1 };
-			StringDrawTest.Append(content, &color, &pos, 0.5f, 60000, StrDrawPos::AsCenter);
+		int w = D3D.Width;
+		int h = D3D.Height;
+		mCamera = Camera();
+
+		mCBuffer = ConstantBuffer();
+
+
+		HFONT hFont = CreateFontW(28,//文字の高さ
+			0,//文字の幅、0だと高さに合わせて調整される？
+			0,//文の傾き？
+			0,//文字の傾き？
+			1000,//太さ　大きいほど太い
+			FALSE,// 斜体
+			FALSE,// 下線
+			FALSE,// 取り消し線
+			SHIFTJIS_CHARSET,//文字セット SHIFT_JISもある
+			OUT_TT_ONLY_PRECIS,//精度　よくわからん
+			CLIP_DEFAULT_PRECIS,
+			ANTIALIASED_QUALITY,//品質 とりあえずアンチエイリアスは使う
+			DEFAULT_PITCH || FF_MODERN,//見た目のグループ？
+			L"ＭＳ 明朝"//フォントの名前
+		);
+		StringDrawTest = GraphicalStringDraw(hFont, 65536, 2048, 32);
+		globalStringDraw = GraphicalStringDraw(hFont, 65536, 2048, 32);
+		for (int x = 0; x < 256; x = x + 8) {
+			for (int y = 0; y < 256; y = y + 8) {
+				Interface::VisibleStringInfo toAppend = Interface::VisibleStringInfo();
+				std::string content = "(" + std::to_string(x) + "," + std::to_string(y) + ")";
+				DirectX::XMVECTOR pos = { (float)x,(float)y,0,1 };
+				DirectX::XMVECTOR color = { 0,0,0,1 };
+				StringDrawTest.Append(content, &color, &pos, 0.5f, 60000, StrDrawPos::AsCenter);
+			}
 		}
+		globalLineDraw = LineDraw(65536, 256);
+
+		mUserInterface = UserInterface(&mEntities, &mCBuffer);
+
+		DebugLogOutput("Generic Drawers Initialization succeeded.");
+
+		std::vector<std::string> EntityFileNames = {
+			"Data/EntityData/Block.json",
+			"Data/EntityData/Effect.json",
+			"Data/EntityData/Bullet.json",
+			"Data/EntityData/Ball.json"
+		};
+		mEntities.LoadEntities(EntityFileNames);
+
+		std::vector<std::string> BallFileNames = {
+			"Data/BallData/Ball.json",
+		};
+		mEntities.LoadBalls(BallFileNames);
+
+
+		std::vector<std::string> UnitFileNames = {
+			"Data/UnitData/Unit.json",
+		};
+		mEntities.LoadUnits(UnitFileNames);
+
+		mAllSystem = AllSystem(this);
+
+		std::random_device RandSeedGen;
+		Interface::RandEngine = std::mt19937(RandSeedGen());
+
+		GraphicProcessSetter(D3D.Width, D3D.Height);
+
+		SetUnitThumbnail();
+
+		std::string missionName = "Data/MissionData/Mission_Test.json";
+
+		mEntities.LoadMission(missionName);
+
+		mEntities.LoadPlayerCorps("Data/SaveData/PlayerCorps.json");
+
+
+
+		RefreshedTimeStamp = std::chrono::system_clock::now();
+		/*
+		Texture Text = Texture("Data/Appearance/Test.tif");
+		Texture Block = Texture("Data/Appearance/Block.tif");
+		D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+		desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		desc.Texture2DArray.ArraySize = 2;
+		desc.Texture2DArray.MipLevels = -1;
+		desc.Texture2DArray.MostDetailedMip = 7;
+		desc.Texture2DArray.FirstArraySlice = 0;
+		D3D.m_device->CreateShaderResourceView(, &desc, mTextureArray.m_srv.GetAddressOf());
+		// リソースとシェーダーリソースビューを作成
+		if (FAILED(DirectX::CreateShaderResourceView(D3D.m_device.Get(), image->GetImages(), image->GetImageCount(), m_info, &m_srv)))
+		{
+			// 失敗
+			m_info = {};
+			return;
+		}
+		mTextureArray = TextureArray("Data/AppearanceData/Test.tif");
+		D3D.m_deviceContext->CopySubresourceRegion(mTextureArray.m_srv.Get(), 0, 0, 0, 0, Text.m_srv.Get(), 0, nullptr);
+
+		*/
+
+		// MessageBoxA(hWnd,"テスト用","おそらく上のやつでしょ",MB_OK);
+		// Win 32 APIのGUI系も呼べるのでゲーム内で使ってもいいしデバッグに使うのもよいだろう
+
+		//_tex.Load("Data/ColorTable.png");
+		//D3D.m_deviceContext->PSSetShaderResources(0, 1, m_tex.m_srv.GetAddressOf());
+		//透過は処理されない(0,0,0,0)と認識されて黒くなる
+
+		// テクスチャやサンプラーの渡しは一度で良い(ただしスロットにおそらく限りがあるのでそれ以上に使いたい場合は途中で入れ替える必要があるのだと思う)
+
+		// こんな感じで、ひたすらデバイスコンテキストに情報を渡す
+		// 
+		// テクスチャを、ピクセルシェーダーのスロット0にセット
+		//0番目から1つ設定という感じの用だ
+		//複数同時にもできる？みたいだけどやり方は不明
+
+		//サンプラーが結び付けられてない？というエラーが出るがここに本当は書かないといけないという感じだろうか
+		//テクセル(テクスチャ上のピクセル)と画面上でのピクセルの位置が合わない場合が当然あり、その時に色をどう決めるか
+		//線形では周りのテクセルの色から線形補間する
+		//異方性(D3D11_FILTER_ANISOTROPIC)では台形を使う(だから正対していない面の描画に強いらしい)
 	}
-	globalLineDraw = LineDraw(65536, 256);
-
-	mUserInterface = UserInterface(&mEntities, &mCBuffer);
-
-	DebugLogOutput("Generic Drawers Initialization succeeded.");
-
-	std::vector<std::string> EntityFileNames = {
-		"Data/EntityData/Block.json",
-		"Data/EntityData/Effect.json",
-		"Data/EntityData/Bullet.json",
-		"Data/EntityData/Ball.json"
-	};
-	mEntities.LoadEntities(EntityFileNames);
-
-	std::vector<std::string> BallFileNames = {
-		"Data/BallData/Ball.json",
-	};
-	mEntities.LoadBalls(BallFileNames);
-
-
-	std::vector<std::string> UnitFileNames = {
-		"Data/UnitData/Unit.json",
-	};
-	mEntities.LoadUnits(UnitFileNames);
-
-	mAllSystem = AllSystem(this);
-
-	std::random_device RandSeedGen;
-	Interface::RandEngine = std::mt19937(RandSeedGen());
-
-	GraphicProcessSetter(D3D.Width, D3D.Height);
-
-	SetUnitThumbnail();
-
-	std::string missionName = "Data/MissionData/Mission_Test.json";
-
-	mEntities.LoadMission(missionName);
-
-	mEntities.LoadPlayerCorps("Data/SaveData/PlayerCorps.json");
-
-
-
-	RefreshedTimeStamp = std::chrono::system_clock::now();
-	/*
-	Texture Text = Texture("Data/Appearance/Test.tif");
-	Texture Block = Texture("Data/Appearance/Block.tif");
-	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-	desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-	desc.Texture2DArray.ArraySize = 2;
-	desc.Texture2DArray.MipLevels = -1;
-	desc.Texture2DArray.MostDetailedMip = 7;
-	desc.Texture2DArray.FirstArraySlice = 0;
-	D3D.m_device->CreateShaderResourceView(, &desc, mTextureArray.m_srv.GetAddressOf());
-	// リソースとシェーダーリソースビューを作成
-	if (FAILED(DirectX::CreateShaderResourceView(D3D.m_device.Get(), image->GetImages(), image->GetImageCount(), m_info, &m_srv)))
-	{
-		// 失敗
-		m_info = {};
-		return;
+	catch(std::string e){
+		DebugLogOutput("{}", e);
 	}
-	mTextureArray = TextureArray("Data/AppearanceData/Test.tif");
-	D3D.m_deviceContext->CopySubresourceRegion(mTextureArray.m_srv.Get(), 0, 0, 0, 0, Text.m_srv.Get(), 0, nullptr);
-
-	*/
-
-	// MessageBoxA(hWnd,"テスト用","おそらく上のやつでしょ",MB_OK);
-	// Win 32 APIのGUI系も呼べるのでゲーム内で使ってもいいしデバッグに使うのもよいだろう
-	
-	//_tex.Load("Data/ColorTable.png");
-	//D3D.m_deviceContext->PSSetShaderResources(0, 1, m_tex.m_srv.GetAddressOf());
-	//透過は処理されない(0,0,0,0)と認識されて黒くなる
-
-	// テクスチャやサンプラーの渡しは一度で良い(ただしスロットにおそらく限りがあるのでそれ以上に使いたい場合は途中で入れ替える必要があるのだと思う)
-	
-	// こんな感じで、ひたすらデバイスコンテキストに情報を渡す
-	// 
-	// テクスチャを、ピクセルシェーダーのスロット0にセット
-	//0番目から1つ設定という感じの用だ
-	//複数同時にもできる？みたいだけどやり方は不明
-
-	//サンプラーが結び付けられてない？というエラーが出るがここに本当は書かないといけないという感じだろうか
-	//テクセル(テクスチャ上のピクセル)と画面上でのピクセルの位置が合わない場合が当然あり、その時に色をどう決めるか
-	//線形では周りのテクセルの色から線形補間する
-	//異方性(D3D11_FILTER_ANISOTROPIC)では台形を使う(だから正対していない面の描画に強いらしい)
 }
 //4つの点を指定できれば一意に他の点を指定できるはずなので一塊になった点群はその4点との関係性だけで記述することができ、4点の移動だけでその点群の移動を表現できる
 //A,B,C,Dの4点としたらA→B,A→C,A→Dが独立であるならこれら3つの係数のだけで点を表現できる
@@ -386,11 +395,16 @@ void GameSystem::Execute(HWND hWnd,int o) {
 void GameSystem::Execute(HWND hWnd)
 {
 	try {
+		PerformanceLog::start("GameSystem::Execute");
 		ApplyInput();
+		PerformanceLog::start("mAllSystem.Update");
 		mAllSystem.Update();
+		PerformanceLog::stop("mAllSystem.Update");
 		float color[4] = { 0.9f, 0.9f, 0.9f, 1.0f };
+		PerformanceLog::start("ClearRenderTarget");
 		D3D.m_deviceContext->ClearRenderTargetView(D3D.m_backBufferView.Get(), color);
 		D3D.m_deviceContext->ClearDepthStencilView(D3D.m_depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0.0f);
+		PerformanceLog::stop("ClearRenderTarget");
 		/*
 		// 三角形の描画
 		{
@@ -518,11 +532,12 @@ void GameSystem::Execute(HWND hWnd)
 		}
 		*/
 
+		PerformanceLog::start("EraseDeletedEntities");
 		mFloorAppearances.EraseDeletedEntities(&mEntities.Registry);
 		mWallAppearances.EraseDeletedEntities(&mEntities.Registry);
 		mVariableAppearances.EraseDeletedEntities(&mEntities.Registry);
 		mConstantAppearances.EraseDeletedEntities(&mEntities.Registry);
-
+		PerformanceLog::stop("EraseDeletedEntities");
 
 		// カメラ・定数バッファ
 		mCamera.Update();
@@ -531,6 +546,7 @@ void GameSystem::Execute(HWND hWnd)
 		mCBuffer.UpdateAndSet(&mCamera.CameraMatrix, &BlockTextureArray.BlackboxMatrices);
 		//IASetVertexBufferの順序が影響するみたい
 		// 実際の描画
+		PerformanceLog::start("Block Draw");
 		GraphicProcessSetter::SetAsBlock();
 		mFloorIBuffer.UpdateAndSet(mFloorAppearances.GetInstancePointer(0), 0, mFloorAppearances.InstanceCount);
 		mFloorDCBuffer.UpdateAndSet(mFloorAppearances.GetDrawCallPointer(0), 0, 4);
@@ -538,27 +554,33 @@ void GameSystem::Execute(HWND hWnd)
 		mWallIBuffer.UpdateAndSet(mWallAppearances.GetInstancePointer(0), 0, mWallAppearances.InstanceCount);
 		mWallDCBuffer.UpdateAndSet(mWallAppearances.GetDrawCallPointer(0), 0, 4);
 		D3D.m_deviceContext->DrawInstanced(4, mWallAppearances.InstanceCount, 0, 0);
+		PerformanceLog::stop("Block Draw");
 
 
+		PerformanceLog::start("Constant Draw");
 		ConstantTextureArray.SetToGraphicPipeLine();
 		mCBuffer.UpdateAndSet(&mCamera.CameraMatrix, &ConstantTextureArray.BlackboxMatrices);
 		GraphicProcessSetter::SetAsBullet();
 		mConstantIBuffer.UpdateAndSet(mConstantAppearances.GetInstancePointer(0), 0, mConstantAppearances.InstanceCount);
 		mConstantDCBuffer.UpdateAndSet(mConstantAppearances.GetDrawCallPointer(0), 0, 4);
 		D3D.m_deviceContext->DrawInstanced(4, mConstantAppearances.InstanceCount, 0, 0);
+		PerformanceLog::stop("Constant Draw");
 
+		PerformanceLog::start("Variable Draw");
 		VariableTextureArray.SetToGraphicPipeLine();
 		mCBuffer.UpdateAndSet(&mCamera.CameraMatrix, &VariableTextureArray.BlackboxMatrices);
 		GraphicProcessSetter::SetAsEffect();
 		mVariableIBuffer.UpdateAndSet(mVariableAppearances.GetInstancePointer(0), 0, mVariableAppearances.InstanceCount);
 		mVariableDCBuffer.UpdateAndSet(mVariableAppearances.GetDrawCallPointer(0), 0, 4);
 		D3D.m_deviceContext->DrawInstanced(4, mVariableAppearances.InstanceCount, 0, 0);
+		PerformanceLog::stop("Variable Draw");
 
 
 		for (int i = 0; i < mVariableAppearances.InstanceCount; i++) {
 			DirectX::XMMATRIX pos = DirectX::XMLoadFloat4x4(&mVariableAppearances.Instances[i].World);
 			globalStringDraw.SimpleAppend(std::to_string(i), 1, 0, 0, pos.r[3], 0.3, 1, StrDrawPos::AsBottomLeftCorner);
 		}
+		PerformanceLog::start("Shadow Draw");
 		GraphicProcessSetter::SetAsGeneral();
 		VariableTextureArray.SetToGraphicPipeLine();
 		mCBuffer.UpdateAndSet(&mCamera.CameraMatrix, &VariableTextureArray.BlackboxMatrices);
@@ -570,28 +592,29 @@ void GameSystem::Execute(HWND hWnd)
 		mShadowIBuffer.UpdateAndSet(mConstantShadowAppearances.GetInstancePointer(0), 0, mConstantShadowAppearances.InstanceCount);
 		mShadowDCBuffer.UpdateAndSet(mConstantShadowAppearances.GetDrawCallPointer(0), 0, 4);
 		D3D.m_deviceContext->DrawInstanced(4, mConstantShadowAppearances.InstanceCount, 0, 0);
+		PerformanceLog::stop("Shadow Draw");
 
 
-
+		PerformanceLog::start("General Draw");
 		StringDrawTest.Update();
-		StringDrawTest.Draw(&mCBuffer);
+		//StringDrawTest.Draw(&mCBuffer);
 		globalStringDraw.Update();
-		globalStringDraw.Draw(&mCBuffer);
+		//globalStringDraw.Draw(&mCBuffer);
 		globalLineDraw.Update();
 		//globalLineDraw.Draw(&mCBuffer);
+		PerformanceLog::stop("General Draw");
 
 		// ここで定数バッファが書き換えられているので注意
+		PerformanceLog::start("UI");
 		mUserInterface.UpdateWhileMission();
+		PerformanceLog::stop("UI");
 
-		std::chrono::system_clock::time_point wakeUpTime = RefreshedTimeStamp + std::chrono::milliseconds(17);
-		std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-		long waitMilliSeconds = (wakeUpTime - now).count()/10000;
-		if (waitMilliSeconds > 0) {
-			//Sleep(waitMilliSeconds);
-		}
-		RefreshedTimeStamp = std::chrono::system_clock::now();
+		PerformanceLog::start("Present");
 		D3D.m_swapChain->Present(1, 0);
+		PerformanceLog::stop("Present");
 		OutputDebugStringA(("Tick:" + std::to_string(Tick) + "\n").c_str());
+		PerformanceLog::stop("GameSystem::Execute");
+		PerformanceLog::CalcAverage();
 		Tick++;
 	}
 	catch (char* e) {
@@ -708,7 +731,6 @@ void GameSystem::SetUnitThumbnail() {
 		std::unique_ptr<DirectX::ScratchImage> pWhiteImage = SameFormatTextureArray::MakeImageFromRTV(D3D.Height / 2 - 32, D3D.Width / 2 - 32, 64, 64);
 
 
-
 		SameFormatTextureArray::SaveImage(SameFormatTextureArray::GetTransparentFromOpaque(std::move(pBlackImage), std::move(pWhiteImage)), "thumbnail/" + std::to_string(i) + ".tif");
 		//mEntities.UnitInfos[i].ThumbnailTextureIndex = mUserInterface.mFreeShapeDraw.mTextureArray.AppendImage(SameFormatTextureArray::MakeImageFromRTV(D3D.Height / 2 - 32, D3D.Width / 2 - 32, 64, 64));
 	}
@@ -717,4 +739,5 @@ void GameSystem::SetUnitThumbnail() {
 	mWallAppearances.EraseDeletedEntities(&mEntities.Registry);
 	mVariableAppearances.EraseDeletedEntities(&mEntities.Registry);
 	mConstantAppearances.EraseDeletedEntities(&mEntities.Registry);
+	DebugLogOutput("Thumbnail generation succeeded");
 }

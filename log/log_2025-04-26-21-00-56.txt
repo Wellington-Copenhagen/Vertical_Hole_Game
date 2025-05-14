@@ -1,0 +1,55 @@
+DirectX11_2DGame\DirectX11_Test\Source\Game\HitBox.h/line32,funcName:Hurtboxes,Tick:0,Collision system Initialization succeeded.
+DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp/line64,funcName:Initialize,Tick:0,Texture buffer Initialization succeeded.
+DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp/line139,funcName:Initialize,Tick:0,Drawing System Initialization succeeded.
+DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp/line182,funcName:Initialize,Tick:0,Generic Drawers Initialization succeeded.
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line148,funcName:LoadEntities,Tick:0,Entities loading succeeded:Data/EntityData/Block.json
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line148,funcName:LoadEntities,Tick:0,Entities loading succeeded:Data/EntityData/Effect.json
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line148,funcName:LoadEntities,Tick:0,Entities loading succeeded:Data/EntityData/Bullet.json
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line148,funcName:LoadEntities,Tick:0,Entities loading succeeded:Data/EntityData/Ball.json
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line213,funcName:LoadBalls,Tick:0,Balls loading succeeded:Data/BallData/Ball.json
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line200,funcName:LoadUnits,Tick:0,Units loading succeeded:Data/UnitData/Unit.json
+DirectX11_2DGame\DirectX11_Test\Source\Game\System.h/line1316,funcName:AllSystem,Tick:0,System initialization succeeded
+DirectX11_2DGame\DirectX11_Test\Source\DirectX\DrawPipe.cpp/line293,funcName:GraphicProcessSetter,Tick:0,Graphic Process Setter Initialization succeeded.
+DirectX11_2DGame\DirectX11_Test\Source\Game\Game.cpp/line739,funcName:SetUnitThumbnail,Tick:0,Thumbnail generation succeeded
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line137,funcName:LoadMap,Tick:0,Map loading succeeded:Data/MapData/TestMap.json
+DirectX11_2DGame\DirectX11_Test\Source\Game\Entity.cpp/line232,funcName:LoadMission,Tick:0,Mission loading succeeded:Data/MissionData/Mission_Test.json
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process LoadEntities(ms): 1.2116082
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::CheckBulletCollision(ms): 1.2568865
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::BindLeaderMember(ms): 0.04846154
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process GameSystem::Execute(ms): 16.579414
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Shadow Draw(ms): 0.019395607
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process LoadBalls(ms): 0.0034578764
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::BindCoreBall(ms): 0.32897797
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::UpdateWorld(ms): 2.8609552
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Block Draw(ms): 0.06220145
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process LoadUnits(ms): 0.0024029308
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process mAllSystem.Update(ms): 11.630479
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process EraseDeletedEntities(ms): 0.51306224
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process LoadMap(ms): 17.403297
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Variable Draw(ms): 0.02881685
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process LoadMission(ms): 17.406055
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process ClearRenderTarget(ms): 0.03054945
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::GenerateTrajectory(ms): 0.0020366302
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::InvationObserve(ms): 0.003135531
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::UnitCountObserve(ms): 0.0038095238
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::Spawn(ms): 0.03364835
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::CalculateNextTickWorld(ms): 1.9347106
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::DamageUpdate(ms): 0.63492686
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::CorpsAction(ms): 0.048194144
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::UnitAction(ms): 1.4973297
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::DrawShadow(ms): 0.006080587
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::CoreApplyLinearAcceralation(ms): 0.0028717949
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::KillGenerate(ms): 0.6768023
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::BallAction(ms): 0.20789011
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::GenerateHitEffect(ms): 0.0023186824
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::DrawConstant(ms): 0.0036410259
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::ControlUnitCount(ms): 0.06352015
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::DrawBlockAppearance(ms): 0.01718681
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::DrawVariable(ms): 1.3328756
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::WallHurtbox(ms): 0.25342858
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::BallHurtbox(ms): 0.15018687
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Systems::CheckUnitCollision(ms): 0.23031868
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Constant Draw(ms): 0.012820516
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process General Draw(ms): 0.90849805
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process UI(ms): 0.06349453
+DirectX11_2DGame\DirectX11_Test\DebugAssist.h/line78,funcName:Save,Tick:273,Time to Process Present(ms): 2.6519895

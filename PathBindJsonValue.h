@@ -8,9 +8,14 @@ public:
 	PathBindJsonValue(std::string filePath) {
 		//マップデータの読み込み
 		Json::Value root;
+		if (!std::filesystem::exists(filePath)) {
+			DebugLogOutput("Json Error:File not found:{}", filePath);
+			throw("");
+		}
 		std::ifstream file = std::ifstream(filePath);
 		if (!file) {
-			DebugLogOutput("Json Error:File not found:{}", filePath);
+			DebugLogOutput("Json Error:File found, but unable to open:{}", filePath);
+			throw("");
 		}
 		file >> mValue;
 		file.close();

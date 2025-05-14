@@ -67,7 +67,8 @@ GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 		dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_GREATER_EQUAL;
 
 		if (FAILED(D3D.m_device->CreateDepthStencilState(&dsDesc, m_depthStencilStateEnable.GetAddressOf()))) {
-			throw("深度ステンシルステートの生成に失敗");
+			DebugLogOutput("Failed to create m_depthStencilStateEnable.");
+			throw("");
 		}
 	}
 	{
@@ -91,7 +92,8 @@ GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 		dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_GREATER_EQUAL;
 
 		if (FAILED(D3D.m_device->CreateDepthStencilState(&dsDesc, m_depthStencilStateDisable.GetAddressOf()))) {
-			throw("深度ステンシルステートの生成に失敗");
+			DebugLogOutput("Failed to create m_depthStencilStateDisable.");
+			throw("");
 		}
 	}
 
@@ -111,9 +113,9 @@ GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 		blendDesc.AlphaToCoverageEnable = false;
 		blendDesc.IndependentBlendEnable = false;
 		blendDesc.RenderTarget[0] = rtvBlendDesc;
-		if (FAILED(D3D.m_device->CreateBlendState(&blendDesc, m_blendStateEnable.GetAddressOf())))
-		{
-			throw("ブレンドステートの生成に失敗");
+		if (FAILED(D3D.m_device->CreateBlendState(&blendDesc, m_blendStateEnable.GetAddressOf()))) {
+			DebugLogOutput("Failed to create m_blendStateEnable.");
+			throw("");
 		}
 	}
 
@@ -131,9 +133,9 @@ GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 		blendDesc.AlphaToCoverageEnable = false;
 		blendDesc.IndependentBlendEnable = false;
 		blendDesc.RenderTarget[0] = rtvBlendDesc;
-		if (FAILED(D3D.m_device->CreateBlendState(&blendDesc, m_blendStateDisable.GetAddressOf())))
-		{
-			throw("ブレンドステートの生成に失敗");
+		if (FAILED(D3D.m_device->CreateBlendState(&blendDesc, m_blendStateDisable.GetAddressOf()))) {
+			DebugLogOutput("Failed to create m_blendStateDisable.");
+			throw("");
 		}
 	}
 
@@ -149,13 +151,13 @@ GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 		rasterizerDesc.ScissorEnable = false;
 		rasterizerDesc.MultisampleEnable = false;
 		if (FAILED(D3D.m_device->CreateRasterizerState(&rasterizerDesc, m_rasterizerState.GetAddressOf()))) {
-			throw("ラスタライザ―ステートの生成に失敗");
+			DebugLogOutput("Failed to create m_rasterizerState.");
+			throw("");
 		}
 	}
 
 
 
-	_ASSERT(_CrtCheckMemory());
 	//ブロック用の
 	{
 		std::vector<D3D11_INPUT_ELEMENT_DESC> layout = {
@@ -284,7 +286,8 @@ GraphicProcessSetter::GraphicProcessSetter(int width, int height) {
 		samplerDesc.MinLOD = 0;
 
 		if (FAILED(D3D.m_device->CreateSamplerState(&samplerDesc, &m_samplerState))) {
-			throw("サンプラの生成に失敗");
+			DebugLogOutput("Failed to create m_samplerState.");
+			throw("");
 		}
 	}
 	DebugLogOutput("Graphic Process Setter Initialization succeeded.");
@@ -471,16 +474,22 @@ void GraphicProcessSetter::CompilePixelShader(LPCWSTR pixelShaderPath, ID3D11Pix
 	ComPtr<ID3DBlob> pError;
 	// ピクセルシェーダーを読み込み＆コンパイル
 	ComPtr<ID3DBlob> compiledPS;
+	if (!std::filesystem::exists(pixelShaderPath)) {
+		DebugLogOutput("Shader file not found");
+		throw("");
+	}
 	if (pixelShaderPath != nullptr) {
 		if (FAILED(D3DCompileFromFile(pixelShaderPath, nullptr, nullptr, "main", "ps_5_0", 0, 0, &compiledPS, &pError)))
 		{
-			OutputDebugStringA((char*)pError->GetBufferPointer());
-			throw("ピクセルシェーダのコンパイルに失敗");
+			DebugLogOutput("ピクセルシェーダーのコンパイルに失敗");
+			DebugLogOutput("{}",std::string((char*)pError->GetBufferPointer()));
+			throw("");
 		}
 		// ピクセルシェーダー作成
 		if (FAILED(D3D.m_device->CreatePixelShader(compiledPS->GetBufferPointer(), compiledPS->GetBufferSize(), nullptr, ppPixelShader)))
 		{
-			throw("頂点シェーダのコンパイルに失敗");
+			DebugLogOutput("ピクセルシェーダーの生成に失敗");
+			throw("");
 		}
 	}
 }

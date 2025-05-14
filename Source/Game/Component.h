@@ -590,7 +590,6 @@ namespace Component {
 			Weight = pInitData->Weight;
 			RadianPerTick = pInitData->RadianPerTick;
 			MoveTilePerTick = pInitData->MoveTilePerTick;
-			MoveTilePerTick = 0.04;
 			SpeedBuff = pInitData->SpeedMultiply;
 			BallCount = 0;
 			DistanceThresholdMax = 0;
@@ -635,22 +634,13 @@ namespace Component {
 		entt::entity CoreId;
 		float AngleFromCore;
 		bool OnCenter;
-		float Attack;
-		float MovePower;
-		float RotatePower;
-		float Weight;
 
 		void Init(Interface::EntityInitData* pInitData){
 			AngleFromCore = atan2f(pInitData->Pos.r[3].m128_f32[1], pInitData->Pos.r[3].m128_f32[0]);
 			OnCenter = pInitData->Pos.r[3].m128_f32[0] == 0 && pInitData->Pos.r[3].m128_f32[1] == 0;
-			Attack = Attack * pInitData->DamageMultiply;
 			CoreId = pInitData->CoreId;
 		}
 		BallData(PathBindJsonValue fromLoad, std::map<std::string, Interface::UnitIndex>* pUnitNameHash, std::map<std::string, entt::entity>* pEntNameHash) {
-			Attack = fromLoad.get("attack").asFloat();
-			MovePower = fromLoad.get("movePower").asFloat();
-			RotatePower = fromLoad.get("rotatePower").asFloat();
-			Weight = fromLoad.get("weight").asFloat();
 		}
 	};
 	struct BulletData {

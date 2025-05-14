@@ -39,35 +39,50 @@ struct VertexShaderAndInputLayout {
 			}
 		}
 		if (drawcallSize != sizeof(DCType) || instanceSize != sizeof(IType)) {
-			throw("Input Layoutとバッファに使う型のサイズが不一致");
+			DebugLogOutput("Input Layoutとバッファに使う型のサイズが不一致");
 		}
 
 
 
+		if (!std::filesystem::exists(vertexShaderPath)) {
+			DebugLogOutput("Shader file not found");
+			throw("");
+		}
 		// 頂点シェーダーを読み込み＆コンパイル
 		ComPtr<ID3DBlob> compiledVS;
 		ComPtr<ID3DBlob> pError;
 		if (FAILED(D3DCompileFromFile(vertexShaderPath, nullptr, nullptr, "main", "vs_5_0", 0, 0, &compiledVS, &pError)))
 		{
-			OutputDebugStringA((char*)pError->GetBufferPointer());
-			throw("頂点シェーダのコンパイルに失敗");
+			DebugLogOutput("頂点シェーダーのコンパイルに失敗");
+			DebugLogOutput("{}", std::string((char*)pError->GetBufferPointer()));
+			throw("");
 		}
 		// 頂点シェーダー作成
 		if (FAILED(D3D.m_device->CreateVertexShader(compiledVS->GetBufferPointer(), compiledVS->GetBufferSize(), nullptr, mVertexShader.GetAddressOf())))
 		{
-			throw("頂点シェーダの生成に失敗");
+			DebugLogOutput("頂点シェーダーの生成に失敗");
+			throw("");
 		}
 		// １頂点の詳細な情報
 		//頂点データの形式を示している
 		// 頂点インプットレイアウト作成
 		if (FAILED(D3D.m_device->CreateInputLayout(&layoutDesc[0], layoutDesc.size(), compiledVS->GetBufferPointer(), compiledVS->GetBufferSize(), mInputLayout.GetAddressOf())))
 		{
-			throw("頂点インプットレイアウトの生成に失敗");
+			DebugLogOutput("インプットレイアウトの生成に失敗");
+			throw("");
 		}
 	}
 	void SetToDrawPipe() {
 		D3D.m_deviceContext->VSSetShader(mVertexShader.Get(), 0, 0);
 		D3D.m_deviceContext->IASetInputLayout(mInputLayout.Get());
+	}
+	void Release() {
+		if (mVertexShader) {
+			mVertexShader.ReleaseAndGetAddressOf();
+		}
+		if (mInputLayout) {
+			mInputLayout.ReleaseAndGetAddressOf();
+		}
 	}
 };
 //描画パイプラインにおけるシェーダーリソース以外の設定
@@ -117,5 +132,32 @@ public:
 	static void SetAsFreeShape();
 	static void CompilePixelShader(LPCWSTR pixelShaderPath, ID3D11PixelShader** ppPixelShader);
 	GraphicProcessSetter(int width, int height);
+	template <class T>
+	static void Release(ComPtr<T> toRelease) {
+		if (toRelease) {
+			toRelease.ReleaseAndGetAddressOf();
+		}
+	}
+	static void Shutdown() {
+		Release(m_depthStencilStateEnable);
+		Release(m_depthStencilStateDisable);
+		Release(m_blendStateDisable);
+		Release(m_blendStateEnable);
+		Release(m_rasterizerState);
+		Release(m_samplerState);
+		mBlockVShaderLayout.Release();
+		Release(mBlockPixelShader);
+		mEffectVShaderLayout.Release();
+		Release(mEffectPixelShader);
+		mBulletVShaderLayout.Release();
+		Release(mBulletPixelShader);
+		mCharVShaderLayout.Release();
+		Release(mCharPixelShader);
+
+		mLineVShaderLayout.Release();
+		mFreeShapeVShaderLayout.Release();
+		mGeneralVShaderLayout.Release();
+		Release(mGeneralPixelShader);
+	}
 };
-#define DP GraphicProcessSetter::GetI()
+#define DP GraphicProcessSetter::Instance()

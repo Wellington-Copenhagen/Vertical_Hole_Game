@@ -50,3 +50,34 @@ public:
 		LogTo.close();
 	}
 };
+// 1Tick’†‚É‹N‚«‚éˆ—ŠÔ‚Ì•½‹Ï‚ğ‹‚ß‚é
+class PerformanceLog {
+public:
+	static std::unordered_map<std::string, std::chrono::system_clock::time_point> StartTime;
+	static std::unordered_map<std::string, float> Average;
+	static std::unordered_map<std::string, int> SumOnTick;
+	static void start(std::string name) {
+		StartTime[name] = std::chrono::system_clock::now();
+		if (!Average.contains(name)) {
+			Average[name] = 0.0f;
+			SumOnTick[name] = 0;
+		}
+	}
+	static void stop(std::string name) {
+		auto now = std::chrono::system_clock::now();
+		SumOnTick[name] += std::chrono::duration_cast<std::chrono::microseconds>(now - StartTime[name]).count();
+	}
+	static void CalcAverage() {
+		for (auto& [key, value] : Average) {
+			if (SumOnTick[key] > 0) {
+				Average[key] = (Average[key] * Tick + (float)SumOnTick[key]) / (Tick + 1.0f);
+				SumOnTick[key] = 0;
+			}
+		}
+	}
+	static void Save() {
+		for (auto& [key, value] : Average) {
+			DebugLogOutput("Time to Process {}(ms): {}", key, value / 1000.0f);
+		}
+	}
+};

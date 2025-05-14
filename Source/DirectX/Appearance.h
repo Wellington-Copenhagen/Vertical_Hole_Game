@@ -44,6 +44,7 @@ public:
 	//頭のインスタンスのポインタを返すということで
 	inline Interface::RectAppId Add(entt::entity entity, IType* pInstanceData[InstancePerEntity]) {
 		if (InstanceCount >= InstanceMaxCount - 1) {
+			pInstanceData = nullptr;
 			return -1;
 		}
 		for (int i = 0; i < InstancePerEntity; i++) {
@@ -118,47 +119,70 @@ public:
 	inline DCType* GetDrawCallPointer(int index) {
 		return &DrawCall[index * 4];
 	}
-	inline void Add(int timeToDelete,bool isEternal, IType* pInstanceData[InstancePerEntity]) {
+	inline bool Add(int timeToDelete,bool isEternal, IType* pInstanceData[InstancePerEntity]) {
+		if (InstanceCount >= InstanceMaxCount - 1) {
+			pInstanceData = nullptr;
+			return false;
+		}
 		for (int i = 0; i < InstancePerEntity; i++) {
 			pInstanceData[i] = &Instances[i * InstanceMaxCount + InstanceCount];
 		}
 		TickToDelete[InstanceCount] = { Tick + timeToDelete ,isEternal};
 		InstanceCount++;
+		return true;
 	}
 	void EraseExpired() {
-		for (int i = 0; i < InstanceCount; i++) {
-			if (std::get<0>(TickToDelete[i])<=Tick && !std::get<1>(TickToDelete[i])) {
-				//頂点データの移動
-				for (int j = 0; j < InstancePerEntity; j++) {
-					Instances[i * InstancePerEntity + j] = Instances[(InstanceCount - 1) * InstancePerEntity + j];
-					ZeroMemory(&Instances[(InstanceCount - 1) * InstancePerEntity + j], sizeof(IType));
-				}
-				//EntIdの移動
-				TickToDelete[i] = TickToDelete[InstanceCount - 1];
-				//カウントを減らす
+		std::vector<int> newIndex = std::vector<int>();
+		int previousCount = InstanceCount;
+		for (int i = 0; i < previousCount; i++) {
+			if (std::get<0>(TickToDelete[i]) <= Tick && !std::get<1>(TickToDelete[i])) {
 				InstanceCount--;
-				i--;
 			}
+			else {
+				newIndex.push_back(i);
+			}
+		}
+		int alivingCount = newIndex.size();
+		for (int i = 0; i < alivingCount; i++) {
+			//頂点データの移動
+			for (int j = 0; j < InstancePerEntity; j++) {
+				Instances[j * InstanceMaxCount + i] = Instances[j * InstanceMaxCount + newIndex[i]];
+			}
+			//EntIdの移動
+			TickToDelete[i] = TickToDelete[newIndex[i]];
+		}
+		for (int j = 0; j < InstancePerEntity; j++) {
+			ZeroMemory(&Instances[j * InstanceMaxCount + alivingCount], sizeof(IType) * (previousCount - alivingCount));
 		}
 	}
 	template<typename IAType>
 	void EraseExpired(std::vector<IAType>* pInstanceAuxiliaries) {
-		for (int i = 0; i < InstanceCount; i++) {
+		std::vector<int> newIndex = std::vector<int>();
+		int previousCount = InstanceCount;
+		for (int i = 0; i < previousCount; i++) {
 			if (std::get<0>(TickToDelete[i]) <= Tick && !std::get<1>(TickToDelete[i])) {
-				//頂点データの移動
-				for (int j = 0; j < InstancePerEntity; j++) {
-					Instances[i * InstancePerEntity + j] = Instances[(InstanceCount - 1) * InstancePerEntity + j];
-					ZeroMemory(&Instances[(InstanceCount - 1) * InstancePerEntity + j], sizeof(IType));
-				}
-				if (pInstanceAuxiliaries != nullptr) {
-					(*pInstanceAuxiliaries)[i] = (*pInstanceAuxiliaries)[InstanceCount - 1];
-				}
-				//EntIdの移動
-				TickToDelete[i] = TickToDelete[InstanceCount - 1];
-				//カウントを減らす
 				InstanceCount--;
-				i--;
 			}
+			else {
+				newIndex.push_back(i);
+			}
+		}
+		int alivingCount = newIndex.size();
+		for (int i = 0; i < alivingCount; i++) {
+			//頂点データの移動
+			for (int j = 0; j < InstancePerEntity; j++) {
+				Instances[j * InstanceMaxCount + i] = Instances[j * InstanceMaxCount + newIndex[i]];
+			}
+			//EntIdの移動
+			TickToDelete[i] = TickToDelete[newIndex[i]];
+		}
+		if (pInstanceAuxiliaries != nullptr) {
+			for (int i = 0; i < alivingCount; i++) {
+				(*pInstanceAuxiliaries)[i] = (*pInstanceAuxiliaries)[newIndex[i]];
+			}
+		}
+		for (int j = 0; j < InstancePerEntity; j++) {
+			ZeroMemory(&Instances[j * InstanceMaxCount + alivingCount], sizeof(IType) * (previousCount - alivingCount));
 		}
 	}
 	void Clear() {
